@@ -1,0 +1,8 @@
+Package: abvanalysis
+Title: Analysis of the common breeding bird survey
+Version: 0.0
+Authors@R: c(person("Thierry", "Onkelinx", email = "thierry.onkelinx@inbo.be", role = c("aut", "cre")))
+Description: What the package does (one paragraph)
+Depends: R (>= 3.1.2)
+License: GPL-3
+LazyData: true
