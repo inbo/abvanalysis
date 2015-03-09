@@ -7,4 +7,6 @@ Depends: R (>= 3.1.2)
 License: GPL-3
 LazyData: true
 Imports:
+  n2khelper,
+  lubridate,
   RODBC
