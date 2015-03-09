@@ -3,6 +3,7 @@
 export(calculate_weight)
 export(connect_abv)
 export(read_observation)
+export(read_specieslist)
 importFrom(RODBC,odbcClose)
 importFrom(RODBC,odbcDriverConnect)
 importFrom(RODBC,sqlQuery)
