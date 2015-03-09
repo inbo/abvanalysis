@@ -5,7 +5,14 @@
 \title{Prepare all datasets
 Prepare all datasets and store the version into a git repository}
 \usage{
-prepare_dataset()
+prepare_dataset(username, password, verbose = TRUE)
+}
+\arguments{
+\item{username}{the username for the git repository}
+
+\item{password}{the user's password for the git repository}
+
+\item{verbose}{Display a progress bar when TRUE (default)}
 }
 \description{
 Prepare all datasets
