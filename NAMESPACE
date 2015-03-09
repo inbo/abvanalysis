@@ -2,6 +2,7 @@
 
 export(calculate_weight)
 export(connect_abv)
+export(prepare_dataset)
 export(read_observation)
 export(read_specieslist)
 importFrom(RODBC,odbcClose)
@@ -12,3 +13,4 @@ importFrom(lubridate,year)
 importFrom(n2khelper,check_dataframe_variable)
 importFrom(n2khelper,cut_date)
 importFrom(n2khelper,read_delim_git)
+importFrom(n2khelper,write_delim_git)
