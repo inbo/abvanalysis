@@ -7,17 +7,6 @@ prepare_analysis <- function(min.observation = 100){
   
   rawdata.files <- list_files_git(path = "abv")
   species <- as.integer(gsub("\\.txt$", "", rawdata.files))
-  sha <- sapply(species, prepare_analysis_dataset, min.observation = min.observation)
-  sha <- do.call(rbind, sha)
-  model.set <- data.frame(
-    ModelSet = c(
-      "0 + fYear + Period + (1|LocationID) + (1|SubLocationID) + (1|RowID)",
-      "0 + fCycle + Period + (1|LocationID) + (1|SubLocationID) + (1|RowID)",
-      "cYear + Period + (1|LocationID) + (1|SubLocationID) + (1|RowID)"
-    )
-  )
-  to.do <- merge(sha, model.set)
-  to.do$Covariate <- to.do$ModelSet
-  save(to.do, file = "todo.rda")
-  return(to.do)
+  analysis <- lapply(species, prepare_analysis_dataset, min.observation = min.observation)
+  return(species[sapply(analysis, is.null)])
 }

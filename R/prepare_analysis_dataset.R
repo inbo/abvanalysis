@@ -29,9 +29,8 @@ prepare_analysis_dataset <- function(species.id, min.observation = 100){
   rm(species.observation)
   rm(observation)
 
-  analysis$LocationID <- factor(analysis$LocationID)
-  analysis$SubLocationID <- interaction(analysis$LocationID, analysis$SubLocationName, drop = TRUE)
-  analysis$SubLocationName <- NULL
+  analysis$fLocationID <- factor(analysis$LocationID)
+  analysis$fSubLocationID <- interaction(analysis$fLocationID, analysis$SubLocationName, drop = TRUE)
   analysis$fYear <- factor(analysis$Year)
   analysis$cYear <- analysis$Year - max(analysis$Year)
   cycle.label <- seq(min(analysis$Year), max(analysis$Year), by = 3)
@@ -41,20 +40,34 @@ prepare_analysis_dataset <- function(species.id, min.observation = 100){
     labels = cycle.label
   )
   analysis$Year <- NULL
-  if(length(unique(analysis$Period)) == 1){
-    analysis$Period <- NULL
-  } else {
-    analysis$Period <- factor(analysis$Period)
-  }
-  analysis$RowID <- seq_along(analysis$Location)
-  sha <- digest(analysis, algo = "sha1")
-  save(analysis, file = paste0(sha, ".rda"))
-  return(
-    data.frame(
-      SpeciesID = species.id,
-      NObservation = nrow(analysis),
-      NPrescence = sum(analysis$Count > 0),
-      SHA1 = sha
-    )
+  analysis$fPeriod <- factor(analysis$Period)
+  analysis$fRowID <- factor(seq_along(analysis$Location))
+  
+  model.type <- "fit_glmer_poisson"
+  data <- analysis[, c("Count", "Weight", "fRowID", "ObservationID", "fLocationID", "fSubLocationID", "fPeriod", "fYear")]
+  model.set <- "0 + fYear + fPeriod + (1|fLocationID) + (1|fSubLocationID) + (1|fRowID)"
+  weight <- "Weight"
+  sha <- digest(
+    list(species.id, model.type, model.set, weight, data), 
+    algo = "sha1"
   )
+  save(species.id, model.type, model.set, weight, data, file = paste0(sha, ".rda"))
+
+  data <- analysis[, c("Count", "Weight", "fRowID", "ObservationID", "fLocationID", "fSubLocationID", "fPeriod", "cYear")]
+  model.set <- "cYear + fPeriod + (1|fLocationID) + (1|fSubLocationID) + (1|fRowID)"
+  sha <- digest(
+    list(species.id, model.type, model.set, weight, data), 
+    algo = "sha1"
+  )
+  save(species.id, model.type, model.set, weight, data, file = paste0(sha, ".rda"))
+
+  data <- analysis[, c("Count", "Weight", "fRowID", "ObservationID", "fLocationID", "fSubLocationID", "fPeriod", "fCycle")]
+  model.set <- "0 + fCycle + fPeriod + (1|fLocationID) + (1|fSubLocationID) + (1|fRowID)"
+  sha <- digest(
+    list(species.id, model.type, model.set, weight, data), 
+    algo = "sha1"
+  )
+  save(species.id, model.type, model.set, weight, data, file = paste0(sha, ".rda"))
+  
+  return(analysis)
 }
