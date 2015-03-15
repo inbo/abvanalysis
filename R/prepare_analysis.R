@@ -8,5 +8,10 @@ prepare_analysis <- function(min.observation = 100){
   rawdata.files <- list_files_git(path = "abv")
   species <- as.integer(gsub("\\.txt$", "", rawdata.files))
   analysis <- lapply(species, prepare_analysis_dataset, min.observation = min.observation)
-  return(species[sapply(analysis, is.null)])
+  species <- species[sapply(analysis, is.null)]
+  if(length(species) > 0){
+    dir.create("database")
+    save(species, min.observation, file = "database/insufficient_observation.rda")
+  }
+  return(species)
 }
