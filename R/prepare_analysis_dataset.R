@@ -29,8 +29,8 @@ prepare_analysis_dataset <- function(species.id, min.observation = 100){
   rm(species.observation)
   rm(observation)
 
-  analysis$fLocationID <- factor(analysis$LocationID)
-  analysis$fSubLocationID <- interaction(analysis$fLocationID, analysis$SubLocationName, drop = TRUE)
+  analysis$fLocation <- factor(analysis$LocationID)
+  analysis$fSubLocation <- interaction(analysis$fLocation, analysis$SubLocationName, drop = TRUE)
   analysis$fYear <- factor(analysis$Year)
   analysis$cYear <- analysis$Year - max(analysis$Year)
   cycle.label <- seq(min(analysis$Year), max(analysis$Year), by = 3)
@@ -39,13 +39,12 @@ prepare_analysis_dataset <- function(species.id, min.observation = 100){
     (analysis$Year - min(analysis$Year)) %/% 3, 
     labels = cycle.label
   )
-  analysis$Year <- NULL
   analysis$fPeriod <- factor(analysis$Period)
-  analysis$fRowID <- factor(seq_along(analysis$Location))
+  analysis$fRow <- factor(seq_len(nrow(analysis)))
   
-  model.type <- "fit_glmer_poisson"
-  data <- analysis[, c("Count", "Weight", "fRowID", "ObservationID", "fLocationID", "fSubLocationID", "fPeriod", "fYear")]
-  model.set <- "0 + fYear + fPeriod + (1|fLocationID) + (1|fSubLocationID) + (1|fRowID)"
+  model.type <- "glmer poisson"
+  data <- analysis[, c("Count", "Weight", "fRow", "ObservationID", "fLocation", "fSubLocation", "fPeriod", "fYear")]
+  model.set <- "0 + fYear + fPeriod + (1|fLocation) + (1|fSubLocation) + (1|fRow)"
   weight <- "Weight"
   sha <- digest(
     list(species.id, model.type, model.set, weight, data), 
@@ -53,16 +52,16 @@ prepare_analysis_dataset <- function(species.id, min.observation = 100){
   )
   save(species.id, model.type, model.set, weight, data, file = paste0(sha, ".rda"))
 
-  data <- analysis[, c("Count", "Weight", "fRowID", "ObservationID", "fLocationID", "fSubLocationID", "fPeriod", "cYear")]
-  model.set <- "cYear + fPeriod + (1|fLocationID) + (1|fSubLocationID) + (1|fRowID)"
+  data <- analysis[, c("Count", "Weight", "fRow", "ObservationID", "fLocation", "fSubLocation", "fPeriod", "cYear")]
+  model.set <- "cYear + fPeriod + (1|fLocation) + (1|fSubLocation) + (1|fRow)"
   sha <- digest(
     list(species.id, model.type, model.set, weight, data), 
     algo = "sha1"
   )
   save(species.id, model.type, model.set, weight, data, file = paste0(sha, ".rda"))
 
-  data <- analysis[, c("Count", "Weight", "fRowID", "ObservationID", "fLocationID", "fSubLocationID", "fPeriod", "fCycle")]
-  model.set <- "0 + fCycle + fPeriod + (1|fLocationID) + (1|fSubLocationID) + (1|fRowID)"
+  data <- analysis[, c("Count", "Weight", "fRow", "ObservationID", "fLocation", "fSubLocation", "fPeriod", "fCycle")]
+  model.set <- "0 + fCycle + fPeriod + (1|fLocation) + (1|fSubLocation) + (1|fRow)"
   sha <- digest(
     list(species.id, model.type, model.set, weight, data), 
     algo = "sha1"
