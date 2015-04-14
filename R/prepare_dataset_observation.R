@@ -23,8 +23,7 @@ prepare_dataset_observation <- function(develop = TRUE){
     observation,
     database.id
   )
-  observation$LocationID <- observation$ID
-  observation$ID <- NULL
+  colnames(observation) <- gsub("^ID$", "LocationID", colnames(observation))
   
   location.group <- data.frame(
     Description = "Vlaanderen",
@@ -53,13 +52,18 @@ prepare_dataset_observation <- function(develop = TRUE){
     observation[, c("LocationID", "ExternalCode", "SubExternalCode", "DatasourceID")]
   )
   observation$ExternalCode <- NULL
-  colnames(sub.location)[1] <- "ParentLocationID"
+  colnames(sub.location) <- gsub("^LocationID$", "ParentLocationID", colnames(sub.location))
   sub.location$Description <- paste(sub.location$ExternalCode, sub.location$SubExternalCode)
-  sub.location$ExternalCode <- sub.location$SubExternalCode
-  sub.location$SubExternalCode <- NULL
+  sub.location$ExternalCode <- NULL
+  colnames(sub.location) <- gsub(
+    "^SubExternalCode$", 
+    "ExternalCode", 
+    colnames(sub.location)
+  )
   database.id <- odbc_get_multi_id(
     data = sub.location,
-    id.field = "ID", merge.field = c("ParentLocationID", "ExternalCode", "DatasourceID"), table = "Location",
+    id.field = "ID", merge.field = c("ParentLocationID", "ExternalCode", "DatasourceID"),
+    table = "Location",
     channel = channel, create = TRUE
   )
   observation <- merge(
@@ -68,7 +72,9 @@ prepare_dataset_observation <- function(develop = TRUE){
     by.x = c("DatasourceID", "LocationID", "SubExternalCode"),
     by.y = c("DatasourceID", "ParentLocationID", "ExternalCode")
   )
-  observation$SubLocationID <- observation$ID
+  colnames(observation) <- gsub("^ID$", "SubLocationID", colnames(observation))
+
+  observation$DatasourceID <- datasource_id(develop = develop)
   observation <- observation[
     order(
       observation$Stratum, 
@@ -77,14 +83,16 @@ prepare_dataset_observation <- function(develop = TRUE){
       observation$Year, 
       observation$Period
     ),
-    c("ObservationID", "Stratum", "LocationID", "SubLocationID", "Year", "Period", "Weight")
+    c("DatasourceID", "ObservationID", "Stratum", "LocationID", "SubLocationID", "Year", "Period", "Weight", "SubExternalCode")
   ]
   
   location.group.location.sha <- write_delim_git(
     x = location.group.location, file = "locationgrouplocation.txt", path = "abv"
   )
   observation.sha <- write_delim_git(
-    x = observation, file = "observation.txt", path = "abv"
+    x = observation[, c("DatasourceID", "ObservationID", "Stratum", "LocationID", "SubLocationID", "Year", "Period", "Weight")], 
+    file = "observation.txt", 
+    path = "abv"
   )
   
   dataset <- data.frame(

@@ -9,18 +9,18 @@
 select_relevant <- function(observation, observation.species){
   check_dataframe_variable(
     df = observation, 
-    variable = c("ObservationID", "LocationID", "SubLocationName", "Year", "Period"),
+    variable = c("ObservationID", "LocationID", "SubLocationID", "Year", "Period"),
     name = "observation"
   )
   check_dataframe_variable(
     df = observation.species, 
-    variable = c("ObservationID", "SubLocationName", "Count"),
+    variable = c("ObservationID", "SubLocationID", "Count"),
     name = "observation.species"
   )
 
   observation.species <- merge(
     observation.species,
-    observation[, c("ObservationID", "LocationID", "SubLocationName", "Year", "Period")]
+    observation[, c("ObservationID", "LocationID", "SubLocationID", "Year", "Period")]
   )
   observation.species <- select_factor_count_strictly_positive(
     observation = observation.species,
@@ -39,5 +39,5 @@ select_relevant <- function(observation, observation.species){
   if(nrow(observation.species) == 0){
     return(NULL)
   }
-  return(observation.species)
+  return(observation.species[, c("ObservationID", "SubLocationID", "Count")])
 }

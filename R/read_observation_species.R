@@ -8,13 +8,13 @@ read_observation_species <- function(species.id, develop = TRUE){
   sql <- paste0("
     SELECT
       visit.ObservationID AS ObservationID,
-      visit.SubLocationName AS SubLocationName,
+      visit.SubExternalCode AS SubExternalCode,
       observed.Count AS Count
     FROM
         (
           SELECT 
             WRNG_ID AS ObservationID, 
-            WRPT_PTN AS SubLocationName
+            WRPT_PTN AS SubExternalCode
           FROM 
               tblWaarneming 
             INNER JOIN 
@@ -30,7 +30,7 @@ read_observation_species <- function(species.id, develop = TRUE){
         (
           SELECT
             WRME_WRNG_ID AS ObservationID, 
-            Left([WRME_PNT],3) AS SubLocationName, 
+            Left([WRME_PNT],3) AS SubExternalCode, 
             Sum(WRME_ANT) AS Count
           FROM
             tblWaarnemingMeting
@@ -43,7 +43,7 @@ read_observation_species <- function(species.id, develop = TRUE){
         ) AS observed
       ON
         visit.ObservationID = observed.ObservationID AND
-        visit.SubLocationName = observed.SubLocationName
+        visit.SubExternalCode = observed.SubExternalCode
   ")
   observed.count <- sqlQuery(channel = channel, query = sql, stringsAsFactors = FALSE)
   odbcClose(channel)

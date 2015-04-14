@@ -3,6 +3,7 @@
 #' @export
 #' @importFrom n2khelper odbc_get_multi_id connect_result
 #' @importFrom RODBC odbcClose
+#' @importFrom n2kanalysis mark_obsolete_dataset
 prepare_dataset_species <- function(develop = TRUE){
   
   import.date <- Sys.time()
@@ -75,9 +76,9 @@ prepare_dataset_species <- function(develop = TRUE){
     id.field = "ID", merge.field = c("FileName", "PathName", "Fingerprint"), 
     table = "Dataset", 
     channel = channel, create = TRUE
-  )
-  
+  )  
   odbcClose(channel)
+  mark_obsolete_dataset(develop = develop)
   
   species.group.species <- merge(
     species.group.species,
