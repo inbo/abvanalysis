@@ -2,6 +2,7 @@
 
 export(calculate_weight)
 export(connect_rawdata)
+export(datasource_id)
 export(prepare_dataset)
 export(read_observation)
 export(read_observation_species)
