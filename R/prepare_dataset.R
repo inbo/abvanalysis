@@ -5,38 +5,33 @@
 #' @importFrom plyr d_ply
 #' @param verbose Display a progress bar when TRUE (default)
 #' @inheritParams n2khelper::auto_commit
-prepare_dataset <- function(username, password, verbose = TRUE){
-  observation <- read_observation()
-  observation <- calculate_weight(observation = observation)
-  observation <- observation[
-    order(observation$ObservationID, observation$SubLocationName),
-    c("ObservationID", "LocationID", "SubLocationName", "Year", "Period", "Weight")
-  ]
-  write_delim_git(observation, file = "observation.txt", path = "abv")
+#' @inheritParams n2khelper::odbc_connect
+#' @importFrom n2khelper remove_files_git
+prepare_dataset <- function(username, password, verbose = TRUE, develop = TRUE){
   
-  species.list <- read_specieslist()
-  write_delim_git(species.list$Species, file = "species.txt", path = "abv")
-  write_delim_git(species.list$Speciesgroup, file = "speciesgroup.txt", path = "abv")
+  path <- "abv"
+  pattern <- "txt$"
+  success <- remove_files_git(path = path, pattern = pattern)
+  if(length(success) > 0 && !all(success)){
+    stop("Error cleaning existing files in the git repository. Path: '", path, "', pattern: '", pattern, "'")
+  }
+  
+  observation <- prepare_dataset_observation(develop = develop)
+  species <- prepare_dataset_species(develop = develop)
   
   if(verbose){
     progress <- "time"
   } else {
     progress <- "none"
   }
-  junk <- d_ply(species.list$Species, "SpeciesID", .progress = progress, function(x){
-    observation.species <- read_observation_species(species.id = x$SpeciesID[1])
-    observation.species <- select_relevant(
-      observation = observation, 
-      observation.species = observation.species
-    )
-    if(!is.null(observation.species)){
-      observation.species <- observation.species[
-        order(observation.species$ObservationID, observation.species$SubLocationName), 
-        c("ObservationID", "SubLocationName", "Count")
-      ]
-      write_delim_git(observation.species, file = paste0(x$SpeciesID[1], ".txt"), path = "abv")
-    }
-  })
+  junk <- d_ply(
+    .data = species, 
+    .variables = "SpeciesGroupID", 
+    .progress = progress, 
+    .fun = prepare_dataset_species_observation,
+    observation = observation,
+    develop = develop
+  )
   
   auto_commit(
     package = environmentName(parent.env(environment())),
