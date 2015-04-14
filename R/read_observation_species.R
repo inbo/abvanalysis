@@ -1,9 +1,10 @@
 #' Read the observations of a given species
 #' @export
 #' @importFrom RODBC sqlQuery odbcClose
-#' @param species.id The id of the species
-read_observation_species <- function(species.id){
-  channel <- connect_abv()
+#' @param species.id The external id of the species
+#' @inheritParams n2khelper::odbc_connect
+read_observation_species <- function(species.id, develop = TRUE){
+  channel <- connect_rawdata(develop = develop)
   sql <- paste0("
     SELECT
       visit.ObservationID AS ObservationID,

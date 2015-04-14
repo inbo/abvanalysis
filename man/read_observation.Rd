@@ -4,7 +4,10 @@
 \alias{read_observation}
 \title{Return the set of all visited locations}
 \usage{
-read_observation()
+read_observation(develop = TRUE)
+}
+\arguments{
+\item{develop}{Logical value. Indicates the location ton the results database}
 }
 \description{
 Return the set of all visited locations

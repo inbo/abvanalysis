@@ -1,11 +1,12 @@
 #' Read the list of species
 #' @return A list with two components: \code{Species} holds the names of all species, \code{Speciesgroup} lists the species per user defined group.
 #' @export
+#' @inheritParams n2khelper::odbc_connect
 #' @importFrom RODBC sqlQuery odbcClose
 #' @examples
 #' read_specieslist()
-read_specieslist <- function(){
-  channel <- connect_abv()
+read_specieslist <- function(develop = TRUE){
+  channel <- connect_rawdata(develop = develop)
   sql <- "
     SELECT
       SPEC_CDE AS SpeciesID,

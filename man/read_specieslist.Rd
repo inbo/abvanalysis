@@ -4,7 +4,10 @@
 \alias{read_specieslist}
 \title{Read the list of species}
 \usage{
-read_specieslist()
+read_specieslist(develop = TRUE)
+}
+\arguments{
+\item{develop}{Logical value. Indicates the location ton the results database}
 }
 \value{
 A list with two components: \code{Species} holds the names of all species, \code{Speciesgroup} lists the species per user defined group.
