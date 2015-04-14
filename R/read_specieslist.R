@@ -9,11 +9,11 @@ read_specieslist <- function(develop = TRUE){
   channel <- connect_rawdata(develop = develop)
   sql <- "
     SELECT
-      SPEC_CDE AS SpeciesID,
-      SPEC_NAM_WET As Species,
-      SPEC_NAM_NED AS SpeciesNL,
-      SPEC_NAM_ENG AS SpeciesEN,
-      SPEC_NAM_FRA AS SpeciesFR
+      SPEC_CDE AS ExternalCode,
+      SPEC_NAM_WET As ScientificName,
+      SPEC_NAM_NED AS DutchName,
+      SPEC_NAM_ENG AS EnglishName,
+      SPEC_NAM_FRA AS FrenchName
     FROM
       tblSoort
     ORDER BY
@@ -22,8 +22,8 @@ read_specieslist <- function(develop = TRUE){
   species <- sqlQuery(channel = channel, query = sql, stringsAsFactors = FALSE)
   sql <- "
     SELECT
-      Beschrijving AS SpeciesGroup,
-      SoortCode AS SpeciesID
+      Beschrijving AS Description,
+      SoortCode AS ExternalCode
     FROM
         (
           SoortIndicatorType
@@ -42,6 +42,7 @@ read_specieslist <- function(develop = TRUE){
   "
   speciesgroup <- sqlQuery(channel = channel, query = sql, stringsAsFactors = FALSE)
   odbcClose(channel)
+  speciesgroup$SchemeID <- scheme_id(develop = develop)
   return(
     list(
       Species = species,
