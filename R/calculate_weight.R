@@ -5,20 +5,33 @@
 #' @export
 #' @importFrom n2khelper check_dataframe_variable read_delim_git
 calculate_weight <- function(observation){
-  check_dataframe_variable(df = observation, variable = c("LocationID", "Year"), name = "observation")
+  check_dataframe_variable(
+    df = observation, 
+    variable = c("ExternalCode", "Year"), 
+    name = "observation"
+  )
   
   # add the stratum information
   stratum <- read_delim_git("habitat.txt", path = "abv/attribuut")
-  check_dataframe_variable(df = stratum, variable = c("TAG", "Stratum"), name = "habitat.txt")
+  check_dataframe_variable(
+    df = stratum, 
+    variable = c("TAG", "Stratum"), 
+    name = "habitat.txt"
+  )
   
   stratum$Stratum <- factor(stratum$Stratum)
-  observation <- merge(observation, stratum[, c("TAG", "Stratum")], by.x = "LocationID", by.y = "TAG")
+  observation <- merge(
+    observation, 
+    stratum[, c("TAG", "Stratum")], 
+    by.x = "ExternalCode", 
+    by.y = "TAG"
+  )
   
   # stratum size in the population
   population <- as.data.frame(table(Stratum = stratum$Stratum), responseName = "N")
   
   # sampling effort per year and stratum
-  sampling.effort.year <- unique(observation[, c("Year", "Stratum", "LocationID")])
+  sampling.effort.year <- unique(observation[, c("Year", "Stratum", "ExternalCode")])
   sampling.effort.year <- as.data.frame(
     table(
       Year = sampling.effort.year$Year, 

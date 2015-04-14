@@ -10,8 +10,8 @@ read_observation <- function(develop = TRUE){
     SELECT 
       WRNG_ID AS ObservationID, 
       WRNG_DTE_BGN AS Timestamp,
-      WRNG_UTM1_CDE AS LocationID, 
-      WRPT_PTN AS SubLocationName
+      WRNG_UTM1_CDE AS ExternalCode, 
+      WRPT_PTN AS SubExternalCode
     FROM 
         tblWaarneming 
       INNER JOIN 
@@ -27,14 +27,17 @@ read_observation <- function(develop = TRUE){
   odbcClose(channel)
   observation$Date <- floor_date(observation$Timestamp, unit = "day")
   observation$Period <- cut_date(
-    x = observation$Date, dm = c("1-3", "16-4", "1-6", "16-7"), include.last = FALSE
+    x = observation$Date, 
+    dm = c("1-3", "16-4", "1-6", "16-7"), 
+    include.last = FALSE
   )
   levels(observation$Period) <- 1:3
   observation$Year <- year(observation$Date)
   observation <- observation[!is.na(observation$Period), ]
+  observation$DatasourceID <- datasource_id(develop = develop)
   observation <- observation[
-    order(observation$ObservationID, observation$SubLocationName),
-    c("ObservationID", "LocationID", "SubLocationName", "Year", "Period")
+    order(observation$ObservationID, observation$SubExternalCode),
+    c("DatasourceID", "ObservationID", "ExternalCode", "SubExternalCode", "Year", "Period")
   ]
   return(observation)  
 }
