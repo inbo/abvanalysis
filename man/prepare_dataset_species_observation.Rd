@@ -9,6 +9,8 @@ prepare_dataset_species_observation(this.species, observation, develop = TRUE)
 \arguments{
 \item{this.species}{a dataframe with the ExternalCode and the SpeciesGroupID}
 
+\item{observation}{a data.frame with observations}
+
 \item{develop}{Logical value. Indicates the location ton the results database}
 }
 \description{

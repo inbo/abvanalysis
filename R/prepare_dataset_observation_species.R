@@ -1,5 +1,6 @@
 #' Read the counts and save them to git
 #' @param this.species a dataframe with the ExternalCode and the SpeciesGroupID
+#' @param observation a data.frame with observations
 #' @inheritParams n2khelper::odbc_connect
 #' @export
 #' @importFrom n2khelper check_dataframe_variable odbc_get_id  odbc_get_multi_id connect_result check_id
