@@ -4,10 +4,12 @@
 \alias{prepare_analysis}
 \title{Prepare all datasets and a to do list of models}
 \usage{
-prepare_analysis(min.observation = 100)
+prepare_analysis(min.observation = 100, analysis.path = "analysis")
 }
 \arguments{
 \item{min.observation}{The minimum number of positive observations (Count > 0)}
+
+\item{analysis.path}{the path to store the rda files for the analysis}
 }
 \description{
 Prepare all datasets and a to do list of models

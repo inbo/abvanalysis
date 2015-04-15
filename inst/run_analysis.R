@@ -1,5 +1,10 @@
 library(abvanalysis)
+
+current.wd <- getwd()
 path <- "~/tmp/abvanalysis"
-dir.create(path, recursive = TRUE)
+if(!file_test("-d", path)){
+  dir.create(path, recursive = TRUE)
+}
 setwd(path)
 prepare_analysis()
+setwd(current.wd)
