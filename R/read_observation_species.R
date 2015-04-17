@@ -4,7 +4,7 @@
 #' @param species.id The external id of the species
 #' @inheritParams n2khelper::odbc_connect
 read_observation_species <- function(species.id, develop = TRUE){
-  channel <- connect_rawdata(develop = develop)
+  channel <- connect_source(develop = develop)
   sql <- paste0("
     SELECT
       visit.ObservationID AS ObservationID,

@@ -5,7 +5,7 @@
 #' @importFrom lubridate floor_date year
 #' @importFrom n2khelper cut_date
 read_observation <- function(develop = TRUE){
-  channel <- connect_rawdata(develop = develop)
+  channel <- connect_source(develop = develop)
   sql <- "
     SELECT 
       WRNG_ID AS ObservationID, 

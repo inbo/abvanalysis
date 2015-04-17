@@ -6,7 +6,7 @@
 #' @examples
 #' read_specieslist()
 read_specieslist <- function(develop = TRUE){
-  channel <- connect_rawdata(develop = develop)
+  channel <- connect_source(develop = develop)
   sql <- "
     SELECT
       SPEC_CDE AS ExternalCode,
