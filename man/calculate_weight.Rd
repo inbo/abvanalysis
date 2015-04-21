@@ -4,10 +4,12 @@
 \alias{calculate_weight}
 \title{Calculate the survey weights for the observations}
 \usage{
-calculate_weight(observation)
+calculate_weight(observation, result.channel)
 }
 \arguments{
 \item{observation}{the dataframe with observations. Should be the output of \code{\link{read_observation}}}
+
+\item{result.channel}{An open RODBC connection to the results database}
 }
 \description{
 Adds the survey weights and the stratum to the observations

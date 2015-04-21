@@ -4,10 +4,10 @@
 \alias{connect_source}
 \title{Connect to the source data}
 \usage{
-connect_source(develop = TRUE)
+connect_source(result.channel)
 }
 \arguments{
-\item{develop}{Logical value. Indicates the location ton the results database}
+\item{result.channel}{An open RODBC connection to the results database}
 }
 \description{
 Connect to the source data

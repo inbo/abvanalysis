@@ -1,11 +1,22 @@
 #' Return the set of all visited locations
 #' @export
-#' @inheritParams n2khelper::odbc_connect
-#' @importFrom RODBC sqlQuery odbcClose
+#' @param source.channel An open ODBC connection to the source database
+#' @inheritParams connect_source
+#' @importFrom RODBC sqlQuery
 #' @importFrom lubridate floor_date year
 #' @importFrom n2khelper cut_date
-read_observation <- function(develop = TRUE){
-  channel <- connect_source(develop = develop)
+read_observation <- function(source.channel, result.channel){
+  check_dbtable_variable(
+    table = "tblWaarneming", 
+    variable = c("WRNG_ID", "WRNG_DTE_BGN", "WRNG_UTM1_CDE"), 
+    channel = source.channel
+  )
+  check_dbtable_variable(
+    table = "tblWaarnemingPunt", 
+    variable = c("WRPT_PTN", "WRPT_WRNG_ID"), 
+    channel = source.channel
+  )
+  
   sql <- "
     SELECT 
       WRNG_ID AS ObservationID, 
@@ -23,8 +34,8 @@ read_observation <- function(develop = TRUE){
       WRNG_UCWT_CDE = 'ABV' AND 
       NOT (WRNG_WGST_CDE = 'NV')
   "
-  observation <- sqlQuery(channel = channel, query = sql, stringsAsFactors = FALSE)
-  odbcClose(channel)
+  observation <- sqlQuery(channel = source.channel, query = sql, stringsAsFactors = FALSE)
+  
   observation$Date <- floor_date(observation$Timestamp, unit = "day")
   observation$Period <- cut_date(
     x = observation$Date, 
@@ -34,7 +45,7 @@ read_observation <- function(develop = TRUE){
   levels(observation$Period) <- 1:3
   observation$Year <- year(observation$Date)
   observation <- observation[!is.na(observation$Period), ]
-  observation$DatasourceID <- datasource_id(develop = develop)
+  observation$DatasourceID <- datasource_id(result.channel = result.channel)
   observation <- observation[
     order(observation$ObservationID, observation$SubExternalCode),
     c("DatasourceID", "ObservationID", "ExternalCode", "SubExternalCode", "Year", "Period")

@@ -2,9 +2,10 @@
 #' 
 #' Adds the survey weights and the stratum to the observations
 #' @param observation the dataframe with observations. Should be the output of \code{\link{read_observation}}
+#' @inheritParams connect_source
 #' @export
-#' @importFrom n2khelper check_dataframe_variable read_delim_git
-calculate_weight <- function(observation){
+#' @importFrom n2khelper check_dataframe_variable git_connect read_delim_git
+calculate_weight <- function(observation, result.channel){
   check_dataframe_variable(
     df = observation, 
     variable = c("ExternalCode", "Year"), 
@@ -12,19 +13,20 @@ calculate_weight <- function(observation){
   )
   
   # add the stratum information
-  stratum <- read_delim_git("habitat.txt", path = "abv/attribuut")
+  stratum <- read_delim_git(
+    file = "habitat.txt", 
+    connection = git_connect(data.source.name = "Attributes ABV", channel = result.channel)
+  )
   check_dataframe_variable(
     df = stratum, 
-    variable = c("TAG", "Stratum"), 
+    variable = c("ExternalCode", "Stratum"), 
     name = "habitat.txt"
   )
   
   stratum$Stratum <- factor(stratum$Stratum)
   observation <- merge(
     observation, 
-    stratum[, c("TAG", "Stratum")], 
-    by.x = "ExternalCode", 
-    by.y = "TAG"
+    stratum[, c("ExternalCode", "Stratum")], 
   )
   
   # stratum size in the population
@@ -78,7 +80,9 @@ calculate_weight <- function(observation){
       max.sampling.effort
     )
   }
-  colnames(sampling.effort.cycle)[3] <- "EffortCycle"
+  colnames(sampling.effort.cycle) <- gsub(
+    "^Effort$", "EffortCycle", colnames(sampling.effort.cycle)
+  )
  
   sampling.effort.year <- merge(
     sampling.effort.year,

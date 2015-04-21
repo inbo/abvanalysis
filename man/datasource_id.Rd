@@ -4,10 +4,10 @@
 \alias{datasource_id}
 \title{Get the id of the data source}
 \usage{
-datasource_id(develop = TRUE)
+datasource_id(result.channel)
 }
 \arguments{
-\item{develop}{Logical value. Indicates the location ton the results database}
+\item{result.channel}{An open RODBC connection to the results database}
 }
 \description{
 Get the id of the data source

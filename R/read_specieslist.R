@@ -1,12 +1,31 @@
 #' Read the list of species
 #' @return A list with two components: \code{Species} holds the names of all species, \code{Speciesgroup} lists the species per user defined group.
 #' @export
-#' @inheritParams n2khelper::odbc_connect
-#' @importFrom RODBC sqlQuery odbcClose
+#' @inheritParams prepare_dataset_observation
+#' @importFrom n2khelper check_dbtable_variable
+#' @importFrom RODBC sqlQuery
 #' @examples
 #' read_specieslist()
-read_specieslist <- function(develop = TRUE){
-  channel <- connect_source(develop = develop)
+read_specieslist <- function(source.channel){
+  check_dbtable_variable(
+    table = "tblSoort",
+    variable = c("SPEC_CDE", "SPEC_NAM_WET", "SPEC_NAM_NED", "SPEC_NAM_ENG", "SPEC_NAM_FRA"),
+    schema = "dbo",
+    channel = source.channel
+  )
+  check_dbtable_variable(
+    table = "SoortIndicatorType",
+    variable = c("SoortCode", "IndicatorTypeCode"),
+    schema = "dbo",
+    channel = source.channel
+  )
+  check_dbtable_variable(
+    table = "IndicatorType",
+    variable = c("Code", "Beschrijving"),
+    schema = "dbo",
+    channel = source.channel
+  )
+  
   sql <- "
     SELECT
       SPEC_CDE AS ExternalCode,
@@ -19,7 +38,7 @@ read_specieslist <- function(develop = TRUE){
     ORDER BY
       SPEC_CDE
   "
-  species <- sqlQuery(channel = channel, query = sql, stringsAsFactors = FALSE)
+  species <- sqlQuery(channel = source.channel, query = sql, stringsAsFactors = FALSE)
   sql <- "
     SELECT
       Beschrijving AS Description,
@@ -40,9 +59,8 @@ read_specieslist <- function(develop = TRUE){
       IndicatorTypeCode,
       SoortCode
   "
-  speciesgroup <- sqlQuery(channel = channel, query = sql, stringsAsFactors = FALSE)
-  odbcClose(channel)
-  speciesgroup$SchemeID <- scheme_id(develop = develop)
+  speciesgroup <- sqlQuery(channel = source.channel, query = sql, stringsAsFactors = FALSE)
+
   return(
     list(
       Species = species,

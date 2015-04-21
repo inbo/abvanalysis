@@ -4,10 +4,14 @@
 \alias{prepare_dataset_observation}
 \title{Read the observations and save them to git and the results database}
 \usage{
-prepare_dataset_observation(develop = TRUE)
+prepare_dataset_observation(source.channel, result.channel, raw.git)
 }
 \arguments{
-\item{develop}{Logical value. Indicates the location ton the results database}
+\item{source.channel}{An open ODBC channel to the source database}
+
+\item{result.channel}{An open RODBC connection to the results database}
+
+\item{raw.git}{A git_connection to store the rawdata}
 }
 \description{
 Read the observations and save them to git and the results database

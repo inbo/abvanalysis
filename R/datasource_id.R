@@ -1,12 +1,12 @@
 #' Get the id of the data source
-#' @inheritParams n2khelper::odbc_connect
+#' @inheritParams connect_source
 #' @importFrom n2khelper odbc_get_id
 #' @export
-datasource_id <- function(develop = TRUE){
+datasource_id <- function(result.channel){
   odbc_get_id(
     table = "Datasource",
     variable = "Description",
-    value = "Raw data ABV",
-    develop = develop
+    value = "Source data ABV",
+    channel = result.channel
   )
 }

@@ -4,10 +4,12 @@
 \alias{read_observation}
 \title{Return the set of all visited locations}
 \usage{
-read_observation(develop = TRUE)
+read_observation(source.channel, result.channel)
 }
 \arguments{
-\item{develop}{Logical value. Indicates the location ton the results database}
+\item{source.channel}{An open ODBC connection to the source database}
+
+\item{result.channel}{An open RODBC connection to the results database}
 }
 \description{
 Return the set of all visited locations

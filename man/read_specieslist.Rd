@@ -4,10 +4,10 @@
 \alias{read_specieslist}
 \title{Read the list of species}
 \usage{
-read_specieslist(develop = TRUE)
+read_specieslist(source.channel)
 }
 \arguments{
-\item{develop}{Logical value. Indicates the location ton the results database}
+\item{source.channel}{An open ODBC channel to the source database}
 }
 \value{
 A list with two components: \code{Species} holds the names of all species, \code{Speciesgroup} lists the species per user defined group.
