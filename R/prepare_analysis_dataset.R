@@ -2,39 +2,31 @@
 #' 
 #' The analysis dataset is saved to a rda file with the SHA-1 as name.
 #' @return A data.frame with the species id number of rows in the analysis dataset, number of precenses in the analysis datset and SHA-1 of the analysis dataset or NULL if not enough data.
-#' @importFrom n2khelper check_single_character check_dataframe_variable
+#' @importFrom n2khelper check_path check_dataframe_variable
 #' @importFrom plyr ddply
 #' @importFrom digest digest
 #' @export
 #' @param rawdata.file The file with the counts per visit
 #' @param observation the dataframe with the visits and location group
-#' @param rawdata.path the path in the git repository holding the raw data
 #' @param analysis.path the path to store the rda files for the analysis
 #' @param min.observation The minimum number of positive observations (Count > 0)
+#' @inheritParams prepare_dataset
 prepare_analysis_dataset <- function(
   rawdata.file, 
   observation, 
-  rawdata.path = "abv", 
-  analysis.path = "analysis", 
-  min.observation = 100
+  raw.connection, 
+  analysis.path, 
+  min.observation
 ){
+  min.observation <- check_single_strictly_positive_integer(min.observation)
+  analysis.path <- check_path(analysis.path, type = "directory")
   check_dataframe_variable(
     df = observation,
     variable = c("ObservationID", "DatasourceID", "LocationID", "SubLocationID", "Year", "Period", "Weight", "LocationGroupID"),
     name = "observation"
   )
-  
-  analysis.path <- check_single_character(analysis.path, name = "analysis.path")
-  analysis.path <- normalizePath(
-    paste0(analysis.path, "/"), 
-    winslash = "/", 
-    mustWork = FALSE
-  )
-  if(!file_test("-d", analysis.path)){
-    dir.create(path = analysis.path, recursive = TRUE)
-  }
-  
-  species.observation <- read_delim_git(file = rawdata.file, path = rawdata.path)
+    
+  species.observation <- read_delim_git(file = rawdata.file, connection = raw.connection)
   if(class(species.observation) != "data.frame"){
     stop("data file '", rawdata.file, "'")
   }
@@ -60,6 +52,7 @@ prepare_analysis_dataset <- function(
             ModelType = "weighted glmer poisson: 0 + fYear + Period + Location + SubLocation + RowID",
             Covariate = NA,
             Fingerprint = digest(dataset, algo = "sha1"),
+            AnalysisDate = Sys.time(),
             NObs = nrow(dataset),
             NLocation = n.location
           )
@@ -128,6 +121,7 @@ prepare_analysis_dataset <- function(
           ModelType = modeltype,
           Covariate = covariate,
           Fingerprint = file.fingerprint,
+          AnalysisDate = Sys.time(),
           NObs = nrow(data),
           NLocation = n.location
         )
@@ -135,8 +129,8 @@ prepare_analysis_dataset <- function(
     }
   )
   analysis$SpeciesGroupID <- species.group.id
-  analysis$name <- rawdata.file
-  analysis$path <- rawdata.path
+  analysis$FileName <- rawdata.file
+  analysis$PathName <- raw.connection@LocalPath
   
   return(analysis)
 }

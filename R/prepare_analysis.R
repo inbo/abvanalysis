@@ -1,15 +1,20 @@
 #' Prepare all datasets and a to do list of models
 #' @inheritParams prepare_analysis_dataset
+#' @inheritParams prepare_dataset
 #' @export
-#' @importFrom n2khelper check_single_strictly_positive_integer check_single_character list_files_git git_sha
-prepare_analysis <- function(min.observation = 100, analysis.path = "analysis"){
+#' @importFrom n2khelper check_single_strictly_positive_integer check_path list_files_git git_sha
+prepare_analysis <- function(raw.connection, analysis.path = ".", min.observation = 100){
   min.observation <- check_single_strictly_positive_integer(min.observation)
-  analysis.path <- check_single_character(analysis.path, name = "analysis.path")
-  analysis.path <- normalizePath(
-    paste0(analysis.path, "/"), 
-    winslash = "/", 
-    mustWork = FALSE
+  path <- check_path(
+    paste0(analysis.path, "/analysis/"), 
+    type = "directory", 
+    error = FALSE
   )
+  if(is.logical(path)){
+    dir.create(path = paste0(analysis.path, "/analysis/"), recursive = TRUE)
+    path <- check_path(paste0(analysis.path, "/analysis/"), type = "directory")
+  }
+  analysis.path <- path
   
   success <- file.remove(list.files(analysis.path, pattern = "\\.rda$", full.names = TRUE))
   if(length(success) > 0 && !all(success)){
@@ -21,8 +26,7 @@ prepare_analysis <- function(min.observation = 100, analysis.path = "analysis"){
     )
   }
   
-  rawdata.path <- "abv"
-  observation <- read_delim_git(file = "observation.txt", path = rawdata.path)
+  observation <- read_delim_git(file = "observation.txt", connection = raw.connection)
   if(class(observation) != "data.frame"){
     stop("observation.txt not available")
   }
@@ -34,7 +38,7 @@ prepare_analysis <- function(min.observation = 100, analysis.path = "analysis"){
   
   location.group.location <- read_delim_git(
     file = "locationgrouplocation.txt", 
-    path = rawdata.path
+    connection = raw.connection
   )
   if(class(location.group.location) != "data.frame"){
     stop("locationgrouplocation.txt not available")
@@ -48,7 +52,7 @@ prepare_analysis <- function(min.observation = 100, analysis.path = "analysis"){
   observation <- merge(observation, location.group.location)
   rm(location.group.location)
   
-  rawdata.files <- list_files_git(path = rawdata.path)
+  rawdata.files <- list_files_git(connection = raw.connection, pattern = "^[0-9]*\\.txt$")
   if(length(rawdata.files) == 0){
     warning("Nothing to do")
     return(NULL)
@@ -60,33 +64,23 @@ prepare_analysis <- function(min.observation = 100, analysis.path = "analysis"){
       prepare_analysis_dataset, 
       min.observation = min.observation, 
       observation = observation,
-      rawdata.path = rawdata.path,
+      raw.connection = raw.connection,
       analysis.path = analysis.path
     )
   )
   sha.rawdata <- git_sha(
-    file = rawdata.files, 
-    path = rawdata.path
-  )[, c("path", "name", "sha")]
-  dataset <- merge(
-    analysis[, c("name", "path", "Fingerprint")], 
-    sha.rawdata
-  )[, c("Fingerprint", "sha")]
-  analysis$name <- NULL
-  analysis$path <- NULL
-  
-  sha.design <- git_sha(
-    file = c("observation.txt", "locationgrouplocation.txt"), 
-    path = rawdata.path
-  )[, "sha", drop = FALSE]
-  dataset <- rbind(
-    dataset,
-    merge(
-      analysis[, "Fingerprint", drop = FALSE], 
-      sha.design
-    )
+    file = c(rawdata.files, "observation.txt", "locationgrouplocation.txt"), 
+    connection = raw.connection
   )
-  to.do <- analysis[, c("Fingerprint", "NObs", "NLocation")]
+  dataset <- merge(
+    analysis[, c("FileName", "PathName", "Fingerprint")], 
+    sha.rawdata,
+    by.x = c("FileName", "PathName"),
+    by.y = c("File", "Path")
+  )
+  
+  to.do <- analysis[!is.na(analysis$Covariate), c("Fingerprint", "NObs", "NLocation")]
+  to.do <- to.do[order(to.do$NObs, to.do$NLocation), ]
   save(to.do, file = paste0(analysis.path, "todo.rda"))
 
   return(

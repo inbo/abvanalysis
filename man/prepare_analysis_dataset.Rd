@@ -4,15 +4,15 @@
 \alias{prepare_analysis_dataset}
 \title{Create the analysis dataset based on the available raw data}
 \usage{
-prepare_analysis_dataset(rawdata.file, observation, rawdata.path = "abv",
-  analysis.path = "analysis", min.observation = 100)
+prepare_analysis_dataset(rawdata.file, observation, raw.connection,
+  analysis.path, min.observation)
 }
 \arguments{
 \item{rawdata.file}{The file with the counts per visit}
 
 \item{observation}{the dataframe with the visits and location group}
 
-\item{rawdata.path}{the path in the git repository holding the raw data}
+\item{raw.connection}{a git-connection object to write the output to}
 
 \item{analysis.path}{the path to store the rda files for the analysis}
 
