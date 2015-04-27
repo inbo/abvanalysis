@@ -1,12 +1,13 @@
 #' Read the observations and save them to git and the results database
 #' @inheritParams prepare_dataset
-#' @param source.channel An open ODBC channel to the source database
-#' @param raw.git A git_connection to store the rawdata
 #' @export
-#' @importFrom n2khelper odbc_get_multi_id connect_result
+#' @importFrom n2khelper check_single_strictly_positive_integer odbc_get_multi_id connect_result
 #' @importFrom n2kanalysis mark_obsolete_dataset
 #' @importFrom RODBC odbcClose
-prepare_dataset_observation <- function(source.channel, result.channel, raw.git){
+prepare_dataset_observation <- function(
+  source.channel, result.channel, raw.connection, attribute.connection, scheme.id
+){
+  scheme.id <- check_single_strictly_positive_integer(scheme.id, name = "scheme.id")
   
   import.date <- Sys.time()
   observation <- read_observation(
@@ -34,7 +35,7 @@ prepare_dataset_observation <- function(source.channel, result.channel, raw.git)
   
   location.group <- data.frame(
     Description = "Vlaanderen",
-    SchemeID = scheme_id(result.channel = result.channel)
+    SchemeID = scheme.id
   )
   location.group.id <- odbc_get_multi_id(
     data = location.group,
@@ -88,7 +89,6 @@ prepare_dataset_observation <- function(source.channel, result.channel, raw.git)
   )
   colnames(observation) <- gsub("^ID$", "SubLocationID", colnames(observation))
 
-  observation$DatasourceID <- datasource_id(result.channel = result.channel)
   observation <- observation[
     order(
       observation$Stratum, 
@@ -101,17 +101,19 @@ prepare_dataset_observation <- function(source.channel, result.channel, raw.git)
   ]
   
   location.group.location.sha <- write_delim_git(
-    x = location.group.location, file = "locationgrouplocation.txt", connection = raw.git
+    x = location.group.location, 
+    file = "locationgrouplocation.txt", 
+    connection = raw.connection
   )
   observation.sha <- write_delim_git(
     x = observation[, c("DatasourceID", "ObservationID", "LocationID", "SubLocationID", "Year", "Period", "Weight")], 
     file = "observation.txt", 
-    connection = raw.git
+    connection = raw.connection
   )
   
   dataset <- data.frame(
     FileName = c("observation.txt",  "locationgrouplocation.txt"),
-    PathName = raw.git@LocalPath,
+    PathName = raw.connection@LocalPath,
     Fingerprint = c(observation.sha, location.group.location.sha),
     ImportDate = import.date,
     Obsolete = FALSE

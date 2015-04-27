@@ -1,7 +1,6 @@
 #' Return the set of all visited locations
 #' @export
-#' @param source.channel An open ODBC connection to the source database
-#' @inheritParams connect_source
+#' @inheritParams prepare_dataset
 #' @importFrom RODBC sqlQuery
 #' @importFrom lubridate floor_date year
 #' @importFrom n2khelper cut_date

@@ -4,14 +4,21 @@
 \alias{prepare_dataset_species_observation}
 \title{Read the counts and save them to git}
 \usage{
-prepare_dataset_species_observation(this.species, observation, develop = TRUE)
+prepare_dataset_species_observation(this.species, observation, result.channel,
+  source.channel, raw.connection, scheme.id)
 }
 \arguments{
 \item{this.species}{a dataframe with the ExternalCode and the SpeciesGroupID}
 
 \item{observation}{a data.frame with observations}
 
-\item{develop}{Logical value. Indicates the location ton the results database}
+\item{result.channel}{An open RODBC connection to the results database}
+
+\item{source.channel}{An open ODBC connection to the source database}
+
+\item{raw.connection}{a git-connection object to write the output to}
+
+\item{scheme.id}{The id of the scheme}
 }
 \description{
 Read the counts and save them to git

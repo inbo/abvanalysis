@@ -1,12 +1,17 @@
 #' Read the list of species
 #' @return A list with two components: \code{Species} holds the names of all species, \code{Speciesgroup} lists the species per user defined group.
 #' @export
-#' @inheritParams prepare_dataset_observation
+#' @inheritParams prepare_dataset
 #' @importFrom n2khelper check_dbtable_variable
 #' @importFrom RODBC sqlQuery
 #' @examples
-#' read_specieslist()
-read_specieslist <- function(source.channel){
+#' result.channel <- n2khelper::connect_result()
+#' source.channel <- connect_source(result.channel = result.channel)
+#' read_specieslist(
+#'   source.channel = source.channel,
+#'   result.channel = result.channel
+#' )
+read_specieslist <- function(source.channel, result.channel){
   check_dbtable_variable(
     table = "tblSoort",
     variable = c("SPEC_CDE", "SPEC_NAM_WET", "SPEC_NAM_NED", "SPEC_NAM_ENG", "SPEC_NAM_FRA"),
@@ -39,6 +44,10 @@ read_specieslist <- function(source.channel){
       SPEC_CDE
   "
   species <- sqlQuery(channel = source.channel, query = sql, stringsAsFactors = FALSE)
+  species$TableName <- "tblSoort"
+  species$ColumnName <- "SPEC_CDE"
+  species$DatasourceID <- datasource_id(result.channel = result.channel)
+  
   sql <- "
     SELECT
       Beschrijving AS Description,

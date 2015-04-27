@@ -4,10 +4,12 @@
 \alias{read_specieslist}
 \title{Read the list of species}
 \usage{
-read_specieslist(source.channel)
+read_specieslist(source.channel, result.channel)
 }
 \arguments{
-\item{source.channel}{An open ODBC channel to the source database}
+\item{source.channel}{An open ODBC connection to the source database}
+
+\item{result.channel}{An open RODBC connection to the results database}
 }
 \value{
 A list with two components: \code{Species} holds the names of all species, \code{Speciesgroup} lists the species per user defined group.
@@ -16,6 +18,11 @@ A list with two components: \code{Species} holds the names of all species, \code
 Read the list of species
 }
 \examples{
-read_specieslist()
+result.channel <- n2khelper::connect_result()
+source.channel <- connect_source(result.channel = result.channel)
+read_specieslist(
+  source.channel = source.channel,
+  result.channel = result.channel
+)
 }
 

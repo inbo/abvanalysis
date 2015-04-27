@@ -1,10 +1,27 @@
 #' Read the observations of a given species
 #' @export
-#' @importFrom RODBC sqlQuery odbcClose
+#' @importFrom RODBC sqlQuery
+#' @importFrom n2khelper check_single_strictly_positive_integer check_dbtable_variable
 #' @param species.id The external id of the species
-#' @inheritParams n2khelper::odbc_connect
-read_observation_species <- function(species.id, develop = TRUE){
-  channel <- connect_source(develop = develop)
+#' @inheritParams prepare_dataset
+read_observation_species <- function(species.id, source.channel){
+  species.id <- check_single_strictly_positive_integer(species.id, name = "species.id")
+  check_dbtable_variable(
+    table = "tblWaarneming",
+    variable = c("WRNG_ID", "WRNG_UCWT_CDE", "WRNG_WGST_CDE"),
+    channel = source.channel
+  )
+  check_dbtable_variable(
+    table = "tblWaarnemingPunt",
+    variable = c("WRPT_PTN", "WRPT_WRNG_ID", "WRPT_BZT"),
+    channel = source.channel
+  )
+  check_dbtable_variable(
+    table = "tblWaarnemingMeting",
+    variable = c("WRME_WRNG_ID", "WRME_PNT", "WRME_ANT", "WRME_SPEC_CDE"),
+    channel = source.channel
+  )
+  
   sql <- paste0("
     SELECT
       visit.ObservationID AS ObservationID,
@@ -45,8 +62,7 @@ read_observation_species <- function(species.id, develop = TRUE){
         visit.ObservationID = observed.ObservationID AND
         visit.SubExternalCode = observed.SubExternalCode
   ")
-  observed.count <- sqlQuery(channel = channel, query = sql, stringsAsFactors = FALSE)
-  odbcClose(channel)
+  observed.count <- sqlQuery(channel = source.channel, query = sql, stringsAsFactors = FALSE)
   observed.count$Count[is.na(observed.count$Count)] <- 0
   return(observed.count)
 }

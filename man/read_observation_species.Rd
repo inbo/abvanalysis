@@ -4,12 +4,12 @@
 \alias{read_observation_species}
 \title{Read the observations of a given species}
 \usage{
-read_observation_species(species.id, develop = TRUE)
+read_observation_species(species.id, source.channel)
 }
 \arguments{
 \item{species.id}{The external id of the species}
 
-\item{develop}{Logical value. Indicates the location ton the results database}
+\item{source.channel}{An open ODBC connection to the source database}
 }
 \description{
 Read the observations of a given species

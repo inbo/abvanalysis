@@ -11,5 +11,6 @@ Imports:
   n2khelper,
   lubridate,
   plyr,
+  reshape2,
   digest,
   RODBC

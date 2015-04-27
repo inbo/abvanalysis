@@ -1,73 +1,168 @@
 #' Read the species groups and save them to git and the results database
-#' @inheritParams n2khelper::odbc_connect
+#' @inheritParams prepare_dataset
 #' @export
-#' @importFrom n2khelper odbc_get_multi_id connect_result
-#' @importFrom RODBC odbcClose
+#' @importFrom n2khelper check_single_strictly_positive_integer get_nbn_key_multi get_nbn_name odbc_get_multi_id connect_result
 #' @importFrom n2kanalysis mark_obsolete_dataset
-prepare_dataset_species <- function(develop = TRUE){
+#' @importFrom reshape2 dcast
+prepare_dataset_species <- function(
+  source.channel, result.channel, raw.connection, scheme.id
+){
+  scheme.id <- check_single_strictly_positive_integer(scheme.id, name = "scheme.id")
   
   import.date <- Sys.time()
-  species.list <- read_specieslist(develop = TRUE)
-  
-  channel <- connect_result(develop = develop)
-  species.id <- odbc_get_multi_id(
-    data = species.list$Species,
-    id.field = "ID", merge.field = "ExternalCode", table = "Species",
-    channel = channel, create = TRUE
+  species.list <- read_specieslist(
+    source.channel = source.channel, 
+    result.channel = result.channel
   )
-  species.id <- merge(species.id, species.list$Species[, c("ExternalCode", "DutchName")])
-  colnames(species.id) <- gsub("^ID$", "SpeciesID", colnames(species.id))
   
-  species.group.species <- merge(
-    species.list$Speciesgroup,
-    species.id[, c("ExternalCode", "SpeciesID")]
+  species <- get_nbn_key_multi(species.list$Species, orders = c("la", "nl", "en"))
+  species$Description <- species$DutchName
+
+  database.id <- odbc_get_multi_id(
+    data = species[, c("ExternalCode", "DatasourceID", "Description")],
+    id.field = "ID", merge.field = c("ExternalCode", "DatasourceID"), 
+    table = "Sourcespecies",
+    channel = result.channel, 
+    create = TRUE
   )
-  species.group.species$ExternalCode <- NULL
+  species <- merge(database.id, species)
+  colnames(species) <- gsub("^ID$", "SourcespeciesID", colnames(species))
+  species$Description <- NULL
   
-  species.group <- rbind(
-    data.frame(
-      Description = species.id$DutchName,
-      SchemeID = scheme_id(develop = develop),
-      Combined = 0,
-      SpeciesID = species.id$SpeciesID
-    ),
-    cbind(
-      species.group.species,
-      Combined = 1
-    )
+
+  nbn.species <- dcast(
+    get_nbn_name(species$NBNKey), 
+    formula = NBNKey ~ Language, 
+    value.var = "Name"
   )
+  colnames(nbn.species) <- gsub("^en$", "EnglishName", colnames(nbn.species))
+  colnames(nbn.species) <- gsub("^la$", "ScientificName", colnames(nbn.species))
+  colnames(nbn.species) <- gsub("^nl$", "DutchName", colnames(nbn.species))
+  colnames(nbn.species) <- gsub("^fr$", "FrenchName", colnames(nbn.species))
   
   database.id <- odbc_get_multi_id(
-    data = unique(species.group[, c("Description", "SchemeID")]),
-    id.field = "ID", merge.field = c("Description", "SchemeID"), table = "SpeciesGroup",
-    channel = channel, create = TRUE
+    data = nbn.species,
+    id.field = "ID", merge.field = "NBNKey", 
+    table = "Species",
+    channel = result.channel, 
+    create = TRUE
+  )
+  colnames(database.id) <- gsub("^ID$", "SpeciesID", colnames(database.id))
+  nbn.species <- merge(nbn.species, database.id)
+  
+  species <- merge(species, database.id)
+  database.id <- odbc_get_multi_id(
+    data = species[, c("SpeciesID", "SourcespeciesID")],
+    id.field = "ID", merge.field = c("SpeciesID", "SourcespeciesID"), 
+    table = "SpeciesSourcespecies",
+    channel = result.channel, 
+    create = TRUE
+  )
+  
+  
+  #define each species as a species group
+  nbn.species$Description <- nbn.species$DutchName
+  if(anyNA(nbn.species$Description)){
+    warning(
+      "Species without DutchName in NBN:\n",
+      paste(
+        nbn.species$NBNKey[is.na(nbn.species$Description)], 
+        nbn.species$ScientificName[is.na(nbn.species$Description)], 
+        collapse = "\n"
+      )
+    )
+    nbn.species$Description[is.na(nbn.species$Description)] <- nbn.species$ScientificName[is.na(nbn.species$Description)]
+  }
+  if(anyNA(nbn.species$Description)){
+    stop("At least one species with neither DutchName and ScienticName. NA is not acceptable as Speciesgroup Description")
+  }
+  species.group <- data.frame(
+    Description = nbn.species$Description,
+    SchemeID = scheme.id
+  )
+  database.id <- odbc_get_multi_id(
+    data = species.group,
+    id.field = "ID", 
+    merge.field = c("Description", "SchemeID"), 
+    table = "SpeciesGroup",
+    channel = result.channel, 
+    create = TRUE
   )
   species.group <- merge(database.id, species.group)
-  colnames(species.group) <- gsub("^ID$", "SpeciesGroupID", colnames(species.group))
+  colnames(species.group) <- gsub("^ID", "SpeciesGroupID", colnames(species.group))
   
-  species.group.species <- species.group[
-    order(species.group$SpeciesGroupID, species.group$SpeciesID),
+  species.group.species <- merge(
+    species.group[, c("Description", "SpeciesGroupID")],
+    nbn.species[, c("Description", "SpeciesID")]
+  )
+  species.group.species$Description <- NULL
+  database.id <- odbc_get_multi_id(
+    data = species.group.species,
+    id.field = "ID", 
+    merge.field = c("SpeciesGroupID", "SpeciesID"), 
+    table = "SpeciesGroupSpecies",
+    channel = result.channel, create = TRUE
+  )
+  
+  output <- merge(
+    species.group.species,
+    species[, c("SpeciesID", "ExternalCode", "DatasourceID")],
+  )
+  
+  # Define other speciesgroups
+  species.group <- data.frame(
+    Description = unique(species.list$Speciesgroup$Description),
+    SchemeID = scheme.id
+  )
+  database.id <- odbc_get_multi_id(
+    data = species.group,
+    id.field = "ID", 
+    merge.field = c("Description", "SchemeID"), 
+    table = "SpeciesGroup",
+    channel = result.channel, 
+    create = TRUE
+  )
+  species.group <- merge(database.id, species.group)
+  colnames(species.group) <- gsub("^ID", "SpeciesGroupID", colnames(species.group))
+  
+  species.group.species <- merge(
+    species.group[, c("Description", "SpeciesGroupID")],
+    species.list$Speciesgroup
+  )
+  species.group.species$Description <- NULL
+  species.group.species <- merge(
+    species.group.species,
+    species[, c("ExternalCode", "SpeciesID")]
+  )
+  species.group.species$ExternalCode <- NULL
+  database.id <- odbc_get_multi_id(
+    data = species.group.species,
+    id.field = "ID", 
+    merge.field = c("SpeciesGroupID", "SpeciesID"), 
+    table = "SpeciesGroupSpecies",
+    channel = result.channel, create = TRUE
+  )
+  
+  species.group.species <- species.group.species[
+    order(species.group.species$SpeciesGroupID, species.group.species$SpeciesID),
     c("SpeciesGroupID", "SpeciesID")
   ]
   
-  species.group <- unique(species.group[, c("SpeciesGroupID", "Combined")])
-  species.group <- species.group[
-    order(species.group$SpeciesGroupID),
-    c("SpeciesGroupID", "Combined")
-  ]
-  
-  
-  
-  species.group.sha <- write_delim_git(
-    x = species.group, file = "speciesgroup.txt", path = "abv"
+  species.sha <- write_delim_git(
+    x = output[
+      order(output$SpeciesGroupID, output$SpeciesID), 
+      c("SpeciesGroupID", "SpeciesID")
+    ], 
+    file = "species.txt", 
+    connection = raw.connection
   )
-  species.group.species.sha <- write_delim_git(
-    x = species.group.species, file = "speciesgroupspecies.txt", path = "abv"
+  species.group.sha <- write_delim_git(
+    x = species.group.species, file = "speciesgroup.txt", connection = raw.connection
   )
   dataset <- data.frame(
-    FileName = c("speciesgroup.txt", "speciesgroupspecies.txt"),
-    PathName = "abv",
-    Fingerprint = c(species.group.sha, species.group.species.sha),
+    FileName = c("species.txt", "speciesgroup.txt"),
+    PathName = raw.connection@LocalPath,
+    Fingerprint = c(species.sha, species.group.sha),
     ImportDate = import.date,
     Obsolete = FALSE
   )
@@ -75,23 +170,9 @@ prepare_dataset_species <- function(develop = TRUE){
     data = dataset,
     id.field = "ID", merge.field = c("FileName", "PathName", "Fingerprint"), 
     table = "Dataset", 
-    channel = channel, create = TRUE
+    channel = result.channel, create = TRUE
   )  
-  odbcClose(channel)
-  mark_obsolete_dataset(develop = develop)
+  mark_obsolete_dataset(channel = result.channel)
   
-  species.group.species <- merge(
-    species.group.species,
-    species.group
-  )
-  species.group.species <- species.group.species[
-    !species.group.species$Combined, 
-    c("SpeciesGroupID", "SpeciesID")
-  ]
-  species <- merge(
-    species.id[, c("SpeciesID", "ExternalCode")],
-    species.group.species
-  )
-  
-  return(species[, c("ExternalCode", "SpeciesGroupID")])
+  return(output)
 }

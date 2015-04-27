@@ -5,16 +5,21 @@
 \title{Prepare all datasets
 Prepare all datasets and store the version into a git repository}
 \usage{
-prepare_dataset(username, password, verbose = TRUE, develop = TRUE)
+prepare_dataset(result.channel, source.channel, attribute.connection,
+  raw.connection, scheme.id, verbose = TRUE)
 }
 \arguments{
-\item{username}{the username for the git repository}
+\item{result.channel}{An open RODBC connection to the results database}
 
-\item{password}{the user's password for the git repository}
+\item{source.channel}{An open ODBC connection to the source database}
+
+\item{attribute.connection}{a git-connection object to the attribute data}
+
+\item{raw.connection}{a git-connection object to write the output to}
+
+\item{scheme.id}{The id of the scheme}
 
 \item{verbose}{Display a progress bar when TRUE (default)}
-
-\item{develop}{Logical value. Indicates the location ton the results database}
 }
 \description{
 Prepare all datasets
