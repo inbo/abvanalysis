@@ -2,7 +2,7 @@
 #' 
 #' The analysis dataset is saved to a rda file with the SHA-1 as name.
 #' @return A data.frame with the species id number of rows in the analysis dataset, number of precenses in the analysis datset and SHA-1 of the analysis dataset or NULL if not enough data.
-#' @importFrom n2khelper check_path check_dataframe_variable
+#' @importFrom n2khelper check_path check_dataframe_variable git_recent
 #' @importFrom plyr ddply
 #' @importFrom digest digest
 #' @export
@@ -32,6 +32,7 @@ prepare_analysis_dataset <- function(
   if(class(species.observation) != "data.frame"){
     stop("data file '", rawdata.file, "'")
   }
+  analysis.date <- git_recent(file = rawdata.file, connection = raw.connection)$Date
   check_dataframe_variable(
     df = species.observation,
     variable = c("ObservationID", "SubLocationID", "Count"),
@@ -57,7 +58,6 @@ prepare_analysis_dataset <- function(
             ModelType = "weighted glmer poisson: 0 + fYear + Period + Location + SubLocation + RowID",
             Covariate = NA,
             Fingerprint = digest(dataset, algo = "sha1"),
-            AnalysisDate = Sys.time(),
             NObs = nrow(dataset),
             NLocation = n.location
           )
@@ -112,13 +112,13 @@ prepare_analysis_dataset <- function(
         data.fingerprint <- digest(data, algo = "sha1")
         file.fingerprint <- digest(
           list(
-            species.group.id, location.group.id, data, covariate, modeltype, data.fingerprint
+            scheme.id, species.group.id, location.group.id, data, covariate, modeltype, weight, analysis.date, data.fingerprint
           ),
           algo = "sha1"
         )
         filename <- paste0(analysis.path, file.fingerprint, ".rda")
         save(
-          species.group.id, location.group.id, data, covariate, modeltype, data.fingerprint,
+          scheme.id, species.group.id, location.group.id, data, covariate, modeltype, weight, analysis.date, data.fingerprint,
           file = filename
         )
         data.frame(
@@ -126,7 +126,6 @@ prepare_analysis_dataset <- function(
           ModelType = modeltype,
           Covariate = covariate,
           Fingerprint = file.fingerprint,
-          AnalysisDate = Sys.time(),
           NObs = nrow(data),
           NLocation = n.location
         )
@@ -135,6 +134,7 @@ prepare_analysis_dataset <- function(
   )
   analysis$SchemeID <- scheme.id
   analysis$SpeciesGroupID <- species.group.id
+  analysis$AnalysisDate <- analysis.date
   analysis$FileName <- rawdata.file
   analysis$PathName <- raw.connection@LocalPath
   
