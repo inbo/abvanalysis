@@ -3,28 +3,16 @@
 #' @inheritParams prepare_dataset
 #' @export
 #' @importFrom n2khelper check_single_strictly_positive_integer check_path list_files_git git_sha
-prepare_analysis <- function(raw.connection, analysis.path = ".", min.observation = 100){
+prepare_analysis <- function(
+  raw.connection, scheme.id, analysis.path = ".", min.observation = 100
+){
   min.observation <- check_single_strictly_positive_integer(min.observation)
-  path <- check_path(
-    paste0(analysis.path, "/analysis/"), 
-    type = "directory", 
-    error = FALSE
-  )
+  path <- check_path(paste0(analysis.path, "/"), type = "directory", error = FALSE)
   if(is.logical(path)){
-    dir.create(path = paste0(analysis.path, "/analysis/"), recursive = TRUE)
-    path <- check_path(paste0(analysis.path, "/analysis/"), type = "directory")
+    dir.create(path = analysis.path, recursive = TRUE)
+    path <- check_path(paste0(analysis.path, "/"), type = "directory")
   }
   analysis.path <- path
-  
-  success <- file.remove(list.files(analysis.path, pattern = "\\.rda$", full.names = TRUE))
-  if(length(success) > 0 && !all(success)){
-    remaining <- list.files(analysis.path, pattern = "\\.rda$")
-    stop(
-      "Unable to remove ", length(remaining), " existing rda files:\n\n", 
-      paste(head(remaining, 10), collapse = "\n"), 
-      "\n..."
-    )
-  }
   
   observation <- read_delim_git(file = "observation.txt", connection = raw.connection)
   if(class(observation) != "data.frame"){
@@ -65,7 +53,8 @@ prepare_analysis <- function(raw.connection, analysis.path = ".", min.observatio
       min.observation = min.observation, 
       observation = observation,
       raw.connection = raw.connection,
-      analysis.path = analysis.path
+      analysis.path = analysis.path,
+      scheme.id = scheme.id
     )
   )
   sha.rawdata <- git_sha(
@@ -78,9 +67,19 @@ prepare_analysis <- function(raw.connection, analysis.path = ".", min.observatio
     by.x = c("FileName", "PathName"),
     by.y = c("File", "Path")
   )
-  
-  to.do <- analysis[!is.na(analysis$Covariate), c("Fingerprint", "NObs", "NLocation")]
-  to.do <- to.do[order(to.do$NObs, to.do$NLocation), ]
+
+  to.do.extra <- analysis[
+    !is.na(analysis$Covariate), 
+    c("SchemeID", "SpeciesGroupID", "LocationGroupID", "ModelType", "Covariate", "AnalysisDate", "NObs", "NLocation", "Fingerprint")
+  ]
+  to.do.extra$Status <- "new"
+  to.do.file <- check_path(paste0(analysis.path, "todo.rda"), type = "file", error = FALSE)
+  if(is.logical(to.do.file)){
+    to.do <- to.do.extra
+  } else {
+    load(to.do.file)
+    to.do <- rbind(to.do, to.do.extra)
+  }
   save(to.do, file = paste0(analysis.path, "todo.rda"))
 
   return(

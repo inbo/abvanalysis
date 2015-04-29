@@ -4,10 +4,13 @@
 \alias{prepare_analysis}
 \title{Prepare all datasets and a to do list of models}
 \usage{
-prepare_analysis(raw.connection, analysis.path = ".", min.observation = 100)
+prepare_analysis(raw.connection, scheme.id, analysis.path = ".",
+  min.observation = 100)
 }
 \arguments{
 \item{raw.connection}{a git-connection object to write the output to}
+
+\item{scheme.id}{The id of the scheme}
 
 \item{analysis.path}{the path to store the rda files for the analysis}
 

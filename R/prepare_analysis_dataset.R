@@ -16,10 +16,12 @@ prepare_analysis_dataset <- function(
   observation, 
   raw.connection, 
   analysis.path, 
-  min.observation
+  min.observation,
+  scheme.id
 ){
   min.observation <- check_single_strictly_positive_integer(min.observation)
-  analysis.path <- check_path(analysis.path, type = "directory")
+  scheme.id <- check_single_strictly_positive_integer(scheme.id)
+  analysis.path <- check_path(paste0(analysis.path, "/"), type = "directory")
   check_dataframe_variable(
     df = observation,
     variable = c("ObservationID", "DatasourceID", "LocationID", "SubLocationID", "Year", "Period", "Weight", "LocationGroupID"),
@@ -38,17 +40,20 @@ prepare_analysis_dataset <- function(
   species.group.id <- as.integer(gsub("\\.txt$", "", rawdata.file))
   
   rawdata <- merge(species.observation, observation)
-
+  weight <- "Weight"
+  
   analysis <- ddply(
     .data = rawdata, 
     .variables = "LocationGroupID",
     .fun = function(dataset){
       dataset$fLocation <- factor(dataset$LocationID)
       n.location <- length(levels(dataset$fLocation))
+      location.group.id <- dataset$LocationGroupID[1]
       
       if(sum(dataset$Count > 0) < min.observation){
         return(
           data.frame(
+            LocationGroupID = location.group.id,
             ModelType = "weighted glmer poisson: 0 + fYear + Period + Location + SubLocation + RowID",
             Covariate = NA,
             Fingerprint = digest(dataset, algo = "sha1"),
@@ -96,10 +101,9 @@ prepare_analysis_dataset <- function(
       }
       design <- paste(design, collapse = " + ")
       covariates <- paste(trend, design, sep = " + ")
-      location.group.id <- dataset$LocationGroupID[1]
       
       do.call(rbind, lapply(seq_along(covariates), function(i){
-        data <- dataset[, c("ObservationID", "DatasourceID", "Count", "Weight", trend.variable[1], design.variable)]
+        data <- dataset[, c("ObservationID", "DatasourceID", "Count", "Weight", trend.variable[i], design.variable)]
         modeltype <- paste(
           "weighted glmer poisson:", 
           trend.variable[i], "+ Period + Location + SubLocation + RowID"
@@ -118,6 +122,7 @@ prepare_analysis_dataset <- function(
           file = filename
         )
         data.frame(
+          LocationGroupID = location.group.id,
           ModelType = modeltype,
           Covariate = covariate,
           Fingerprint = file.fingerprint,
@@ -128,6 +133,7 @@ prepare_analysis_dataset <- function(
       }))
     }
   )
+  analysis$SchemeID <- scheme.id
   analysis$SpeciesGroupID <- species.group.id
   analysis$FileName <- rawdata.file
   analysis$PathName <- raw.connection@LocalPath
