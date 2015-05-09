@@ -4,14 +4,10 @@
 \alias{connect_raw}
 \title{Make a git connection to the raw data}
 \usage{
-connect_raw(result.channel, username, password)
+connect_raw(result.channel)
 }
 \arguments{
 \item{result.channel}{An open RODBC connection to the results database}
-
-\item{username}{the username in case the ConnectMethod is "Credentials supplied by the user running the report". Ignored in all other cases.}
-
-\item{password}{the password to be used in combination with the username.}
 }
 \description{
 Make a git connection to the raw data

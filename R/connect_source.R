@@ -10,27 +10,21 @@ connect_source <- function(result.channel){
 #' Make a git connection to the attribute
 #' @export
 #' @inheritParams connect_source
-#' @inheritParams n2khelper::git_connection
 #' @importFrom n2khelper git_connect
-connect_attribute <- function(result.channel, username, password){
+connect_attribute <- function(result.channel){
   git_connect(
     data.source.name = "Attributes ABV", 
-    channel = result.channel,
-    username = username,
-    password = password
+    channel = result.channel
   )
 }
 
 #' Make a git connection to the raw data
 #' @export
 #' @inheritParams connect_source
-#' @inheritParams n2khelper::git_connection
 #' @importFrom n2khelper git_connect
-connect_raw <- function(result.channel, username, password){
+connect_raw <- function(result.channel){
   git_connect(
     data.source.name = "Raw data ABV", 
-    channel = result.channel,
-    username = username,
-    password = password
+    channel = result.channel
   )
 }

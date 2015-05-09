@@ -9,7 +9,7 @@
 #' @export
 #' @importFrom n2khelper check_single_logical write_delim_git auto_commit
 #' @importFrom plyr d_ply
-#' @importFrom n2khelper git_connect remove_files_git
+#' @importFrom n2khelper git_connect remove_files_git write_delim_git
 prepare_dataset <- function(
   result.channel, 
   source.channel, 
@@ -18,9 +18,16 @@ prepare_dataset <- function(
   scheme.id,
   verbose = TRUE
 ){
+  scheme.id <- check_single_strictly_positive_integer(scheme.id, name = "scheme.id")
   verbose <- check_single_logical(verbose, name = "verbose")
   
   remove_files_git(connection = raw.connection, pattern = "txt$")
+  
+  scheme.sha <- write_delim_git(
+    x = data.frame(SchemeID = scheme.id), 
+    file = "scheme.txt", 
+    connection = raw.connection
+  )
   
   if(verbose){
     message("Importing observations")
@@ -29,8 +36,7 @@ prepare_dataset <- function(
     source.channel = source.channel, 
     result.channel = result.channel,
     raw.connection = raw.connection,
-    attribute.connection = attribute.connection,
-    scheme.id = scheme.id
+    attribute.connection = attribute.connection
   )
   if(verbose){
     message("Importing species")
@@ -38,8 +44,7 @@ prepare_dataset <- function(
   species <- prepare_dataset_species(
     source.channel = source.channel, 
     result.channel = result.channel,
-    raw.connection = raw.connection,
-    scheme.id = scheme.id
+    raw.connection = raw.connection
   )
   
   if(verbose){
@@ -57,8 +62,7 @@ prepare_dataset <- function(
     observation = observation,
     result.channel = result.channel,
     source.channel = source.channel,
-    raw.connection = raw.connection,
-    scheme.id = scheme.id
+    raw.connection = raw.connection
   )
   
   auto_commit(

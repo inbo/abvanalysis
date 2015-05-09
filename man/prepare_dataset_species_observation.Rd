@@ -5,7 +5,7 @@
 \title{Read the counts and save them to git}
 \usage{
 prepare_dataset_species_observation(this.species, observation, result.channel,
-  source.channel, raw.connection, scheme.id)
+  source.channel, raw.connection)
 }
 \arguments{
 \item{this.species}{a dataframe with the ExternalCode and the SpeciesGroupID}
@@ -17,8 +17,6 @@ prepare_dataset_species_observation(this.species, observation, result.channel,
 \item{source.channel}{An open ODBC connection to the source database}
 
 \item{raw.connection}{a git-connection object to write the output to}
-
-\item{scheme.id}{The id of the scheme}
 }
 \description{
 Read the counts and save them to git

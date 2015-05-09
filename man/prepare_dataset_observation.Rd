@@ -5,7 +5,7 @@
 \title{Read the observations and save them to git and the results database}
 \usage{
 prepare_dataset_observation(source.channel, result.channel, raw.connection,
-  attribute.connection, scheme.id)
+  attribute.connection)
 }
 \arguments{
 \item{source.channel}{An open ODBC connection to the source database}
@@ -15,8 +15,6 @@ prepare_dataset_observation(source.channel, result.channel, raw.connection,
 \item{raw.connection}{a git-connection object to write the output to}
 
 \item{attribute.connection}{a git-connection object to the attribute data}
-
-\item{scheme.id}{The id of the scheme}
 }
 \description{
 Read the observations and save them to git and the results database

@@ -3,9 +3,12 @@
 #' @param observation a data.frame with observations
 #' @inheritParams prepare_dataset
 #' @export
-#' @importFrom n2khelper check_dataframe_variable odbc_get_id  odbc_get_multi_id
+#' @importFrom n2khelper check_dataframe_variable odbc_get_id  check_single_strictly_positive_integer odbc_get_multi_id
 #' @importFrom RODBC sqlQuery
-prepare_dataset_species_observation <- function(this.species, observation, result.channel, source.channel, raw.connection, scheme.id){
+#' @importFrom digest digest
+prepare_dataset_species_observation <- function(
+  this.species, observation, result.channel, source.channel, raw.connection
+){
   check_dataframe_variable(
     df = this.species,
     variable = c("ExternalCode", "SpeciesGroupID"),
@@ -19,6 +22,8 @@ prepare_dataset_species_observation <- function(this.species, observation, resul
     variable = c("ObservationID", "SubExternalCode", "SubLocationID"),
     name = "observation"
   )
+  scheme.id <- read_delim_git("scheme.txt", connection = raw.connection)$SchemeID
+  scheme.id <- check_single_strictly_positive_integer(scheme.id, name = "scheme.txt")
   
   import.date <- Sys.time()
   observation.species <- read_observation_species(
