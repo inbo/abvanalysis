@@ -4,7 +4,9 @@
 #' @return A data.frame with the species id number of rows in the analysis dataset, number of precenses in the analysis datset and SHA-1 of the analysis dataset or NULL if not enough data.
 #' @importFrom n2khelper check_path check_dataframe_variable git_recent
 #' @importFrom plyr ddply
-#' @importFrom digest digest
+#' @importClassesFrom n2kanalysis n2kGlmerPoisson
+#' @importFrom n2kanalysis n2k_glmer_poisson
+#' @importMethodsFrom n2kanalysis get_file_fingerprint
 #' @export
 #' @param rawdata.file The file with the counts per visit
 #' @param observation the dataframe with the visits and location group
@@ -16,11 +18,14 @@ prepare_analysis_dataset <- function(
   observation, 
   raw.connection, 
   analysis.path, 
-  min.observation,
-  scheme.id
+  min.observation
 ){
-  min.observation <- check_single_strictly_positive_integer(min.observation)
-  scheme.id <- check_single_strictly_positive_integer(scheme.id)
+  min.observation <- check_single_strictly_positive_integer(
+    min.observation, 
+    name = "min.observation"
+  )
+  scheme.id <- read_delim_git("scheme.txt", connection = raw.connection)$SchemeID
+  scheme.id <- check_single_strictly_positive_integer(scheme.id, name = "scheme.id")
   analysis.path <- check_path(paste0(analysis.path, "/"), type = "directory")
   check_dataframe_variable(
     df = observation,
@@ -47,21 +52,24 @@ prepare_analysis_dataset <- function(
     .data = rawdata, 
     .variables = "LocationGroupID",
     .fun = function(dataset){
-      dataset$fLocation <- factor(dataset$LocationID)
-      n.location <- length(levels(dataset$fLocation))
       location.group.id <- dataset$LocationGroupID[1]
       
       if(sum(dataset$Count > 0) < min.observation){
-        return(
-          data.frame(
-            LocationGroupID = location.group.id,
-            ModelType = "weighted glmer poisson: 0 + fYear + Period + Location + SubLocation + RowID",
-            Covariate = NA,
-            Fingerprint = digest(dataset, algo = "sha1"),
-            NObs = nrow(dataset),
-            NLocation = n.location
-          )
+        analysis <- n2k_glmer_poisson(
+          scheme.id = scheme.id,
+          species.group.id = species.group.id,
+          location.group.id = location.group.id,
+          analysis.date = analysis.date,
+          model.type = "weighted glmer poisson: fYear + Period + Location + SubLocation + RowID",
+          covariate = "1",
+          data = dataset,
+          weight = weight,
+          status = "insufficient data"
         )
+        filename <- paste0(analysis.path, get_file_fingerprint(analysis), ".rda")
+        if(!file.exists(filename)){
+          save(analysis, file = filename)
+        }
       }
       
       dataset$fYear <- factor(dataset$Year)
@@ -85,7 +93,8 @@ prepare_analysis_dataset <- function(
       dataset$fRow <- factor(seq_len(nrow(dataset)))
       design <- "(1|fRow)"
       design.variable <- "fRow"
-      if(n.location > 0){
+      dataset$fLocation <- factor(dataset$LocationID)
+      if(length(levels(dataset$fLocation)) > 0){
         design <- c(design, "(1|fLocation)")
         design.variable <- c(design.variable, "fLocation")
       }
@@ -102,41 +111,31 @@ prepare_analysis_dataset <- function(
       design <- paste(design, collapse = " + ")
       covariates <- paste(trend, design, sep = " + ")
       
-      do.call(rbind, lapply(seq_along(covariates), function(i){
+      junk <- sapply(seq_along(covariates), function(i){
         data <- dataset[, c("ObservationID", "DatasourceID", "Count", "Weight", trend.variable[i], design.variable)]
-        modeltype <- paste(
+        model.type <- paste(
           "weighted glmer poisson:", 
           trend.variable[i], "+ Period + Location + SubLocation + RowID"
         )
         covariate <- covariates[i]
-        data.fingerprint <- digest(data, algo = "sha1")
-        file.fingerprint <- digest(
-          list(
-            scheme.id, species.group.id, location.group.id, data, covariate, modeltype, weight, analysis.date, data.fingerprint
-          ),
-          algo = "sha1"
+        analysis <- n2k_glmer_poisson(
+          scheme.id = scheme.id,
+          species.group.id = species.group.id,
+          location.group.id = location.group.id,
+          analysis.date = analysis.date,
+          model.type = model.type,
+          covariate = covariate,
+          data = data,
+          weight = weight
         )
-        filename <- paste0(analysis.path, file.fingerprint, ".rda")
-        save(
-          scheme.id, species.group.id, location.group.id, data, covariate, modeltype, weight, analysis.date, data.fingerprint,
-          file = filename
-        )
-        data.frame(
-          LocationGroupID = location.group.id,
-          ModelType = modeltype,
-          Covariate = covariate,
-          Fingerprint = file.fingerprint,
-          NObs = nrow(data),
-          NLocation = n.location
-        )
-      }))
+        filename <- paste0(analysis.path, get_file_fingerprint(analysis), ".rda")
+        if(!file.exists(filename)){
+          save(analysis, file = filename)
+        }
+      })
+      return(NULL)
     }
   )
-  analysis$SchemeID <- scheme.id
-  analysis$SpeciesGroupID <- species.group.id
-  analysis$AnalysisDate <- analysis.date
-  analysis$FileName <- rawdata.file
-  analysis$PathName <- raw.connection@LocalPath
   
-  return(analysis)
+  return(invisible(NULL))
 }

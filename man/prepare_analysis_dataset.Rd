@@ -5,7 +5,7 @@
 \title{Create the analysis dataset based on the available raw data}
 \usage{
 prepare_analysis_dataset(rawdata.file, observation, raw.connection,
-  analysis.path, min.observation, scheme.id)
+  analysis.path, min.observation)
 }
 \arguments{
 \item{rawdata.file}{The file with the counts per visit}
@@ -17,8 +17,6 @@ prepare_analysis_dataset(rawdata.file, observation, raw.connection,
 \item{analysis.path}{the path to store the rda files for the analysis}
 
 \item{min.observation}{The minimum number of positive observations (Count > 0)}
-
-\item{scheme.id}{The id of the scheme}
 }
 \value{
 A data.frame with the species id number of rows in the analysis dataset, number of precenses in the analysis datset and SHA-1 of the analysis dataset or NULL if not enough data.

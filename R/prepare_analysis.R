@@ -43,49 +43,15 @@ prepare_analysis <- function(
   rawdata.files <- list_files_git(connection = raw.connection, pattern = "^[0-9]*\\.txt$")
   if(length(rawdata.files) == 0){
     warning("Nothing to do")
-    return(NULL)
+    return(invisible(NULL))
   }
-  analysis <- do.call(
-    rbind,
-    lapply(
-      rawdata.files, 
-      prepare_analysis_dataset, 
-      min.observation = min.observation, 
-      observation = observation,
-      raw.connection = raw.connection,
-      analysis.path = analysis.path,
-      scheme.id = scheme.id
-    )
+  junk <- sapply(
+    rawdata.files, 
+    prepare_analysis_dataset, 
+    min.observation = min.observation, 
+    observation = observation,
+    raw.connection = raw.connection,
+    analysis.path = analysis.path
   )
-  sha.rawdata <- git_sha(
-    file = c(rawdata.files, "observation.txt", "locationgrouplocation.txt"), 
-    connection = raw.connection
-  )
-  dataset <- merge(
-    analysis[, c("FileName", "PathName", "Fingerprint")], 
-    sha.rawdata,
-    by.x = c("FileName", "PathName"),
-    by.y = c("File", "Path")
-  )
-
-  to.do.extra <- analysis[
-    !is.na(analysis$Covariate), 
-    c("SchemeID", "SpeciesGroupID", "LocationGroupID", "ModelType", "Covariate", "AnalysisDate", "NObs", "NLocation", "Fingerprint")
-  ]
-  to.do.extra$Status <- "new"
-  to.do.file <- check_path(paste0(analysis.path, "todo.rda"), type = "file", error = FALSE)
-  if(is.logical(to.do.file)){
-    to.do <- to.do.extra
-  } else {
-    load(to.do.file)
-    to.do <- rbind(to.do, to.do.extra)
-  }
-  save(to.do, file = paste0(analysis.path, "todo.rda"))
-
-  return(
-    list(
-      Analysis = analysis,
-      AnalysisDataset = dataset
-    )
-  )
+  return(invisible(NULL))
 }
