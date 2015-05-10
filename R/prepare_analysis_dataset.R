@@ -70,6 +70,7 @@ prepare_analysis_dataset <- function(
         if(!file.exists(filename)){
           save(analysis, file = filename)
         }
+        return(NULL)
       }
       
       dataset$fYear <- factor(dataset$Year)
