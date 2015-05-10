@@ -75,7 +75,7 @@ prepare_analysis_dataset <- function(
       
       dataset$fYear <- factor(dataset$Year)
       if(length(levels(dataset$fYear)) == 1){
-        trend <- "1"
+        trend <- "0 + fYear"
       } else {
         dataset$cYear <- dataset$Year - max(dataset$Year)
         trend <- c("0 + fYear", "1 + cYear")
@@ -95,17 +95,17 @@ prepare_analysis_dataset <- function(
       design <- "(1|fRow)"
       design.variable <- "fRow"
       dataset$fLocation <- factor(dataset$LocationID)
-      if(length(levels(dataset$fLocation)) > 0){
+      if(length(levels(dataset$fLocation)) > 1){
         design <- c(design, "(1|fLocation)")
         design.variable <- c(design.variable, "fLocation")
       }
       dataset$fSubLocation <- factor(dataset$SubLocationID)
-      if(length(levels(dataset$fSubLocation)) > 0){
+      if(length(levels(dataset$fSubLocation)) > 1){
         design <- c(design, "(1|fSubLocation)")
         design.variable <- c(design.variable, "fSubLocation")
       }
       dataset$fPeriod <- factor(dataset$Period)
-      if(length(levels(dataset$fPeriod)) > 0){
+      if(length(levels(dataset$fPeriod)) > 1){
         design <- c(design, "fPeriod")
         design.variable <- c(design.variable, "fPeriod")
       }
