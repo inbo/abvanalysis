@@ -16,7 +16,12 @@ read_observation <- function(source.channel, result.channel){
     channel = source.channel
   )
   
-  sql <- "
+  latest.year <- as.integer(format(Sys.time(), "%Y"))
+  if(Sys.time() < as.POSIXct(format(Sys.time(), "%Y-08-15"))){
+    latest.year <- latest.year - 1
+  }
+  
+  sql <- paste0("
     SELECT 
       WRNG_ID AS ObservationID, 
       WRNG_DTE_BGN AS Timestamp,
@@ -29,10 +34,11 @@ read_observation <- function(source.channel, result.channel){
       ON 
         tblWaarneming.WRNG_ID = tblWaarnemingPunt.WRPT_WRNG_ID
     WHERE 
+      WRNG_DTE_BGN < '", latest.year, "-07-16' AND
       WRPT_BZT = 'True' AND 
       WRNG_UCWT_CDE = 'ABV' AND 
       NOT (WRNG_WGST_CDE = 'NV')
-  "
+  ")
   observation <- sqlQuery(channel = source.channel, query = sql, stringsAsFactors = FALSE)
   
   observation$Date <- floor_date(observation$Timestamp, unit = "day")
