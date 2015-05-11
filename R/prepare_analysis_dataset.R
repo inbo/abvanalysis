@@ -24,8 +24,20 @@ prepare_analysis_dataset <- function(
     min.observation, 
     name = "min.observation"
   )
-  scheme.id <- read_delim_git("scheme.txt", connection = raw.connection)$SchemeID
-  scheme.id <- check_single_strictly_positive_integer(scheme.id, name = "scheme.id")
+  metadata <- read_delim_git("metadata.txt", connection = raw.connection)
+  scheme.id <- metadata$Value[metadata$Key == "SchemeID"]
+  scheme.id <- check_single_strictly_positive_integer(scheme.id, name = "SchemeID")
+  first.year <- metadata$Value[metadata$Key == "FirstImportedYear"]
+  first.year <- check_single_strictly_positive_integer(
+    first.year, 
+    name = "FirstImportedYear"
+  )
+  last.year <- metadata$Value[metadata$Key == "LastImportedYear"]
+  last.year <- check_single_strictly_positive_integer(
+    last.year, 
+    name = "LastImportedYear"
+  )
+  
   analysis.path <- check_path(paste0(analysis.path, "/"), type = "directory")
   check_dataframe_variable(
     df = observation,
@@ -62,6 +74,8 @@ prepare_analysis_dataset <- function(
           analysis.date = analysis.date,
           model.type = "weighted glmer poisson: fYear + Period + Location + SubLocation + RowID",
           covariate = "1",
+          first.imported.year = first.year,
+          last.imported.year = last.year,
           data = dataset,
           weight = weight,
           status = "insufficient data"
@@ -126,6 +140,8 @@ prepare_analysis_dataset <- function(
           analysis.date = analysis.date,
           model.type = model.type,
           covariate = covariate,
+          first.imported.year = first.year,
+          last.imported.year = last.year,
           data = data,
           weight = weight
         )
