@@ -5,12 +5,14 @@
 #' @importFrom n2khelper check_dbtable_variable
 #' @importFrom RODBC sqlQuery
 #' @examples
-#' result.channel <- n2khelper::connect_result()
-#' source.channel <- connect_source(result.channel = result.channel)
-#' read_specieslist(
-#'   source.channel = source.channel,
-#'   result.channel = result.channel
-#' )
+#' \dontrun{
+#'  result.channel <- n2khelper::connect_result()
+#'  source.channel <- connect_source(result.channel = result.channel)
+#'  read_specieslist(
+#'    source.channel = source.channel,
+#'     result.channel = result.channel
+#'  )
+#' }
 read_specieslist <- function(source.channel, result.channel){
   check_dbtable_variable(
     table = "tblSoort",

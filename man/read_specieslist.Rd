@@ -18,11 +18,13 @@ A list with two components: \code{Species} holds the names of all species, \code
 Read the list of species
 }
 \examples{
-result.channel <- n2khelper::connect_result()
-source.channel <- connect_source(result.channel = result.channel)
-read_specieslist(
-  source.channel = source.channel,
-  result.channel = result.channel
-)
+\dontrun{
+ result.channel <- n2khelper::connect_result()
+ source.channel <- connect_source(result.channel = result.channel)
+ read_specieslist(
+   source.channel = source.channel,
+    result.channel = result.channel
+ )
+}
 }
 
