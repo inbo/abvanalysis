@@ -5,10 +5,9 @@
 #' @importFrom n2kanalysis mark_obsolete_dataset
 #' @importFrom reshape2 dcast
 prepare_dataset_species <- function(
-  source.channel, result.channel, raw.connection
+  source.channel, result.channel, raw.connection, scheme.id
 ){
-  scheme.id <- read_delim_git("scheme.txt", connection = raw.connection)$SchemeID
-  scheme.id <- check_single_strictly_positive_integer(scheme.id, name = "scheme.txt")
+  scheme.id <- check_single_strictly_positive_integer(scheme.id, name = "scheme.id")
   
   import.date <- Sys.time()
   species.list <- read_specieslist(

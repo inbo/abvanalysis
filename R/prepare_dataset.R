@@ -22,13 +22,7 @@ prepare_dataset <- function(
   verbose <- check_single_logical(verbose, name = "verbose")
   
   remove_files_git(connection = raw.connection, pattern = "txt$")
-  
-  scheme.sha <- write_delim_git(
-    x = data.frame(SchemeID = scheme.id), 
-    file = "scheme.txt", 
-    connection = raw.connection
-  )
-  
+    
   if(verbose){
     message("Importing observations")
   }
@@ -36,15 +30,28 @@ prepare_dataset <- function(
     source.channel = source.channel, 
     result.channel = result.channel,
     raw.connection = raw.connection,
-    attribute.connection = attribute.connection
+    attribute.connection = attribute.connection,
+    scheme.id = scheme.id
   )
+  
+  metadata <- data.frame(
+    Key = c("SchemeID", "FirstImportedYear", "LastImportedYear", "Duration"),
+    Value = c(scheme.id, range(observation$Year), diff(range(observation$Year)) + 1)
+  )
+  metadata.sha <- write_delim_git(
+    x = metadata, 
+    file = "metadata.txt", 
+    connection = raw.connection
+  )
+  
   if(verbose){
     message("Importing species")
   }
   species <- prepare_dataset_species(
     source.channel = source.channel, 
     result.channel = result.channel,
-    raw.connection = raw.connection
+    raw.connection = raw.connection,
+    scheme.id = scheme.id
   )
   
   if(verbose){
@@ -62,7 +69,10 @@ prepare_dataset <- function(
     observation = observation,
     result.channel = result.channel,
     source.channel = source.channel,
-    raw.connection = raw.connection
+    raw.connection = raw.connection,
+    first.year = min(observation$Year),
+    last.year = max(observation$Year),
+    scheme.id = scheme.id
   )
   
   auto_commit(

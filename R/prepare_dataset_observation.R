@@ -5,10 +5,9 @@
 #' @importFrom n2kanalysis mark_obsolete_dataset
 #' @importFrom RODBC odbcClose
 prepare_dataset_observation <- function(
-  source.channel, result.channel, raw.connection, attribute.connection
+  source.channel, result.channel, raw.connection, attribute.connection, scheme.id
 ){
-  scheme.id <- read_delim_git("scheme.txt", connection = raw.connection)$SchemeID
-  scheme.id <- check_single_strictly_positive_integer(scheme.id, name = "scheme.txt")
+  scheme.id <- check_single_strictly_positive_integer(scheme.id, name = "scheme.id")
   
   import.date <- Sys.time()
   observation <- read_observation(
