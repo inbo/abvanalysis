@@ -4,10 +4,15 @@
 \alias{connect_attribute}
 \title{Make a git connection to the attribute}
 \usage{
-connect_attribute(result.channel)
+connect_attribute(result.channel, username = character(0),
+  password = character(0))
 }
 \arguments{
 \item{result.channel}{An open RODBC connection to the results database}
+
+\item{username}{The username for a https connection. Leave default for a ssh connection.}
+
+\item{password}{The password for the connection.}
 }
 \description{
 Make a git connection to the attribute
