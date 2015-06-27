@@ -57,7 +57,7 @@ calculate_weight <- function(observation, result.channel){
   year.per.cycle <- table(cycle.year$Cycle)
   uncomplete.cycle <- as.integer(names(which(year.per.cycle < 3)))
   # correct effort for incomplete cycles
-  if(length(uncomplete.cycle) > 0){
+  if (length(uncomplete.cycle) > 0) {
     max.sampling.effort <- aggregate(
       sampling.effort.cycle[, "Effort", drop = FALSE],
       sampling.effort.cycle[, "Stratum", drop = FALSE],

@@ -5,9 +5,9 @@
 #' @param last.year most recent year of the data
 #' @inheritParams prepare_dataset
 #' @export
-#' @importFrom n2khelper check_dataframe_variable odbc_get_id  check_single_strictly_positive_integer odbc_get_multi_id
+#' @importFrom n2khelper check_dataframe_variable odbc_get_id  check_single_strictly_positive_integer odbc_get_multi_id get_sha1
+#' @importFrom n2kanalysis get_analysis_version
 #' @importFrom RODBC sqlQuery
-#' @importFrom digest digest
 prepare_dataset_species_observation <- function(
   this.species, observation, result.channel, source.channel, raw.connection, scheme.id, first.year, last.year
 ){
@@ -21,7 +21,7 @@ prepare_dataset_species_observation <- function(
   }
   check_dataframe_variable(
     df = observation,
-    variable = c("ObservationID", "SubExternalCode", "SubLocationID"),
+    variable = c("ObservationID", "SubLocationID"),
     name = "observation"
   )
   scheme.id <- check_single_strictly_positive_integer(scheme.id, name = "scheme.id")
@@ -31,47 +31,55 @@ prepare_dataset_species_observation <- function(
     species.id = this.species$ExternalCode,
     source.channel = source.channel
   )
-  observation.species <- merge(
-    observation.species,
-    observation
-  )
-  observation.species$SubExternalCode <- NULL
-  observation.species <- select_relevant(observation, observation.species)
-
+  if (nrow(observation.species) == 0) {
+    observation.species <- NULL
+  } else {
+    observation.species <- select_relevant(observation, observation.species)
+  }
+  
   filename <- paste0(this.species$SpeciesGroupID, ".txt")
   
-  if(is.null(observation.species)){
+  if (is.null(observation.species)) {
     observation.species.sha <- NA
-    status.id <- odbc_get_id(
-      table = "AnalysisStatus", 
-      variable = "Description",
-      value = "No data",
-      channel = result.channel
-    )
+    status.id <- odbc_get_multi_id(
+      data = data.frame(Description = "insufficient data"),
+      id.field = "ID", 
+      merge.field = c("Description"), 
+      table = "AnalysisStatus",
+      channel = result.channel, 
+      create = TRUE,
+      select = TRUE
+    )$ID
   } else {
     observation.species <- observation.species[
-      order(observation.species$ObservationID, observation.species$SubLocationID),
-      c("ObservationID", "SubLocationID", "Count")
+      order(observation.species$ObservationID),
+      c("ObservationID", "Count")
     ]
     observation.species.sha <- write_delim_git(
       x = observation.species, 
       file = filename, 
       connection = raw.connection
     )
-    status.id <- odbc_get_id(
-      table = "AnalysisStatus", 
-      variable = "Description",
-      value = "Working",
-      channel = result.channel
-    )
+    status.id <- odbc_get_multi_id(
+      data = data.frame(Description = "waiting"),
+      id.field = "ID", 
+      merge.field = c("Description"), 
+      table = "AnalysisStatus",
+      channel = result.channel, 
+      create = TRUE,
+      select = TRUE
+    )$ID
   }
   
-  import.id <- odbc_get_id(
-    table = "ModelType", 
-    variable = "Description", 
-    value = "import", 
-    channel = result.channel
-  )
+  import.id <- odbc_get_multi_id(
+    data = data.frame(Description = "import"),
+    id.field = "ID", 
+    merge.field = "Description", 
+    table = "ModelType",
+    channel = result.channel, 
+    create = TRUE,
+    select = TRUE
+  )$ID
   
   model.set <- data.frame(
     ModelTypeID = import.id,
@@ -85,24 +93,49 @@ prepare_dataset_species_observation <- function(
     merge.field = c("ModelTypeID", "FirstYear", "LastYear", "Duration"), 
     table = "ModelSet",
     channel = result.channel, 
-    create = TRUE
+    create = TRUE,
+    select = TRUE
   )$ID
   
-  version <- data.frame(
-    Description = paste(
-      "abvanalyis version", 
-      sessionInfo()$otherPkgs$abvanalysis$Version
-    ),
-    Obsolete = FALSE
+  version <- get_analysis_version(sessionInfo())
+  
+  r.package <- odbc_get_multi_id(
+    data = version@RPackage[, c("Description", "Version")],
+    id.field = "ID",
+    merge.field = c("Description", "Version"),
+    table = "RPackage",
+    channel = result.channel, 
+    create = TRUE,
+    select = TRUE
   )
-  version.id <- odbc_get_multi_id(
-    data = version,
-    id.field = "ID", 
-    merge.field = "Description", 
+  r.package <- merge(r.package, version@RPackage)[, c("Fingerprint", "ID")]
+  colnames(r.package)[colnames(r.package) == "Fingerprint"] <- "RPackage"
+  colnames(r.package)[colnames(r.package) == "ID"] <- "RPackageID"
+  analysis.package <- merge(version@AnalysisVersionRPackage, r.package)[, c("AnalysisVersion", "RPackageID")]
+
+  analysis.version <- odbc_get_multi_id(
+    data = data.frame(Description = version@AnalysisVersion$Fingerprint),
+    id.field = "ID",
+    merge.field = "Description",
     table = "AnalysisVersion",
     channel = result.channel, 
-    create = TRUE
-  )$ID
+    create = TRUE,
+    select = TRUE
+  )
+  colnames(analysis.version)[colnames(analysis.version) == "ID"] <- "AnalysisVersionID"
+  colnames(analysis.version)[colnames(analysis.version) == "Description"] <- "AnalysisVersion"
+  analysis.package <- merge(analysis.version, analysis.package)[, c("AnalysisVersionID", "RPackageID")]
+  odbc_get_multi_id(
+    data = analysis.package,
+    id.field = "ID",
+    merge.field = c("AnalysisVersionID", "RPackageID"),
+    table = "AnalysisVersionRPackage",
+    channel = result.channel, 
+    create = TRUE,
+    select = FALSE
+  )
+  
+  version.id <- analysis.version$AnalysisVersionID
   
   sql <- paste0("
     SELECT
@@ -115,7 +148,7 @@ prepare_dataset_species_observation <- function(
       Obsolete = 0
   ")
   location.ds <- sqlQuery(channel = result.channel, query = sql, stringsAsFactors = FALSE)
-  sha <- sort(c(location.ds$Fingerprint, observation.species.sha))
+  fingerprint <- get_sha1(sort(c(location.ds$Fingerprint, observation.species.sha)))
   
   analysis <- data.frame(
     ModelSetID = model.set.id,
@@ -129,7 +162,7 @@ prepare_dataset_species_observation <- function(
     AnalysisVersionID = version.id,
     AnalysisDate = import.date,
     StatusID = status.id,
-    Fingerprint = digest(sha, algo = "sha1")
+    Fingerprint = fingerprint
   )
   analysis.id <- odbc_get_multi_id(
     data = analysis,
@@ -137,10 +170,11 @@ prepare_dataset_species_observation <- function(
     merge.field = c("ModelSetID", "LocationGroupID", "SpeciesGroupID", "AnalysisVersionID", "Fingerprint"),
     table = "Analysis",
     channel = result.channel,
-    create = TRUE
+    create = TRUE,
+    select = TRUE
   )$ID
   
-  if(!is.na(observation.species.sha)){
+  if (!is.na(observation.species.sha)) {
     dataset <- data.frame(
       FileName = filename,
       PathName = raw.connection@LocalPath,
@@ -156,7 +190,8 @@ prepare_dataset_species_observation <- function(
         merge.field = c("FileName", "PathName", "Fingerprint"), 
         table = "Dataset", 
         channel = result.channel, 
-        create = TRUE
+        create = TRUE,
+        select = TRUE
       )
     )
   }
@@ -164,12 +199,14 @@ prepare_dataset_species_observation <- function(
     AnalysisID = analysis.id,
     DatasetID = location.ds$ID
   )
-  database.id <- odbc_get_multi_id(
+  odbc_get_multi_id(
     data = analysis.dataset,
     id.field = "ID", 
     merge.field = c("AnalysisID", "DatasetID"), 
     table = "AnalysisDataset", 
     channel = result.channel, 
-    create = TRUE
+    create = TRUE,
+    select = FALSE
   )
+  return(analysis[, c("SpeciesGroupID", "Fingerprint")])
 }

@@ -47,7 +47,7 @@ read_specieslist <- function(source.channel, result.channel){
   "
   species <- sqlQuery(channel = source.channel, query = sql, stringsAsFactors = FALSE)
   species$TableName <- "tblSoort"
-  species$ColumnName <- "SPEC_CDE"
+  species$PrimaryKey <- "SPEC_CDE"
   species$DatasourceID <- datasource_id(result.channel = result.channel)
   
   sql <- "

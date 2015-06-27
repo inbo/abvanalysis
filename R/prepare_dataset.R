@@ -25,6 +25,7 @@ prepare_dataset <- function(
     
   if(verbose){
     message("Importing observations")
+    utils::flush.console()
   }
   observation <- prepare_dataset_observation(
     source.channel = source.channel, 
@@ -34,18 +35,9 @@ prepare_dataset <- function(
     scheme.id = scheme.id
   )
   
-  metadata <- data.frame(
-    Key = c("SchemeID", "FirstImportedYear", "LastImportedYear", "Duration"),
-    Value = c(scheme.id, range(observation$Year), diff(range(observation$Year)) + 1)
-  )
-  metadata.sha <- write_delim_git(
-    x = metadata, 
-    file = "metadata.txt", 
-    connection = raw.connection
-  )
-  
   if(verbose){
     message("Importing species")
+    utils::flush.console()
   }
   species <- prepare_dataset_species(
     source.channel = source.channel, 
@@ -57,11 +49,12 @@ prepare_dataset <- function(
   if(verbose){
     progress <- "time"
     message("Importing observations per species")
+    utils::flush.console()
   } else {
     progress <- "none"
   }
 #   this.species <- subset(species, SpeciesGroupID == sample(species$SpeciesGroupID, 1))
-  junk <- d_ply(
+  fingerprint <- ddply(
     .data = species, 
     .variables = "SpeciesGroupID", 
     .progress = progress, 
@@ -74,7 +67,22 @@ prepare_dataset <- function(
     last.year = max(observation$Year),
     scheme.id = scheme.id
   )
-  
+  parent.sha <- write_delim_git(
+    x = fingerprint, 
+    file = "parent.txt", 
+    connection = raw.connection
+  )
+
+  metadata <- data.frame(
+    Key = c("SchemeID", "FirstImportedYear", "LastImportedYear", "Duration"),
+    Value = c(scheme.id, range(observation$Year), diff(range(observation$Year)) + 1)
+  )
+  metadata.sha <- write_delim_git(
+    x = metadata, 
+    file = "metadata.txt", 
+    connection = raw.connection
+  )
+
   auto_commit(
     package = environmentName(parent.env(environment())),
     connection = raw.connection

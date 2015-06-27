@@ -3,21 +3,23 @@
 #' @inheritParams prepare_dataset
 #' @export
 #' @importFrom n2khelper check_single_strictly_positive_integer check_path list_files_git git_sha
+#' @importFrom n2kanalysis status
+#' @importFrom plyr d_ply
 prepare_analysis <- function(
-  raw.connection, scheme.id, analysis.path = ".", min.observation = 100
+  raw.connection, analysis.path = ".", min.observation = 100
 ){
-  min.observation <- check_single_strictly_positive_integer(min.observation)
+  min.observation <- check_single_strictly_positive_integer(
+    x = min.observation, 
+    name = "min.observation"
+  )
   path <- check_path(paste0(analysis.path, "/"), type = "directory", error = FALSE)
-  if(is.logical(path)){
+  if (is.logical(path)) {
     dir.create(path = analysis.path, recursive = TRUE)
     path <- check_path(paste0(analysis.path, "/"), type = "directory")
   }
   analysis.path <- path
   
   observation <- read_delim_git(file = "observation.txt", connection = raw.connection)
-  if(class(observation) != "data.frame"){
-    stop("observation.txt not available")
-  }
   check_dataframe_variable(
     df = observation,
     variable = c("ObservationID", "DatasourceID", "LocationID", "SubLocationID", "Year", "Period", "Weight"),
@@ -28,9 +30,6 @@ prepare_analysis <- function(
     file = "locationgrouplocation.txt", 
     connection = raw.connection
   )
-  if(class(location.group.location) != "data.frame"){
-    stop("locationgrouplocation.txt not available")
-  }
   check_dataframe_variable(
     df = location.group.location,
     variable = c("LocationID", "LocationGroupID"),
@@ -40,18 +39,73 @@ prepare_analysis <- function(
   observation <- merge(observation, location.group.location)
   rm(location.group.location)
   
+  message("Prepare analysis per species")
+  utils::flush.console()
   rawdata.files <- list_files_git(connection = raw.connection, pattern = "^[0-9]*\\.txt$")
-  if(length(rawdata.files) == 0){
+  if (length(rawdata.files) == 0) {
     warning("Nothing to do")
     return(invisible(NULL))
   }
-  junk <- sapply(
+  analysis <- do.call(rbind, lapply(
     rawdata.files, 
     prepare_analysis_dataset, 
     min.observation = min.observation, 
     observation = observation,
     raw.connection = raw.connection,
     analysis.path = analysis.path
+  ))
+  if (nrow(analysis) == 0) {
+    return(invisible(NULL))
+  }
+  current.status <- status(analysis.path)
+  analysis <- merge(
+    analysis,
+    current.status[, c("FileFingerprint", "Status")]
   )
+  
+  message("\nPrepare LRT")
+  utils::flush.console()
+  d_ply(
+    .data = analysis, 
+    .variables = c("LocationGroupID", "SpeciesGroupID"), 
+    .fun = prepare_analysis_lrt, 
+    raw.connection = raw.connection,
+    analysis.path = analysis.path
+  )
+  
+  analysis <- analysis[analysis$Covariate %in% c("fYear", "fCycle"), ]
+  species.id <- read_delim_git(
+    file = "species.txt", 
+    connection = raw.connection
+  )
+  check_dataframe_variable(
+    df = species.id,
+    variable = c("SpeciesGroupID", "SpeciesID"),
+    name = "species.txt"
+  )
+  analysis <- merge(analysis, species.id)
+  analysis$SpeciesGroupID <- NULL
+  
+  species.group.id <- read_delim_git(
+    file = "speciesgroup.txt", 
+    connection = raw.connection
+  )
+  check_dataframe_variable(
+    df = species.group.id,
+    variable = c("SpeciesGroupID", "SpeciesID"),
+    name = "species.txt"
+  )
+  analysis <- merge(analysis, species.group.id)
+  
+  message("Prepare Composite indices")
+  utils::flush.console()
+  d_ply(
+    .data = analysis,
+    .variables = c("LocationGroupID", "SpeciesGroupID", "Covariate"),
+    .fun = prepare_analysis_composite,
+    raw.connection = raw.connection,
+    analysis.path = analysis.path
+  )
+  
   return(invisible(NULL))
 }

@@ -6,7 +6,7 @@
 #' @importFrom plyr ddply
 #' @importClassesFrom n2kanalysis n2kGlmerPoisson
 #' @importFrom n2kanalysis n2k_glmer_poisson
-#' @importMethodsFrom n2kanalysis get_file_fingerprint
+#' @importMethodsFrom n2kanalysis get_file_fingerprint get_status_fingerprint get_seed
 #' @export
 #' @param rawdata.file The file with the counts per visit
 #' @param observation the dataframe with the visits and location group
@@ -38,6 +38,13 @@ prepare_analysis_dataset <- function(
     name = "LastImportedYear"
   )
   
+  parent <- read_delim_git(file = "parent.txt", connection = raw.connection)
+  check_dataframe_variable(
+    df = parent,
+    variable = c("SpeciesGroupID", "Fingerprint"),
+    name = "parent.txt"
+  )
+  
   analysis.path <- check_path(paste0(analysis.path, "/"), type = "directory")
   check_dataframe_variable(
     df = observation,
@@ -46,56 +53,59 @@ prepare_analysis_dataset <- function(
   )
     
   species.observation <- read_delim_git(file = rawdata.file, connection = raw.connection)
-  if(class(species.observation) != "data.frame"){
-    stop("data file '", rawdata.file, "'")
-  }
-  analysis.date <- git_recent(file = rawdata.file, connection = raw.connection)$Date
   check_dataframe_variable(
     df = species.observation,
-    variable = c("ObservationID", "SubLocationID", "Count"),
+    variable = c("ObservationID", "Count"),
     name = rawdata.file
   )
+  analysis.date <- git_recent(file = rawdata.file, connection = raw.connection)$Date
   species.group.id <- as.integer(gsub("\\.txt$", "", rawdata.file))
+  species.id <- read_delim_git("species.txt", connection = raw.connection)
+  seed <- species.id$Seed[species.id$SpeciesGroupID == species.group.id]
+  parent <- parent$Fingerprint[parent$SpeciesGroupID == species.group.id]
   
   rawdata <- merge(species.observation, observation)
-  weight <- "Weight"
   
+  message(species.group.id, " ", appendLF = FALSE)
+  utils::flush.console()
   analysis <- ddply(
     .data = rawdata, 
     .variables = "LocationGroupID",
     .fun = function(dataset){
       location.group.id <- dataset$LocationGroupID[1]
       
-      if(sum(dataset$Count > 0) < min.observation){
+      if (sum(dataset$Count > 0) < min.observation) {
         analysis <- n2k_glmer_poisson(
           scheme.id = scheme.id,
           species.group.id = species.group.id,
           location.group.id = location.group.id,
           analysis.date = analysis.date,
-          model.type = "weighted glmer poisson: fYear + Period + Location + SubLocation + RowID",
-          covariate = "1",
+          model.type = "weighted glmer poisson: fYear + Period + Location + SubLocation + Observation",
+          formula = "Count ~ 1",
           first.imported.year = first.year,
           last.imported.year = last.year,
           data = dataset,
-          weight = weight,
-          status = "insufficient data"
+          status = "insufficient data",
+          parent = parent,
+          seed = seed
         )
         filename <- paste0(analysis.path, get_file_fingerprint(analysis), ".rda")
-        if(!file.exists(filename)){
+        if (!file.exists(filename)) {
           save(analysis, file = filename)
         }
         return(NULL)
       }
       
       dataset$fYear <- factor(dataset$Year)
-      if(length(levels(dataset$fYear)) == 1){
+      if (length(levels(dataset$fYear)) == 1) {
         trend <- "0 + fYear"
+        trend.variable <- "fYear"
       } else {
         dataset$cYear <- dataset$Year - max(dataset$Year)
         trend <- c("0 + fYear", "1 + cYear")
         trend.variable <- c("fYear", "cYear")
         cycle.label <- seq(min(dataset$Year), max(dataset$Year), by = 3)
-        if(length(cycle.label) > 1){
+        if (length(cycle.label) > 1) {
           cycle.label <- paste(cycle.label, cycle.label + 2, sep = " - ")
           dataset$fCycle <- factor(
             (dataset$Year - min(dataset$Year)) %/% 3, 
@@ -105,54 +115,77 @@ prepare_analysis_dataset <- function(
           trend.variable <- c(trend.variable, "fCycle")
         }
       }
-      dataset$fRow <- factor(seq_len(nrow(dataset)))
-      design <- "(1|fRow)"
-      design.variable <- "fRow"
+      
+      dataset$fObservation <- factor(dataset$ObservationID)
+      design <- "(1|fObservation)"
+      design.variable <- "fObservation"
+      
       dataset$fLocation <- factor(dataset$LocationID)
-      if(length(levels(dataset$fLocation)) > 1){
+      if (length(levels(dataset$fLocation)) > 1) {
         design <- c(design, "(1|fLocation)")
         design.variable <- c(design.variable, "fLocation")
       }
+      
       dataset$fSubLocation <- factor(dataset$SubLocationID)
-      if(length(levels(dataset$fSubLocation)) > 1){
+      if (length(levels(dataset$fSubLocation)) > 1) {
         design <- c(design, "(1|fSubLocation)")
         design.variable <- c(design.variable, "fSubLocation")
       }
+      
       dataset$fPeriod <- factor(dataset$Period)
-      if(length(levels(dataset$fPeriod)) > 1){
+      if (length(levels(dataset$fPeriod)) > 1) {
         design <- c(design, "fPeriod")
         design.variable <- c(design.variable, "fPeriod")
       }
+      
       design <- paste(design, collapse = " + ")
       covariates <- paste(trend, design, sep = " + ")
       
-      junk <- sapply(seq_along(covariates), function(i){
+      fingerprint <- do.call(rbind, lapply(seq_along(covariates), function(i){
         data <- dataset[, c("ObservationID", "DatasourceID", "Count", "Weight", trend.variable[i], design.variable)]
         model.type <- paste(
           "weighted glmer poisson:", 
-          trend.variable[i], "+ Period + Location + SubLocation + RowID"
+          trend.variable[i], "+ Period + Location + SubLocation + Observation"
         )
-        covariate <- covariates[i]
+        formula <- paste("Count ~", covariates[i])
         analysis <- n2k_glmer_poisson(
           scheme.id = scheme.id,
           species.group.id = species.group.id,
           location.group.id = location.group.id,
           analysis.date = analysis.date,
+          seed = seed,
           model.type = model.type,
-          covariate = covariate,
+          formula = formula,
           first.imported.year = first.year,
           last.imported.year = last.year,
           data = data,
-          weight = weight
+          parent = parent
         )
-        filename <- paste0(analysis.path, get_file_fingerprint(analysis), ".rda")
-        if(!file.exists(filename)){
+        file.fingerprint <- get_file_fingerprint(analysis)
+        filename <- paste0(analysis.path, file.fingerprint, ".rda")
+        if (!file.exists(filename)) {
           save(analysis, file = filename)
         }
-      })
-      return(NULL)
+        data.frame(
+          ModelType = model.type,
+          Covariate = trend.variable[i],
+          FileFingerprint = file.fingerprint, 
+          StatusFingerprint = get_status_fingerprint(analysis),
+          Seed = get_seed(analysis),
+          stringsAsFactors = FALSE
+        )
+      }))
+      return(
+        cbind(
+          LocationGroupID = location.group.id,
+          AnalysisDate = analysis.date,
+          fingerprint
+        )
+      )
     }
   )
-  
-  return(invisible(NULL))
+  if (nrow(analysis) > 0) {
+    analysis$SpeciesGroupID <- species.group.id
+  }
+  return(analysis)
 }
