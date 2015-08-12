@@ -21,12 +21,16 @@ fit_every_model(
   status = c("new", "waiting"), 
   n.cluster = 1
 )
-status("~/analysis/abv")
+current.status <- status("~/analysis/abv")
+table(current.status$Status)
 
+library(abvanalysis)
 library(n2kanalysis)
 result <- get_result(
   x = "~/analysis/abv", 
-  datasource.id = result_datasource_id(result.channel = result.channel),
+  datasource.id = result_datasource_id(
+    result.channel = n2khelper::connect_result()
+  ),
   keep.fingerprint = FALSE, 
   n.cluster = parallel::detectCores() - 1
 )
