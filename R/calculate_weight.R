@@ -1,118 +1,137 @@
 #' Calculate the survey weights for the observations
-#' 
+#'
 #' Adds the survey weights and the stratum to the observations
-#' @param observation the dataframe with observations. Should be the output of \code{\link{read_observation}}
+#' @param observation the dataframe with observations. Should be the output of
+#'    \code{\link{read_observation}}
 #' @inheritParams connect_source
 #' @export
 #' @importFrom n2khelper check_dataframe_variable git_connect read_delim_git
 calculate_weight <- function(observation, result.channel){
   check_dataframe_variable(
-    df = observation, 
-    variable = c("ExternalCode", "Year"), 
+    df = observation,
+    variable = c("ExternalCode", "Year"),
     name = "observation"
   )
-  
+
   # add the stratum information
   stratum <- read_delim_git(
-    file = "habitat.txt", 
-    connection = git_connect(data.source.name = "Attributes ABV", channel = result.channel)
+    file = "habitat.txt",
+    connection = git_connect(
+      data.source.name = "Attributes ABV",
+      channel = result.channel
+    )
   )
   check_dataframe_variable(
-    df = stratum, 
-    variable = c("ExternalCode", "Stratum"), 
+    df = stratum,
+    variable = c("ExternalCode", "Stratum"),
     name = "habitat.txt"
   )
-  
+
   stratum$Stratum <- factor(stratum$Stratum)
   observation <- merge(
-    observation, 
-    stratum[, c("ExternalCode", "Stratum")], 
+    observation,
+    stratum[, c("ExternalCode", "Stratum")],
   )
-  
+
   # stratum size in the population
-  population <- as.data.frame(table(Stratum = stratum$Stratum), responseName = "N")
-  
+  population <- as.data.frame(
+    table(Stratum = stratum$Stratum),
+    responseName = "N"
+  )
+
   # sampling effort per year and stratum
-  sampling.effort.year <- unique(observation[, c("Year", "Stratum", "ExternalCode")])
-  sampling.effort.year <- as.data.frame(
+  effort.year <- unique(
+    observation[, c("Year", "Stratum", "ExternalCode")]
+  )
+  effort.year <- as.data.frame(
     table(
-      Year = sampling.effort.year$Year, 
-      Stratum = sampling.effort.year$Stratum
+      Year = effort.year$Year,
+      Stratum = effort.year$Stratum
     ),
     responseName = "Effort"
   )
 
   observation$Cycle <- (observation$Year - min(observation$Year)) %/% 3
   cycle.year <- unique(observation[, c("Cycle", "Year")])
-  sampling.effort.year <- merge(sampling.effort.year, cycle.year)
-  
+  effort.year <- merge(effort.year, cycle.year)
+
   # sampling effort per stratum
-  sampling.effort.cycle <- aggregate(
-    sampling.effort.year[, "Effort", drop = FALSE],
-    sampling.effort.year[, c("Cycle", "Stratum")],
+  effort.cycle <- aggregate(
+    effort.year[, "Effort", drop = FALSE],
+    effort.year[, c("Cycle", "Stratum")],
     sum
   )
 
   # check for incomplete cycles
-  year.per.cycle <- table(cycle.year$Cycle)
-  uncomplete.cycle <- as.integer(names(which(year.per.cycle < 3)))
+  year.cycle <- table(cycle.year$Cycle)
+  uncomplete.cycle <- as.integer(names(which(year.cycle < 3)))
   # correct effort for incomplete cycles
   if (length(uncomplete.cycle) > 0) {
-    max.sampling.effort <- aggregate(
-      sampling.effort.cycle[, "Effort", drop = FALSE],
-      sampling.effort.cycle[, "Stratum", drop = FALSE],
+    max.effort <- aggregate(
+      effort.cycle[, "Effort", drop = FALSE],
+      effort.cycle[, "Stratum", drop = FALSE],
       max
     )
-    sampling.to.do <- merge(
-      sampling.effort.cycle[sampling.effort.cycle$Cycle %in% uncomplete.cycle, ],
-      max.sampling.effort,
+    sampling.todo <- merge(
+      effort.cycle[
+        effort.cycle$Cycle %in% uncomplete.cycle,
+      ],
+      max.effort,
       by = "Stratum"
     )
-    sampling.to.do$Effort <- sampling.to.do$Effort.y - sampling.to.do$Effort.x
-    sampling.to.do$Effort.x <- NULL
-    sampling.to.do$Effort.y <- NULL
-    sampling.to.do$Year <- "unknown"
-    sampling.effort.year <- rbind(sampling.effort.year, sampling.to.do)
-    
-    max.sampling.effort$Cycle <- uncomplete.cycle
-    sampling.effort.cycle <- rbind(
-      sampling.effort.cycle[!sampling.effort.cycle$Cycle %in% uncomplete.cycle, ],
-      max.sampling.effort
+    sampling.todo$Effort <- sampling.todo$Effort.y - sampling.todo$Effort.x
+    sampling.todo$Effort.x <- NULL
+    sampling.todo$Effort.y <- NULL
+    sampling.todo$Year <- "unknown"
+    effort.year <- rbind(effort.year, sampling.todo)
+
+    max.effort$Cycle <- uncomplete.cycle
+    effort.cycle <- rbind(
+      effort.cycle[
+        !effort.cycle$Cycle %in% uncomplete.cycle,
+      ],
+      max.effort
     )
   }
-  colnames(sampling.effort.cycle) <- gsub(
-    "^Effort$", "EffortCycle", colnames(sampling.effort.cycle)
+  colnames(effort.cycle) <- gsub(
+    "^Effort$", "EffortCycle", colnames(effort.cycle)
   )
- 
-  sampling.effort.year <- merge(
-    sampling.effort.year,
+
+  effort.year <- merge(
+    effort.year,
     population
   )
-  sampling.effort.year <- merge(
-    sampling.effort.year,
-    sampling.effort.cycle
+  effort.year <- merge(
+    effort.year,
+    effort.cycle
   )
-  
-  sampling.effort.year$Weight <- 
-    sampling.effort.year$Effort * sampling.effort.year$N / sampling.effort.year$EffortCycle ^ 2
-  
+
+  effort.year$Weight <-
+    effort.year$Effort * effort.year$N /
+    effort.year$EffortCycle ^ 2
+
   total.cycle <- aggregate(
     data.frame(
-      TotalWeight = sampling.effort.year$Weight * sampling.effort.year$Effort,
-      TotalEffort = sampling.effort.year$Effort
+      TotalWeight = effort.year$Weight * effort.year$Effort,
+      TotalEffort = effort.year$Effort
     ),
-    sampling.effort.year[, "Cycle", drop = FALSE],
+    effort.year[, "Cycle", drop = FALSE],
     sum
   )
-  sampling.effort.year <- merge(sampling.effort.year, total.cycle)
-  sampling.effort.year$Weight <- sampling.effort.year$Weight * sampling.effort.year$TotalEffort / sampling.effort.year$TotalWeight
-  sampling.effort.year <- sampling.effort.year[sampling.effort.year$Year != "unknown", ]
-  sampling.effort.year$Year <- factor(sampling.effort.year$Year)
-  sampling.effort.year$Year <- as.integer(levels(sampling.effort.year$Year))[sampling.effort.year$Year]
+  effort.year <- merge(effort.year, total.cycle)
+  effort.year$Weight <- effort.year$Weight *
+    effort.year$TotalEffort / effort.year$TotalWeight
+  effort.year <- effort.year[
+    effort.year$Year != "unknown",
+  ]
+  effort.year$Year <- factor(effort.year$Year)
+  effort.year$Year <- as.integer(levels(effort.year$Year))[
+    effort.year$Year
+  ]
   observation$Cycle <- NULL
   observation <- merge(
     observation,
-    sampling.effort.year[, c("Year", "Stratum", "Weight")]
+    effort.year[, c("Year", "Stratum", "Weight")]
   )
   return(observation)
 }
