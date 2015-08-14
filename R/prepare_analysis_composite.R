@@ -4,34 +4,35 @@
 #' @inheritParams prepare_dataset
 #' @export
 #' @importFrom n2kanalysis n2k_composite
+#' @importFrom assertthat assert_that is.count
 prepare_analysis_composite <- function(dataset, raw.connection, analysis.path){
   analysis.path <- check_path(paste0(analysis.path, "/"), type = "directory")
   check_dataframe_variable(
-    df = dataset, 
-    variable = c("LocationGroupID", "SpeciesGroupID", "Covariate", "FileFingerprint", "StatusFingerprint", "Seed"), 
+    df = dataset,
+    variable = c(
+      "LocationGroupID", "SpeciesGroupID", "Covariate", "FileFingerprint",
+      "StatusFingerprint", "Seed"
+    ),
     name = "dataset"
   )
-  
+
   metadata <- read_delim_git("metadata.txt", connection = raw.connection)
   scheme.id <- metadata$Value[metadata$Key == "SchemeID"]
-  scheme.id <- check_single_strictly_positive_integer(scheme.id, name = "SchemeID")
+  assert_that(is.count(scheme.id))
   first.year <- metadata$Value[metadata$Key == "FirstImportedYear"]
-  first.year <- check_single_strictly_positive_integer(
-    first.year, 
-    name = "FirstImportedYear"
-  )
+  assert_that(is.count(first.year))
   last.year <- metadata$Value[metadata$Key == "LastImportedYear"]
-  last.year <- check_single_strictly_positive_integer(
-    last.year, 
-    name = "LastImportedYear"
-  )
+  assert_that(is.count(last.year))
   dataset$ParentAnalysis <- dataset$FileFingerprint
   dataset$ParentStatusFingerprint <- dataset$StatusFingerprint
   dataset$ParentStatus <- dataset$Status
-  
-  
+
+
   analysis <- n2k_composite(
-    parent.status = dataset[, c("ParentAnalysis", "ParentStatusFingerprint", "ParentStatus")],
+    parent.status = dataset[
+      ,
+      c("ParentAnalysis", "ParentStatusFingerprint", "ParentStatus")
+    ],
     seed = min(dataset$Seed),
     scheme.id = scheme.id,
     species.group.id = dataset$SpeciesGroupID[1],
