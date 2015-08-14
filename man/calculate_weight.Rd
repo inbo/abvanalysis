@@ -7,7 +7,8 @@
 calculate_weight(observation, result.channel)
 }
 \arguments{
-\item{observation}{the dataframe with observations. Should be the output of \code{\link{read_observation}}}
+\item{observation}{the dataframe with observations. Should be the output of
+\code{\link{read_observation}}}
 
 \item{result.channel}{An open RODBC connection to the results database}
 }

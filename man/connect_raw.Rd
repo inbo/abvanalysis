@@ -10,7 +10,8 @@ connect_raw(result.channel, username = character(0),
 \arguments{
 \item{result.channel}{An open RODBC connection to the results database}
 
-\item{username}{The username for a https connection. Leave default for a ssh connection.}
+\item{username}{The username for a https connection. Leave default for a ssh
+connection.}
 
 \item{password}{The password for the connection.}
 }
