@@ -12,4 +12,5 @@ Imports:
   lubridate,
   plyr,
   reshape2,
+  assertthat,
   RODBC

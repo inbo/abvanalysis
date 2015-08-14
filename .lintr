@@ -1,1 +1,1 @@
-exclusions: list("R/calculate_weight.R" = c(111, 123))
+exclusions: list("R/calculate_weight.R" = c(111, 123), "R/prepare_analysis.R" = 98)
