@@ -35,7 +35,7 @@ prepare_dataset_observation <- function(
     table = "Datafield",
     channel = result.channel,
     create = TRUE,
-    select = TRUE
+    select = FALSE
   )
 
   # TO DO
@@ -139,10 +139,12 @@ prepare_dataset_observation <- function(
     create = TRUE,
     select = TRUE
   )
-  data.field <- c(result.datasource, unique(observation[, "DatasourceID", drop = FALSE]))
-  data.field$TableName <- c("Location", "tblWaarnemingPunt")
-  data.field$PrimaryKey <- c("ID", "WRPT_PTN")
-  data.field$TypeID <- data.field.type$ID
+  data.field <- data.frame(
+    DatasourceID = c(result.datasource, unique(observation[, "DatasourceID"])),
+    TableName = c("Location", "tblWaarnemingPunt"),
+    PrimaryKey = c("ID", "WRPT_PTN"),
+    TypeID = data.field.type$ID
+  )
   data.field <- odbc_get_multi_id(
     data = data.field,
     id.field = "ID",
