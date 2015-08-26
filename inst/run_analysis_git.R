@@ -24,9 +24,13 @@ fit_every_model(
 status("~/analysis/abv") #nolint
 
 library(n2kanalysis)
+result.channel <- n2khelper::connect_result()
+datasource.id <- abvanalysis::result_datasource_id(
+  result.channel = result.channel
+)
 result <- get_result(
   x = "~/analysis/abv", #nolint
-  datasource.id = result_datasource_id(result.channel = result.channel),
+  datasource.id = datasource.id,
   keep.fingerprint = FALSE,
   n.cluster = parallel::detectCores() - 1
 )
