@@ -57,10 +57,15 @@ prepare_dataset_observation <- function(
     create = TRUE,
     select = TRUE
   )
-  data.field <- c(result.datasource, unique(observation[, "DatasourceID", drop = FALSE]))
-  data.field$TableName <- c("Location", "tblUTM1")
-  data.field$PrimaryKey <- c("ID", "UTM1_CDE")
-  data.field$TypeID <- data.field.type$ID
+  data.field <- data.frame(
+    DatasourceID = c(
+      result.datasource,
+      unique(observation[, "DatasourceID"])
+    ),
+    TableName = c("Location", "tblUTM1"),
+    PrimaryKey = c("ID", "UTM1_CDE"),
+    TypeID = data.field.type$ID
+  )
   data.field <- odbc_get_multi_id(
     data = data.field,
     id.field = "ID",
