@@ -1,14 +1,15 @@
 #' Read the observations and save them to git and the results database
 #' @inheritParams prepare_dataset
 #' @export
+#' @importFrom assertthat assert_that is.count
 #' @importFrom n2khelper check_single_strictly_positive_integer odbc_get_multi_id connect_result
 #' @importFrom n2kanalysis mark_obsolete_dataset
 #' @importFrom RODBC odbcClose
 prepare_dataset_observation <- function(
   source.channel, result.channel, raw.connection, attribute.connection, scheme.id
 ){
-  scheme.id <- check_single_strictly_positive_integer(scheme.id, name = "scheme.id")
-  
+  assert_that(is.count(scheme.id))
+
   import.date <- Sys.time()
   observation <- read_observation(
     source.channel = source.channel, 

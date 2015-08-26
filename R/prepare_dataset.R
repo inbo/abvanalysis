@@ -7,7 +7,8 @@
 #' @param scheme.id The id of the scheme
 #' @param verbose Display a progress bar when TRUE (default)
 #' @export
-#' @importFrom n2khelper check_single_logical write_delim_git auto_commit
+#' @importFrom assertthat is.count is.flag noNA
+#' @importFrom n2khelper write_delim_git auto_commit
 #' @importFrom plyr d_ply
 #' @importFrom n2khelper git_connect remove_files_git write_delim_git
 prepare_dataset <- function(
@@ -18,9 +19,10 @@ prepare_dataset <- function(
   scheme.id,
   verbose = TRUE
 ){
-  scheme.id <- check_single_strictly_positive_integer(scheme.id, name = "scheme.id")
-  verbose <- check_single_logical(verbose, name = "verbose")
-  
+  assert_that(is.count(scheme.id))
+  assert_that(is.flag(verbose))
+  assert_that(noNA(verbose))
+
   remove_files_git(connection = raw.connection, pattern = "txt$")
     
   if(verbose){
