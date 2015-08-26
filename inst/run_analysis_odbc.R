@@ -1,4 +1,5 @@
-# this script imports the raw data from the ODBC data source and creates the analysis files
+# this script imports the raw data from the ODBC data source and creates the
+# analysis files
 
 # setting below assumes ssh authentication
 # set correct username and password for https authentication

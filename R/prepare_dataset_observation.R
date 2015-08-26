@@ -12,7 +12,7 @@ prepare_dataset_observation <- function(
 
   import.date <- Sys.time()
   observation <- read_observation(
-    source.channel = source.channel, 
+    source.channel = source.channel,
     result.channel = result.channel
   )
   data.field.type <- odbc_get_multi_id(
@@ -37,13 +37,13 @@ prepare_dataset_observation <- function(
     create = TRUE,
     select = TRUE
   )
-  
-  # TO DO 
+
+  # TO DO
   #   - check for observations < 2007
   #   - check for multiple observations per sublocation - time combination
   #   - check for observations outside the 1/3 - 15/7 range/
   observation <- calculate_weight(
-    observation = observation, 
+    observation = observation,
     result.channel = result.channel
   )
 
@@ -78,17 +78,17 @@ prepare_dataset_observation <- function(
   )
   data.field <- data.field[data.field$DatasourceID != result.datasource, ]
   colnames(data.field) <- gsub("^ID$", "DatafieldID", colnames(data.field))
-  
+
   main.location <- unique(observation[, c("ExternalCode", "DatasourceID")])
   main.location <- merge(main.location, data.field[, c("DatasourceID", "DatafieldID")])
   main.location$Description <- main.location$ExternalCode
 
   database.id <- odbc_get_multi_id(
     data = main.location[, c("Description", "ExternalCode", "DatafieldID")],
-    id.field = "ID", 
-    merge.field = c("ExternalCode", "DatafieldID"), 
+    id.field = "ID",
+    merge.field = c("ExternalCode", "DatafieldID"),
     table = "Location",
-    channel = result.channel, 
+    channel = result.channel,
     create = TRUE,
     select = TRUE
   )
@@ -99,17 +99,17 @@ prepare_dataset_observation <- function(
   )
   colnames(observation) <- gsub("^ID$", "LocationID", colnames(observation))
   observation$DatafieldID <- NULL
-  
+
   location.group <- data.frame(
     Description = "Vlaanderen",
     SchemeID = scheme.id
   )
   location.group.id <- odbc_get_multi_id(
     data = location.group,
-    id.field = "ID", 
-    merge.field = c("SchemeID", "Description"), 
+    id.field = "ID",
+    merge.field = c("SchemeID", "Description"),
     table = "LocationGroup",
-    channel = result.channel, 
+    channel = result.channel,
     create = TRUE,
     select = TRUE
   )$ID
@@ -122,14 +122,14 @@ prepare_dataset_observation <- function(
   ]
   odbc_get_multi_id(
     data = location.group.location,
-    id.field = "ID", 
-    merge.field = c("LocationGroupID", "LocationID"), 
+    id.field = "ID",
+    merge.field = c("LocationGroupID", "LocationID"),
     table = "LocationGroupLocation",
-    channel = result.channel, 
+    channel = result.channel,
     create = TRUE,
     select = FALSE
   )
-  
+
   data.field.type <- odbc_get_multi_id(
     data = data.frame(Description = "SubLocation"),
     id.field = "ID",
@@ -165,16 +165,16 @@ prepare_dataset_observation <- function(
   sub.location$Description <- paste(sub.location$ExternalCode, sub.location$SubExternalCode)
   sub.location$ExternalCode <- NULL
   colnames(sub.location) <- gsub(
-    "^SubExternalCode$", 
-    "ExternalCode", 
+    "^SubExternalCode$",
+    "ExternalCode",
     colnames(sub.location)
   )
   database.id <- odbc_get_multi_id(
     data = sub.location,
-    id.field = "ID", 
+    id.field = "ID",
     merge.field = c("ParentLocationID", "ExternalCode", "DatafieldID"),
     table = "Location",
-    channel = result.channel, 
+    channel = result.channel,
     create = TRUE,
     select = TRUE
   )
@@ -191,26 +191,26 @@ prepare_dataset_observation <- function(
 
   observation <- observation[
     order(
-      observation$Stratum, 
-      observation$LocationID, 
-      observation$SubLocationID, 
-      observation$Year, 
+      observation$Stratum,
+      observation$LocationID,
+      observation$SubLocationID,
+      observation$Year,
       observation$Period
     ),
     c("DatasourceID", "ObservationID", "Stratum", "LocationID", "SubLocationID", "Year", "Period", "Weight")
   ]
-  
+
   location.group.location.sha <- write_delim_git(
-    x = location.group.location, 
-    file = "locationgrouplocation.txt", 
+    x = location.group.location,
+    file = "locationgrouplocation.txt",
     connection = raw.connection
   )
   observation.sha <- write_delim_git(
-    x = observation[, c("DatasourceID", "ObservationID", "LocationID", "SubLocationID", "Year", "Period", "Weight")], 
-    file = "observation.txt", 
+    x = observation[, c("DatasourceID", "ObservationID", "LocationID", "SubLocationID", "Year", "Period", "Weight")],
+    file = "observation.txt",
     connection = raw.connection
   )
-  
+
   dataset <- data.frame(
     FileName = c("observation.txt",  "locationgrouplocation.txt"),
     PathName = raw.connection@LocalPath,
@@ -220,13 +220,13 @@ prepare_dataset_observation <- function(
   )
   database.id <- odbc_get_multi_id(
     data = dataset,
-    id.field = "ID", 
-    merge.field = c("FileName", "PathName", "Fingerprint"), 
-    table = "Dataset", 
-    channel = result.channel, 
+    id.field = "ID",
+    merge.field = c("FileName", "PathName", "Fingerprint"),
+    table = "Dataset",
+    channel = result.channel,
     create = TRUE
   )
   mark_obsolete_dataset(channel = result.channel)
-  
+
   return(observation)
 }

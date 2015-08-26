@@ -12,10 +12,10 @@
 #' @importFrom plyr d_ply
 #' @importFrom n2khelper git_connect remove_files_git write_delim_git
 prepare_dataset <- function(
-  result.channel, 
-  source.channel, 
-  attribute.connection, 
-  raw.connection, 
+  result.channel,
+  source.channel,
+  attribute.connection,
+  raw.connection,
   scheme.id,
   verbose = TRUE
 ){
@@ -24,31 +24,31 @@ prepare_dataset <- function(
   assert_that(noNA(verbose))
 
   remove_files_git(connection = raw.connection, pattern = "txt$")
-    
-  if(verbose){
+
+  if (verbose) {
     message("Importing observations")
     utils::flush.console()
   }
   observation <- prepare_dataset_observation(
-    source.channel = source.channel, 
+    source.channel = source.channel,
     result.channel = result.channel,
     raw.connection = raw.connection,
     attribute.connection = attribute.connection,
     scheme.id = scheme.id
   )
-  
-  if(verbose){
+
+  if (verbose) {
     message("Importing species")
     utils::flush.console()
   }
   species <- prepare_dataset_species(
-    source.channel = source.channel, 
+    source.channel = source.channel,
     result.channel = result.channel,
     raw.connection = raw.connection,
     scheme.id = scheme.id
   )
-  
-  if(verbose){
+
+  if (verbose) {
     progress <- "time"
     message("Importing observations per species")
     utils::flush.console()
@@ -57,9 +57,9 @@ prepare_dataset <- function(
   }
 #   this.species <- subset(species, SpeciesGroupID == sample(species$SpeciesGroupID, 1))
   fingerprint <- ddply(
-    .data = species, 
-    .variables = "SpeciesGroupID", 
-    .progress = progress, 
+    .data = species,
+    .variables = "SpeciesGroupID",
+    .progress = progress,
     .fun = prepare_dataset_species_observation,
     observation = observation,
     result.channel = result.channel,
@@ -70,8 +70,8 @@ prepare_dataset <- function(
     scheme.id = scheme.id
   )
   parent.sha <- write_delim_git(
-    x = fingerprint, 
-    file = "parent.txt", 
+    x = fingerprint,
+    file = "parent.txt",
     connection = raw.connection
   )
 
@@ -80,8 +80,8 @@ prepare_dataset <- function(
     Value = c(scheme.id, range(observation$Year), diff(range(observation$Year)) + 1)
   )
   metadata.sha <- write_delim_git(
-    x = metadata, 
-    file = "metadata.txt", 
+    x = metadata,
+    file = "metadata.txt",
     connection = raw.connection
   )
 
