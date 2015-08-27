@@ -7,7 +7,8 @@
 select_relevant(observation, observation.species)
 }
 \arguments{
-\item{observation}{the dataframe with observations. Should be the output of \code{\link{read_observation}}}
+\item{observation}{the dataframe with observations. Should be the output of
+\code{\link{read_observation}}}
 
 \item{observation.species}{The output from \code{\link{read_observation_species}}}
 }

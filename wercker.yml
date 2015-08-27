@@ -1,0 +1,12 @@
+box: rocker/hadleyverse
+build:
+  steps:
+    - script:
+        name: installation of packages not covered by jimhester/r-dependencies
+        code: |
+          apt-get update -y
+          apt-get install -y r-cran-RODBC
+          Rscript -e 'devtools::install_bitbucket("thierry_onkelinx/n2khelper@develop")'
+          Rscript -e 'devtools::install_bitbucket("thierry_onkelinx/n2kanalysis@develop")'
+    - jimhester/r-dependencies
+    - jimhester/r-check

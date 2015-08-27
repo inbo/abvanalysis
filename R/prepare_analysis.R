@@ -5,51 +5,62 @@
 #' @importFrom n2khelper check_single_strictly_positive_integer check_path list_files_git git_sha
 #' @importFrom n2kanalysis status
 #' @importFrom plyr d_ply
+#' @importFrom assertthat assert_that is.count
 prepare_analysis <- function(
   raw.connection, analysis.path = ".", min.observation = 100
 ){
-  min.observation <- check_single_strictly_positive_integer(
-    x = min.observation, 
-    name = "min.observation"
+  assert_that(is.count(min.observation))
+  path <- check_path(
+    paste0(analysis.path, "/"),
+    type = "directory",
+    error = FALSE
   )
-  path <- check_path(paste0(analysis.path, "/"), type = "directory", error = FALSE)
   if (is.logical(path)) {
     dir.create(path = analysis.path, recursive = TRUE)
     path <- check_path(paste0(analysis.path, "/"), type = "directory")
   }
   analysis.path <- path
-  
-  observation <- read_delim_git(file = "observation.txt", connection = raw.connection)
-  check_dataframe_variable(
-    df = observation,
-    variable = c("ObservationID", "DatasourceID", "LocationID", "SubLocationID", "Year", "Period", "Weight"),
-    name = "observation.txt"
-  )
-  
-  location.group.location <- read_delim_git(
-    file = "locationgrouplocation.txt", 
+
+  observation <- read_delim_git(
+    file = "observation.txt",
     connection = raw.connection
   )
   check_dataframe_variable(
-    df = location.group.location,
+    df = observation,
+    variable = c(
+      "ObservationID", "DatasourceID", "LocationID", "SubLocationID", "Year",
+      "Period", "Weight"
+    ),
+    name = "observation.txt"
+  )
+
+  locationgrouplocation <- read_delim_git(
+    file = "locationgrouplocation.txt",
+    connection = raw.connection
+  )
+  check_dataframe_variable(
+    df = locationgrouplocation,
     variable = c("LocationID", "LocationGroupID"),
     name = "locationgrouplocation.txt"
   )
-  
-  observation <- merge(observation, location.group.location)
-  rm(location.group.location)
-  
+
+  observation <- merge(observation, locationgrouplocation)
+  rm(locationgrouplocation)
+
   message("Prepare analysis per species")
   utils::flush.console()
-  rawdata.files <- list_files_git(connection = raw.connection, pattern = "^[0-9]*\\.txt$")
+  rawdata.files <- list_files_git(
+    connection = raw.connection,
+    pattern = "^[0-9]*\\.txt$"
+  )
   if (length(rawdata.files) == 0) {
     warning("Nothing to do")
     return(invisible(NULL))
   }
   analysis <- do.call(rbind, lapply(
-    rawdata.files, 
-    prepare_analysis_dataset, 
-    min.observation = min.observation, 
+    rawdata.files,
+    prepare_analysis_dataset,
+    min.observation = min.observation,
     observation = observation,
     raw.connection = raw.connection,
     analysis.path = analysis.path
@@ -62,20 +73,20 @@ prepare_analysis <- function(
     analysis,
     current.status[, c("FileFingerprint", "Status")]
   )
-  
+
   message("\nPrepare LRT")
   utils::flush.console()
   d_ply(
-    .data = analysis, 
-    .variables = c("LocationGroupID", "SpeciesGroupID"), 
-    .fun = prepare_analysis_lrt, 
+    .data = analysis,
+    .variables = c("LocationGroupID", "SpeciesGroupID"),
+    .fun = prepare_analysis_lrt,
     raw.connection = raw.connection,
     analysis.path = analysis.path
   )
-  
+
   analysis <- analysis[analysis$Covariate %in% c("fYear", "fCycle"), ]
   species.id <- read_delim_git(
-    file = "species.txt", 
+    file = "species.txt",
     connection = raw.connection
   )
   check_dataframe_variable(
@@ -85,18 +96,18 @@ prepare_analysis <- function(
   )
   analysis <- merge(analysis, species.id)
   analysis$SpeciesGroupID <- NULL
-  
-  species.group.id <- read_delim_git(
-    file = "speciesgroup.txt", 
+
+  speciesgroupid <- read_delim_git(
+    file = "speciesgroup.txt",
     connection = raw.connection
   )
   check_dataframe_variable(
-    df = species.group.id,
+    df = speciesgroupid,
     variable = c("SpeciesGroupID", "SpeciesID"),
     name = "species.txt"
   )
-  analysis <- merge(analysis, species.group.id)
-  
+  analysis <- merge(analysis, speciesgroupid)
+
   message("Prepare Composite indices")
   utils::flush.console()
   d_ply(
@@ -106,6 +117,6 @@ prepare_analysis <- function(
     raw.connection = raw.connection,
     analysis.path = analysis.path
   )
-  
+
   return(invisible(NULL))
 }
