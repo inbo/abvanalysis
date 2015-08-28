@@ -200,7 +200,7 @@ prepare_dataset_observation <- function(
       observation$Year,
       observation$Period
     ),
-    c("DatasourceID", "ObservationID", "Stratum", "LocationID", "SubLocationID", "Year", "Period", "Weight")
+    c("DatasourceID", "ObservationID", "Stratum", "LocationID", "SubLocationID", "Year", "Period", "Weight", "Stratum")
   ]
 
   location.group.location.sha <- write_delim_git(
@@ -209,7 +209,7 @@ prepare_dataset_observation <- function(
     connection = raw.connection
   )
   observation.sha <- write_delim_git(
-    x = observation[, c("DatasourceID", "ObservationID", "LocationID", "SubLocationID", "Year", "Period", "Weight")],
+    x = observation[, c("DatasourceID", "ObservationID", "LocationID", "SubLocationID", "Year", "Period", "Weight", "Stratum")],
     file = "observation.txt",
     connection = raw.connection
   )
