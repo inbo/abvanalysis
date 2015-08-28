@@ -5,7 +5,8 @@
 \title{Make a git connection to the raw data}
 \usage{
 connect_raw(result.channel, username = character(0),
-  password = character(0))
+  password = character(0), commit.user = "abvanalysis",
+  commit.email = "bmk@inbo.be")
 }
 \arguments{
 \item{result.channel}{An open RODBC connection to the results database}

@@ -13,18 +13,23 @@ connect_source <- function(result.channel){
 #' @param username The username for a https connection. Leave default for a ssh
 #'    connection.
 #' @param password The password for the connection.
+#' @inheritParams n2khelper git_connection
 #' @importFrom n2khelper git_connect
 connect_attribute <- function(
   result.channel,
   username = character(0),
-  password = character(0)
+  password = character(0),
+  commit.user = "abvanalysis",
+  commit.email = "bmk@inbo.be"
 ){
   git_connect(
     data.source.name = "Attributes ABV",
     channel = result.channel,
     type = ifelse(length(username) == 0, "ssh", "https"),
     username = username,
-    password = password
+    password = password,
+    commit.user = commit.user,
+    commit.email = commit.email
   )
 }
 
@@ -32,17 +37,22 @@ connect_attribute <- function(
 #' @export
 #' @inheritParams connect_source
 #' @inheritParams connect_attribute
+#' @inheritParams n2khelper git_connection
 #' @importFrom n2khelper git_connect
 connect_raw <- function(
   result.channel,
   username = character(0),
-  password = character(0)
+  password = character(0),
+  commit.user = "abvanalysis",
+  commit.email = "bmk@inbo.be"
 ){
   git_connect(
     data.source.name = "Raw data ABV",
     channel = result.channel,
     type = ifelse(length(username) == 0, "ssh", "https"),
     username = username,
-    password = password
+    password = password,
+    commit.user = commit.user,
+    commit.email = commit.email
   )
 }
