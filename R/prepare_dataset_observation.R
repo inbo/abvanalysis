@@ -44,6 +44,7 @@ prepare_dataset_observation <- function(
   #   - check for observations outside the 1/3 - 15/7 range/
   observation <- calculate_weight(
     observation = observation,
+    attribute.connection = attribute.connection,
     result.channel = result.channel
   )
 

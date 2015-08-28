@@ -4,11 +4,13 @@
 \alias{calculate_weight}
 \title{Calculate the survey weights for the observations}
 \usage{
-calculate_weight(observation, result.channel)
+calculate_weight(observation, attribute.connection, result.channel)
 }
 \arguments{
 \item{observation}{the dataframe with observations. Should be the output of
 \code{\link{read_observation}}}
+
+\item{attribute.connection}{a git-connection object to the attribute data}
 
 \item{result.channel}{An open RODBC connection to the results database}
 }

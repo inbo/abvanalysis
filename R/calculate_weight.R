@@ -4,9 +4,10 @@
 #' @param observation the dataframe with observations. Should be the output of
 #'    \code{\link{read_observation}}
 #' @inheritParams connect_source
+#' @inheritParams prepare_dataset
 #' @export
 #' @importFrom n2khelper check_dataframe_variable git_connect read_delim_git
-calculate_weight <- function(observation, result.channel){
+calculate_weight <- function(observation, attribute.connection, result.channel){
   check_dataframe_variable(
     df = observation,
     variable = c("ExternalCode", "Year"),
@@ -16,10 +17,7 @@ calculate_weight <- function(observation, result.channel){
   # add the stratum information
   stratum <- read_delim_git(
     file = "habitat.txt",
-    connection = git_connect(
-      data.source.name = "Attributes ABV",
-      channel = result.channel
-    )
+    connection = attribute.connection
   )
   check_dataframe_variable(
     df = stratum,
