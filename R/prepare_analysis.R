@@ -29,7 +29,7 @@ prepare_analysis <- function(
     df = observation,
     variable = c(
       "ObservationID", "DatasourceID", "LocationID", "SubLocationID", "Year",
-      "Period", "Weight"
+      "Period", "Weight", "Stratum"
     ),
     name = "observation.txt"
   )
