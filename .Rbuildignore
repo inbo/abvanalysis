@@ -2,3 +2,4 @@
 ^\.Rproj\.user$
 ^wercker\.yml$
 ^\.lintr$
+^\.git$
