@@ -1,12 +1,16 @@
 #' Create the analysis dataset based on the available raw data
 #'
-#' The analysis dataset is saved to a rda file with the SHA-1 as name.
-#' @return A data.frame with the species id number of rows in the analysis dataset, number of precenses in the analysis datset and SHA-1 of the analysis dataset or NULL if not enough data.
+#' This analysis fits an unweighted model but adds the stratum effect. The
+#'    indices per year of the different strata are combined with a linear
+#'    combination into a single index per year.
+#' @return A data.frame with the species id number of rows in the analysis
+#'    dataset, number of precenses in the analysis datset and SHA-1 of the
+#'    analysis dataset or NULL if not enough data.
 #' @importFrom n2khelper check_path check_dataframe_variable git_recent
 #' @importFrom assertthat assert_that is.count
 #' @importFrom plyr ddply
-#' @importClassesFrom n2kanalysis n2kGlmerPoisson
-#' @importFrom n2kanalysis n2k_glmer_poisson
+#' @importClassesFrom n2kanalysis n2kInlaNbinomial
+#' @importFrom n2kanalysis n2k_inla_nbinomial
 #' @importMethodsFrom n2kanalysis get_file_fingerprint get_status_fingerprint get_seed
 #' @export
 #' @param rawdata.file The file with the counts per visit
@@ -43,7 +47,7 @@ prepare_analysis_dataset <- function(
     df = observation,
     variable = c(
       "ObservationID", "DatasourceID", "LocationID", "SubLocationID", "Year",
-      "Period", "Weight", "LocationGroupID"
+      "Period", "Stratum", "LocationGroupID"
     ),
     name = "observation"
   )
@@ -77,13 +81,13 @@ prepare_analysis_dataset <- function(
       locationgroup.id <- dataset$LocationGroupID[1]
 
       if (sum(dataset$Count > 0) < min.observation) {
-        analysis <- n2k_glmer_poisson(
+        analysis <- n2k_inla_nbinomial(
           scheme.id = scheme.id,
           species.group.id = speciesgroup.id,
           location.group.id = locationgroup.id,
           analysis.date = analysis.date,
           model.type =
-"weighted glmer poisson: fYear + Period + Location + SubLocation + Observation",
+            "inla nbinomial: fYear + Stratum + Period + Location + SubLocation",
           formula = "Count ~ 1",
           first.imported.year = first.year,
           last.imported.year = last.year,
@@ -103,13 +107,30 @@ prepare_analysis_dataset <- function(
         return(NULL)
       }
 
+      dataset$fStratum <- factor(dataset$Stratum)
+      multi.stratum <- length(levels(dataset$fStratum)) > 1
+      if (multi.stratum) {
+        design.variable <- "fStratum"
+      } else {
+        design.variable <- character(0)
+      }
+      design <- character(0)
+
       dataset$fYear <- factor(dataset$Year)
       if (length(levels(dataset$fYear)) == 1) {
-        trend <- "0 + fYear"
+        if (multi.stratum) {
+          trend <- "fYear * fStratum"
+        } else {
+          trend <- "fYear"
+        }
         trend.variable <- "fYear"
       } else {
         dataset$cYear <- dataset$Year - max(dataset$Year)
-        trend <- c("0 + fYear", "1 + cYear")
+        if (multi.stratum) {
+          trend <- c("fYear * fStratum", "0 + fStratum + cYear:fStratum")
+        } else {
+          trend <- c("fYear", "cYear")
+        }
         trend.variable <- c("fYear", "cYear")
         cycle.label <- seq(min(dataset$Year), max(dataset$Year), by = 3)
         if (length(cycle.label) > 1) {
@@ -118,37 +139,60 @@ prepare_analysis_dataset <- function(
             (dataset$Year - min(dataset$Year)) %/% 3,
             labels = cycle.label
           )
-          trend <- c(trend, "0 + fCycle")
+          if (multi.stratum) {
+            trend <- c(trend, "fCycle * fStratum")
+          } else {
+            trend <- c(trend, "fCycle")
+          }
           trend.variable <- c(trend.variable, "fCycle")
         }
       }
 
-      dataset$fObservation <- factor(dataset$ObservationID)
-      design <- "(1|fObservation)"
-      design.variable <- "fObservation"
-
       dataset$fLocation <- factor(dataset$LocationID)
       if (length(levels(dataset$fLocation)) > 1) {
-        design <- c(design, "(1|fLocation)")
+        design <- c(design, "f(fLocation, model = \"iid\")")
         design.variable <- c(design.variable, "fLocation")
       }
 
       dataset$fSubLocation <- factor(dataset$SubLocationID)
       if (length(levels(dataset$fSubLocation)) > 1) {
-        design <- c(design, "(1|fSubLocation)")
+        design <- c(design, "f(fSubLocation, model = \"iid\")")
         design.variable <- c(design.variable, "fSubLocation")
+      }
+
+      if (multi.stratum) {
+        weight.formula <- paste("~", trend)
       }
 
       dataset$fPeriod <- factor(dataset$Period)
       if (length(levels(dataset$fPeriod)) > 1) {
         design <- c(design, "fPeriod")
         design.variable <- c(design.variable, "fPeriod")
+        if (multi.stratum) {
+          weight.formula <- paste(weight.formula, "fPeriod", sep = "+")
+        }
       }
-
       design <- paste(design, collapse = " + ")
       covariates <- paste(trend, design, sep = " + ")
 
       fingerprint <- do.call(rbind, lapply(seq_along(covariates), function(i){
+        if (multi.stratum) {
+          if (trend.variable[i] == "cYear") {
+            lc <- get_linear_lincomb(
+              dataset = dataset,
+              time.var = trend.variable[i],
+              formula = as.formula(weight.formula[i])
+            )
+          } else {
+            lc <- get_nonlinear_lincomb(
+              dataset = dataset,
+              time.var = trend.variable[i],
+              formula = as.formula(weight.formula[i])
+            )
+          }
+        } else {
+          lc <- NULL
+        }
         data <- dataset[
           ,
           c(
@@ -157,11 +201,11 @@ prepare_analysis_dataset <- function(
           )
         ]
         model.type <- paste(
-          "weighted glmer poisson:",
-          trend.variable[i], "+ Period + Location + SubLocation + Observation"
+          "inla nbinomial:",
+          trend.variable[i], "+ Period + Location + SubLocation"
         )
         formula <- paste("Count ~", covariates[i])
-        analysis <- n2k_glmer_poisson(
+        analysis <- n2k_inla_nbinomial(
           scheme.id = scheme.id,
           species.group.id = speciesgroup.id,
           location.group.id = locationgroup.id,
@@ -172,7 +216,8 @@ prepare_analysis_dataset <- function(
           first.imported.year = first.year,
           last.imported.year = last.year,
           data = data,
-          parent = parent
+          parent = parent,
+          lin.comb = lc
         )
         file.fingerprint <- get_file_fingerprint(analysis)
         filename <- paste0(analysis.path, file.fingerprint, ".rda")
