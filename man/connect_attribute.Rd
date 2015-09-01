@@ -15,6 +15,10 @@ connect_attribute(result.channel, username = character(0),
 connection.}
 
 \item{password}{The password for the connection.}
+
+\item{commit.user}{the name of the user how will commit}
+
+\item{commit.email}{the email of the user how will commit}
 }
 \description{
 Make a git connection to the attribute

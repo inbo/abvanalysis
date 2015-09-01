@@ -13,7 +13,7 @@ connect_source <- function(result.channel){
 #' @param username The username for a https connection. Leave default for a ssh
 #'    connection.
 #' @param password The password for the connection.
-#' @inheritParams n2khelper git_connection
+#' @inheritParams n2khelper::git_connection
 #' @importFrom n2khelper git_connect
 connect_attribute <- function(
   result.channel,
@@ -37,7 +37,7 @@ connect_attribute <- function(
 #' @export
 #' @inheritParams connect_source
 #' @inheritParams connect_attribute
-#' @inheritParams n2khelper git_connection
+#' @inheritParams n2khelper::git_connection
 #' @importFrom n2khelper git_connect
 connect_raw <- function(
   result.channel,
