@@ -74,12 +74,12 @@ prepare_analysis <- function(
     current.status[, c("FileFingerprint", "Status")]
   )
 
-  message("\nPrepare LRT")
+  message("\nPrepare model comparison")
   utils::flush.console()
   d_ply(
     .data = analysis,
     .variables = c("LocationGroupID", "SpeciesGroupID"),
-    .fun = prepare_analysis_lrt,
+    .fun = prepare_analysis_comparison,
     raw.connection = raw.connection,
     analysis.path = analysis.path
   )
