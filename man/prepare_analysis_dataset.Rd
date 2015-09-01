@@ -16,7 +16,8 @@ prepare_analysis_dataset(rawdata.file, observation, raw.connection,
 
 \item{analysis.path}{the path to store the rda files for the analysis}
 
-\item{min.observation}{The minimum number of positive observations (Count > 0)}
+\item{min.observation}{The minimum number of positive observations
+(Count > 0)}
 }
 \value{
 A data.frame with the species id number of rows in the analysis dataset, number of precenses in the analysis datset and SHA-1 of the analysis dataset or NULL if not enough data.

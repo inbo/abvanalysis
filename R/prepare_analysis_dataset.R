@@ -12,7 +12,8 @@
 #' @param rawdata.file The file with the counts per visit
 #' @param observation the dataframe with the visits and location group
 #' @param analysis.path the path to store the rda files for the analysis
-#' @param min.observation The minimum number of positive observations (Count > 0)
+#' @param min.observation The minimum number of positive observations
+#'    (Count > 0)
 #' @inheritParams prepare_dataset
 prepare_analysis_dataset <- function(
   rawdata.file,
