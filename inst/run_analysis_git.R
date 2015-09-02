@@ -12,7 +12,6 @@ prepare_analysis(
   analysis.path = "~/analysis/abv" #nolint
 )
 
-library(optimx)
 library(n2kanalysis)
 fit_every_model(
   path = "~/analysis/abv", #nolint
