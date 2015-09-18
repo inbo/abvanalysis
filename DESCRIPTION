@@ -13,4 +13,5 @@ Imports:
   plyr,
   reshape2,
   assertthat,
+  dplyr,
   RODBC

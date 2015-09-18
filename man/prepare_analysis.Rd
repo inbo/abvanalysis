@@ -11,7 +11,8 @@ prepare_analysis(raw.connection, analysis.path = ".", min.observation = 100)
 
 \item{analysis.path}{the path to store the rda files for the analysis}
 
-\item{min.observation}{The minimum number of positive observations (Count > 0)}
+\item{min.observation}{The minimum number of positive observations
+(Count > 0)}
 }
 \description{
 Prepare all datasets and a to do list of models

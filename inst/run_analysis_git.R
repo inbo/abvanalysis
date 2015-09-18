@@ -1,20 +1,22 @@
 library(abvanalysis)
 raw.connection <- n2khelper::git_connection(
-  repo.path = "~/n2k/ssh/rawdata", #nolint
+  repo.path = "~/n2k/https/rawdata", #nolint
   local.path = "abv",
-  key = "~/.ssh/id_rsa_n2kreadonly" #nolint
+  username = username,
+  password = password,
+  commit.user = "abvanalysis",
+  commit.email = "bmk@inbo.be"
 )
 prepare_analysis(
   raw.connection = raw.connection,
   analysis.path = "~/analysis/abv" #nolint
 )
 
-library(optimx)
 library(n2kanalysis)
 fit_every_model(
   path = "~/analysis/abv", #nolint
   status = c("new", "waiting"),
-  n.cluster = parallel::detectCores() - 1
+  n.cluster = 1
 )
 fit_every_model(
   path = "~/analysis/abv", #nolint
