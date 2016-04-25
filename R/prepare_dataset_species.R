@@ -212,6 +212,7 @@ prepare_dataset_species <- function(
     select = FALSE
   )
   mark_obsolete_dataset(channel = result.channel)
+  output$ExternalCode <- as.integer(output$ExternalCode)
 
   return(output)
 }
