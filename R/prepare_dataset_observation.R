@@ -2,7 +2,7 @@
 #' @inheritParams prepare_dataset
 #' @export
 #' @importFrom assertthat assert_that is.count
-#' @importFrom n2khelper check_single_strictly_positive_integer odbc_get_multi_id connect_result
+#' @importFrom n2khelper odbc_get_multi_id connect_result
 #' @importFrom n2kanalysis mark_obsolete_dataset
 #' @importFrom RODBC odbcClose
 prepare_dataset_observation <- function(

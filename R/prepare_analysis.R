@@ -2,7 +2,7 @@
 #' @inheritParams prepare_analysis_dataset
 #' @inheritParams prepare_dataset
 #' @export
-#' @importFrom n2khelper check_single_strictly_positive_integer check_path list_files_git git_sha
+#' @importFrom n2khelper check_path list_files_git git_sha
 #' @importFrom n2kanalysis status
 #' @importFrom plyr d_ply
 #' @importFrom assertthat assert_that is.count
