@@ -1,6 +1,5 @@
 #' Prepare the analysis files for the composite indices
 #' @inheritParams prepare_analysis_dataset
-#' @inheritParams prepare_analysis_lrt
 #' @inheritParams prepare_dataset
 #' @param dataset the raw dataset
 #' @export
