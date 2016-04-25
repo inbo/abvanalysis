@@ -2,6 +2,7 @@
 #' @inheritParams prepare_analysis_dataset
 #' @inheritParams prepare_analysis_lrt
 #' @inheritParams prepare_dataset
+#' @param dataset the raw dataset
 #' @export
 #' @importFrom n2kanalysis n2k_composite
 #' @importFrom assertthat assert_that is.count
