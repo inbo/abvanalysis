@@ -1,4 +1,4 @@
-box: inbonatura2000/n2khelper:dev-0.2
+box: inbonatura2000/n2kanalysis:dev-0.1
 build:
   steps:
     - inbobmk/r-check
