@@ -8,7 +8,10 @@ password <- character(0)
 
 library(abvanalysis)
 
-result.channel <- n2khelper::connect_result()
+result.channel <- n2khelper::connect_result(
+  username = Sys.getenv("N2KRESULT_USERNAME"),
+  password = Sys.getenv("N2KRESULT_PASSWORD")
+)
 raw.connection <- connect_raw(
   result.channel = result.channel,
   username = username,
