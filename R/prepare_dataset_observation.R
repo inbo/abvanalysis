@@ -62,7 +62,7 @@ prepare_dataset_observation <- function(
   data.field <- data.frame(
     DatasourceID = c(
       result.datasource,
-      unique(observation[, "DatasourceID"])
+      unique(observation$DatasourceID)
     ),
     TableName = c("Location", "tblUTM1"),
     PrimaryKey = c("ID", "UTM1_CDE"),
