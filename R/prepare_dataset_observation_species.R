@@ -10,6 +10,7 @@
 #' @importFrom n2kanalysis get_analysis_version
 #' @importFrom RODBC sqlQuery
 #' @importFrom assertthat assert_that is.count
+#' @importFrom utils sessionInfo
 prepare_dataset_species_observation <- function(
   this.species, observation, result.channel, source.channel, raw.connection, scheme.id, first.year, last.year
 ){

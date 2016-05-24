@@ -38,7 +38,10 @@ table(current.status$Status)
 
 library(abvanalysis)
 library(n2kanalysis)
-result.channel <- n2khelper::connect_result()
+result.channel <- n2khelper::connect_result(
+  username = Sys.getenv("N2KRESULT_USERNAME"),
+  password = Sys.getenv("N2KRESULT_PASSWORD")
+)
 datasource.id <- abvanalysis::result_datasource_id(
   result.channel = result.channel
 )

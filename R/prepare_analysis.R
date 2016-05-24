@@ -6,10 +6,12 @@
 #' @importFrom n2kanalysis status
 #' @importFrom plyr d_ply
 #' @importFrom assertthat assert_that is.count
+#' @importFrom dplyr %>% bind_rows
 prepare_analysis <- function(
-  raw.connection, analysis.path = ".", min.observation = 100
+  raw.connection, analysis.path = ".", min.observation = 100, min.stratum = 3
 ){
   assert_that(is.count(min.observation))
+  assert_that(is.count(min.stratum))
   path <- check_path(
     paste0(analysis.path, "/"),
     type = "directory",
@@ -57,22 +59,22 @@ prepare_analysis <- function(
     warning("Nothing to do")
     return(invisible(NULL))
   }
-  analysis <- do.call(rbind, lapply(
+  analysis <- lapply(
     rawdata.files,
     prepare_analysis_dataset,
     min.observation = min.observation,
+    min.stratum = min.stratum,
     observation = observation,
     raw.connection = raw.connection,
     analysis.path = analysis.path
-  ))
+  ) %>%
+    bind_rows()
   if (nrow(analysis) == 0) {
     return(invisible(NULL))
   }
-  current.status <- status(analysis.path)
-  analysis <- merge(
-    analysis,
-    current.status[, c("FileFingerprint", "Status")]
-  )
+  analysis <- status(analysis.path) %>%
+    select_(~FileFingerprint, ~Status) %>%
+    inner_join(analysis, by = "FileFingerprint")
 
   message("\nPrepare model comparison")
   utils::flush.console()

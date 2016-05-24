@@ -5,7 +5,7 @@
 \title{Create the analysis dataset based on the available raw data}
 \usage{
 prepare_analysis_dataset(rawdata.file, observation, raw.connection,
-  analysis.path, min.observation)
+  analysis.path, min.observation, min.stratum)
 }
 \arguments{
 \item{rawdata.file}{The file with the counts per visit}
@@ -18,6 +18,8 @@ prepare_analysis_dataset(rawdata.file, observation, raw.connection,
 
 \item{min.observation}{The minimum number of positive observations
 (Count > 0)}
+
+\item{min.stratum}{minimum of locations per stratum. Strata with less locations will be dropped from the analysis}
 }
 \value{
 A data.frame with the species id number of rows in the analysis

@@ -5,7 +5,8 @@
 #' @param formula the formula for the model.matrix
 #' @export
 #' @importFrom n2khelper check_dataframe_variable
-#' @importFrom dplyr %>% group_by_ summarise_ inner_join mutate_ select_
+#' @importFrom dplyr %>% group_by_ summarise_ inner_join mutate_ select_ bind_cols summarise_each
+#' @importFrom stats model.matrix
 get_nonlinear_lincomb <- function(
   dataset,
   time.var,
@@ -31,12 +32,17 @@ get_nonlinear_lincomb <- function(
       fPeriod = ~sort(unique(dataset$fPeriod))[1]
     ) %>%
     select_(~-TotalWeight)
-  mm <- available.weight %>%
-    model.matrix(object = formula) * available.weight$Weight
-  old.names <- colnames(mm)
-  mm <- data.frame(available.weight %>% select_(ID = time.var), mm)
-  weights <- aggregate(. ~ ID, mm, FUN = sum)
-  colnames(weights)[-1] <- old.names
+  weights <-
+    available.weight %>%
+      model.matrix(object = formula) %>%
+    '*'(available.weight$Weight) %>%
+    as.data.frame() %>%
+    bind_cols(
+      available.weight %>%
+        select_(ID = time.var)
+    ) %>%
+    group_by_(~ID) %>%
+    summarise_each(funs = funs(sum))
   rownames(weights) <- weights$ID
   as.matrix(weights[, -1])
 }
