@@ -44,7 +44,7 @@ get_linear_lincomb <- function(
     model.matrix(object = formula) %>%
     as.data.frame() %>%
     '*'(trend.weight$Weight)
-  mm.trend[, -grep(":cYear", colnames(mm.trend))] <- 0
+  mm.trend[, -grep(":", colnames(mm.trend))] <- 0
   mm.trend <- mm.trend %>%
     summarise_each(funs = funs(sum)) %>%
     mutate_(ID = ~"Trend")
