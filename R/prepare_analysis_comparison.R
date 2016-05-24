@@ -29,38 +29,37 @@ prepare_analysis_comparison <- function(dataset, raw.connection, analysis.path){
       ParentStatus = ~ Status
     ) %>%
     arrange_(~ParentAnalysis)
+  seed  <- dataset$Seed[1]
+  species.group.id <- dataset$SpeciesGroupID[1]
+  location.group.id <- dataset$LocationGroupID[1]
+  analysis.date <- dataset$AnalysisDate[1]
 
-  dataset.fyear <- dataset %>% filter_(~ Covariate == "fYear")
-  seed  <- dataset.fyear$Seed
-  species.group.id <- dataset.fyear$SpeciesGroupID
-  location.group.id <- dataset.fyear$LocationGroupID
-  analysis.date <- dataset.fyear$AnalysisDate
-  if ("cYear" %in% dataset$Covariate) {
-    this.dataset <- dataset %>%
-      filter_(~ Covariate != "fCycle")
+  dataset.year <- dataset %>%
+    filter_(~ grepl("Year", Covariate))
+  if (nrow(dataset.year) > 1) {
     analysis <- n2k_inla_comparison(
-      parent = this.dataset$ParentAnalysis,
-      parent.status = this.dataset %>%
+      parent = dataset.year$ParentAnalysis,
+      parent.status = dataset.year %>%
         select_(~ParentAnalysis, ~ParentStatusFingerprint, ~ParentStatus),
       seed = seed,
       scheme.id = scheme.id,
       species.group.id = species.group.id,
       location.group.id = location.group.id,
-      model.type = "inla comparison: cYear / fYear",
-      formula = "~ cYear",
+      model.type = "inla comparison: Year",
+      formula = "~ Year",
       first.imported.year = first.year,
       last.imported.year = last.year,
       analysis.date = analysis.date
     )
     file.fingerprint <- get_file_fingerprint(analysis)
-    filename <- paste0(analysis.path, file.fingerprint, ".rda")
+    filename <- paste0(analysis.path, "/", file.fingerprint, ".rda")
     if (!file.exists(filename)) {
       save(analysis, file = filename)
     }
   }
-  if ("fCycle" %in% dataset$Covariate) {
-    this.dataset <- dataset %>%
-      filter_(~ Covariate != "cYear")
+  this.dataset <- dataset %>%
+    filter_(~ grepl("Cycle", Covariate))
+  if (nrow(this.dataset) > 1) {
     analysis <- n2k_inla_comparison(
       parent = this.dataset$ParentAnalysis,
       parent.status = this.dataset %>%
@@ -69,14 +68,14 @@ prepare_analysis_comparison <- function(dataset, raw.connection, analysis.path){
       scheme.id = scheme.id,
       species.group.id = species.group.id,
       location.group.id = location.group.id,
-      model.type = "inla comparison: fCycle / fYear",
-      formula = "~ fCycle",
+      model.type = "inla comparison: Cycle",
+      formula = "~ Cycle",
       first.imported.year = first.year,
       last.imported.year = last.year,
       analysis.date = analysis.date
     )
     file.fingerprint <- get_file_fingerprint(analysis)
-    filename <- paste0(analysis.path, file.fingerprint, ".rda")
+    filename <- paste0(analysis.path, "/", file.fingerprint, ".rda")
     if (!file.exists(filename)) {
       save(analysis, file = filename)
     }
