@@ -40,7 +40,8 @@ prepare_analysis_comparison <- function(dataset, raw.connection, analysis.path){
     analysis <- n2k_inla_comparison(
       parent = dataset.year$ParentAnalysis,
       parent.status = dataset.year %>%
-        select_(~ParentAnalysis, ~ParentStatusFingerprint, ~ParentStatus),
+        select_(~ParentAnalysis, ~ParentStatusFingerprint, ~ParentStatus) %>%
+        as.data.frame(),
       seed = seed,
       scheme.id = scheme.id,
       species.group.id = species.group.id,
@@ -63,7 +64,8 @@ prepare_analysis_comparison <- function(dataset, raw.connection, analysis.path){
     analysis <- n2k_inla_comparison(
       parent = this.dataset$ParentAnalysis,
       parent.status = this.dataset %>%
-        select_(~ParentAnalysis, ~ParentStatusFingerprint, ~ParentStatus),
+        select_(~ParentAnalysis, ~ParentStatusFingerprint, ~ParentStatus) %>%
+        as.data.frame(),
       seed = seed,
       scheme.id = scheme.id,
       species.group.id = species.group.id,

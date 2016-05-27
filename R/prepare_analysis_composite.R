@@ -29,71 +29,40 @@ prepare_analysis_composite <- function(dataset, raw.connection, analysis.path){
   dataset$ParentStatusFingerprint <- dataset$StatusFingerprint
   dataset$ParentStatus <- dataset$Status
 
-  extractor <- switch(
-    dataset$Covariate[1],
-    "fCycle" = function(model){
-      if (!require(dplyr)) {
-        stop("'dplyr' is required")
-      }
-      if (!require(INLA)) {
-        stop("'INLA' is required")
-      }
-      parameter <- model$summary.lincomb.derived %>%
-        add_rownames("Value") %>%
-        mutate_(Variance = ~sd ^ 2) %>%
-        select_(~Value, Estimate = ~mean, ~Variance) %>%
-        arrange_(~Value)
-      reference <- parameter %>%
-        head(1)
-      parameter %>%
-        mutate_(Estimate = ~Estimate - reference$Estimate)
-    },
-    "cYear" = function(model){
-      if (!require(dplyr)) {
-        stop("'dplyr' is required")
-      }
-      if (!require(INLA)) {
-        stop("'INLA' is required")
-      }
-      parameter <- model$summary.lincomb.derived %>%
-        add_rownames("Value") %>%
-        mutate_(Variance = ~sd ^ 2) %>%
-        select_(~Value, Estimate = ~mean, ~Variance)
-      reference <- parameter %>%
-        filter_(~Value != "Trend") %>%
-        mutate_(Year = ~as.numeric(Value)) %>%
-        arrange_(~Year) %>%
-        head(1)
-      parameter %>%
-        mutate_(
-          Estimate = ~Estimate - ifelse(Value == "Trend", 0, reference$Estimate)
-        )
-    },
-    "fYear" = function(model){
-      if (!require(dplyr)) {
-        stop("'dplyr' is required")
-      }
-      if (!require(INLA)) {
-        stop("'INLA' is required")
-      }
-      parameter <- model$summary.lincomb.derived %>%
-        add_rownames("Value") %>%
-        mutate_(Variance = ~sd ^ 2) %>%
-        select_(~Value, Estimate = ~mean, ~Variance)
-      reference <- parameter %>%
-        mutate_(Year = ~as.numeric(Value)) %>%
-        arrange_(~Year) %>%
-        head(1)
-      parameter %>%
-        mutate_(Estimate = ~Estimate - reference$Estimate)
+  extractor <- function(model){
+    if (!require(dplyr)) {
+      stop("'dplyr' is required")
     }
-  )
+    if (!require(INLA)) {
+      stop("'INLA' is required")
+    }
+    parameter <- model$summary.lincomb.derived %>%
+      add_rownames("Value") %>%
+      select_(~Value, Estimate = ~mean, Variance = ~sd) %>%
+      mutate_(
+        Variance = ~Variance ^ 2,
+        Number = ~suppressWarnings(as.integer(Value))
+      ) %>%
+      arrange_(~Number, ~Value) %>%
+      select_(~-Number)
+    reference <- parameter %>%
+      filter_(~Value != "Trend") %>%
+      head(1)
+    parameter %>%
+      mutate_(
+        Estimate = ~
+          ifelse(
+            Value == "Trend",
+            Estimate,
+            Estimate - reference$Estimate
+          )
+      )
+  }
 
   analysis <- n2k_composite(
-    parent.status = dataset[
-      ,
-      c("ParentAnalysis", "ParentStatusFingerprint", "ParentStatus")
-    ],
+    parent.status = dataset %>%
+      select_(~ParentAnalysis, ~ParentStatusFingerprint, ~ParentStatus) %>%
+      as.data.frame(),
     seed = min(dataset$Seed),
     scheme.id = scheme.id,
     species.group.id = dataset$SpeciesGroupID[1],

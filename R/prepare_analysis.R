@@ -4,9 +4,8 @@
 #' @export
 #' @importFrom n2khelper check_path list_files_git git_sha
 #' @importFrom n2kanalysis status
-#' @importFrom plyr d_ply
 #' @importFrom assertthat assert_that is.count
-#' @importFrom dplyr %>% bind_rows
+#' @importFrom dplyr %>% bind_rows do_ select_ group_by_ inner_join
 prepare_analysis <- function(
   raw.connection, analysis.path = ".", min.observation = 100, min.stratum = 3
 ){
@@ -78,15 +77,18 @@ prepare_analysis <- function(
 
   message("\nPrepare model comparison")
   utils::flush.console()
-  d_ply(
-    .data = analysis,
-    .variables = c("LocationGroupID", "SpeciesGroupID"),
-    .fun = prepare_analysis_comparison,
-    raw.connection = raw.connection,
-    analysis.path = analysis.path
-  )
+  analysis %>%
+    group_by_(~LocationGroupID, ~SpeciesGroupID) %>%
+    do_(
+      Output = ~prepare_analysis_comparison(
+        .,
+      raw.connection = raw.connection,
+      analysis.path = analysis.path
+      )
+    )
 
-  analysis <- analysis[analysis$Covariate %in% c("fYear", "fCycle"), ]
+  message("\nPrepare Composite indices")
+  utils::flush.console()
   species.id <- read_delim_git(
     file = "species.txt",
     connection = raw.connection
@@ -96,9 +98,6 @@ prepare_analysis <- function(
     variable = c("SpeciesGroupID", "SpeciesID"),
     name = "species.txt"
   )
-  analysis <- merge(analysis, species.id)
-  analysis$SpeciesGroupID <- NULL
-
   speciesgroupid <- read_delim_git(
     file = "speciesgroup.txt",
     connection = raw.connection
@@ -108,17 +107,25 @@ prepare_analysis <- function(
     variable = c("SpeciesGroupID", "SpeciesID"),
     name = "species.txt"
   )
-  analysis <- merge(analysis, speciesgroupid)
-
-  message("Prepare Composite indices")
-  utils::flush.console()
-  d_ply(
-    .data = analysis,
-    .variables = c("LocationGroupID", "SpeciesGroupID", "Covariate"),
-    .fun = prepare_analysis_composite,
-    raw.connection = raw.connection,
-    analysis.path = analysis.path
-  )
+  analysis %>%
+    inner_join(
+      species.id %>%
+        select_(~SpeciesGroupID, ~SpeciesID),
+      by = "SpeciesGroupID"
+    ) %>%
+    select_(~-SpeciesGroupID) %>%
+    inner_join(
+      speciesgroupid,
+      by = "SpeciesID"
+    ) %>%
+    group_by_(~LocationGroupID, ~SpeciesGroupID, ~Covariate) %>%
+    do_(
+      Output = ~prepare_analysis_composite(
+        .,
+        raw.connection = raw.connection,
+        analysis.path = analysis.path
+      )
+    )
 
   return(invisible(NULL))
 }
