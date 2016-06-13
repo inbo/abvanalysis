@@ -183,9 +183,9 @@ prepare_analysis_dataset <- function(
           "(Intercept)" = 1,
           cYear = min(dataset$cYear):max(dataset$cYear)
         )
-        rownames(lc.trend) <- min(dataset$cYear):max(dataset$cYear)
         lc.trend <- rbind(lc.trend, Trend = c(0, 1))
       }
+      rownames(lc.trend) <- c(min(dataset$Year):max(dataset$Year), "Trend")
       if (multi.stratum) {
         trend <- c(
           "0 + fStratum +
@@ -267,9 +267,9 @@ prepare_analysis_dataset <- function(
             "(Intercept)" = 1,
             Cycle = min(dataset$Cycle):max(dataset$Cycle)
           )
-          rownames(lc.cycletrend) <- min(dataset$Cycle):max(dataset$Cycle)
           lc.cycletrend <- rbind(lc.cycletrend, Trend = c(0, 3))
         }
+        rownames(lc.cycletrend) <- c(cycle.label, "Trend")
         lc <- list(lc.index, lc.index, lc.trend, lc.cycle, lc.cycle, lc.cycletrend)
         if (multi.stratum) {
           trend <- c(
