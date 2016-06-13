@@ -188,15 +188,41 @@ prepare_analysis_dataset <- function(
       }
       if (multi.stratum) {
         trend <- c(
-          "0 + fStratum + f(cYear, model = \"ar1\", replicate = as.integer(fStratum))",
-          "0 + fStratum + f(cYear, model = \"rw1\", replicate = as.integer(fStratum))",
+          "0 + fStratum +
+          f(
+            cYear,
+            model = \"ar1\",
+            replicate = as.integer(fStratum),
+            hyper = list(
+              theta1 = list(param = c(.1, 1e-5)),
+              theta2 = list(param = c(0, .5))
+            )
+          )",
+          "0 + fStratum +
+          f(
+            cYear,
+            model = \"rw1\",
+            replicate = as.integer(fStratum),
+            hyper = list(theta = list(param = c(.1, 1e-5)))
+          )",
           "0 + fStratum + cYear:fStratum"
         )
         trend.variable <- rep(list(list("cYear", "fStratum")), 3)
       } else {
         trend <- c(
-          "f(cYear, model = \"ar1\")",
-          "f(cYear, model = \"rw1\")",
+          "f(
+            cYear,
+            model = \"ar1\",
+            hyper = list(
+              theta1 = list(param = c(.1, 1e-5)),
+              theta2 = list(param = c(0, .5))
+            )
+          )",
+          "f(
+            cYear,
+            model = \"rw1\",
+            hyper = list(theta = list(param = c(.1, 1e-5)))
+          )",
           "cYear"
         )
         trend.variable <- rep(list("cYear"), 3)
@@ -248,8 +274,23 @@ prepare_analysis_dataset <- function(
         if (multi.stratum) {
           trend <- c(
             trend,
-            "0 + fStratum + f(Cycle, model = \"ar1\", replicate = as.integer(fStratum))",
-            "0 + fStratum + f(Cycle, model = \"rw1\", replicate = as.integer(fStratum))",
+            "0 + fStratum +
+            f(
+              Cycle,
+              model = \"ar1\",
+              replicate = as.integer(fStratum),
+              hyper = list(
+                theta1 = list(param = c(.1, 1e-5)),
+                theta2 = list(param = c(0, .5))
+              )
+            )",
+            "0 + fStratum +
+            f(
+              Cycle,
+              model = \"rw1\",
+              replicate = as.integer(fStratum),
+              hyper = list(theta = list(param = c(.1, 1e-5)))
+            )",
             "0 + fStratum + Cycle:fStratum"
           )
           trend.variable <- c(
@@ -260,8 +301,19 @@ prepare_analysis_dataset <- function(
         } else {
           trend <- c(
             trend,
-            "f(Cycle, model = \"ar1\")",
-            "f(Cycle, model = \"rw1\")",
+            "f(
+              Cycle,
+              model = \"ar1\",
+              hyper = list(
+                theta1 = list(param = c(.1, 1e-5)),
+                theta2 = list(param = c(0, .5))
+              )
+            )",
+            "f(
+              Cycle,
+              model = \"rw1\",
+              hyper = list(theta = list(param = c(.1, 1e-5)))
+            )",
             "Cycle"
           )
           trend.variable <- c(
@@ -277,11 +329,25 @@ prepare_analysis_dataset <- function(
       }
 
       if (length(levels(dataset$fLocation)) > 1) {
-        design <- c(design, "f(fLocation, model = \"iid\")")
+        design <- c(
+          design,
+          "f(
+            fLocation,
+            model = \"iid\",
+            hyper = list(theta = list(param = c(.1, 1e-5)))
+          )"
+        )
         design.variable <- c(design.variable, "fLocation")
       }
       if (length(levels(dataset$fSubLocation)) > 1) {
-        design <- c(design, "f(fSubLocation, model = \"iid\")")
+        design <- c(
+          design,
+          "f(
+            fSubLocation,
+            model = \"iid\",
+            hyper = list(theta = list(param = c(.1, 1e-5)))
+          )"
+        )
         design.variable <- c(design.variable, "fSubLocation")
       }
       if (length(levels(dataset$fPeriod)) > 1) {
