@@ -82,8 +82,8 @@ prepare_analysis <- function(
     do_(
       Output = ~prepare_analysis_comparison(
         .,
-      raw.connection = raw.connection,
-      analysis.path = analysis.path
+        raw.connection = raw.connection,
+        analysis.path = analysis.path
       )
     )
 

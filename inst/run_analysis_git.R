@@ -19,14 +19,14 @@ if (protocol == "ssh") {
 }
 prepare_analysis(
   raw.connection = raw.connection,
-  analysis.path = "~/analysis/abv" #nolint
+  analysis.path = "/media/thierry_onkelinx/CE74C8F474C8E077/analysis/abv" #nolint
 )
 
 library(n2kanalysis)
 fit_every_model(
-  path = "~/analysis/abv", #nolint
+  path = "/media/thierry_onkelinx/CE74C8F474C8E077/analysis/abv", #nolint
   status = c("new", "waiting"),
-  n.cluster = 1
+  n.cluster = 7
 )
 fit_every_model(
   path = "~/analysis/abv", #nolint
@@ -36,7 +36,6 @@ fit_every_model(
 current.status <- status("~/analysis/abv") #nolint
 table(current.status$Status)
 
-library(abvanalysis)
 library(n2kanalysis)
 result.channel <- n2khelper::connect_result(
   username = Sys.getenv("N2KRESULT_USERNAME"),
@@ -46,9 +45,19 @@ datasource.id <- abvanalysis::result_datasource_id(
   result.channel = result.channel
 )
 result <- get_result(
-  x = "~/analysis/abv", #nolint
+  x = "/media/thierry_onkelinx/CE74C8F474C8E077/analysis/abv", #nolint
+  datasource.id = datasource.id,
+  keep.fingerprint = FALSE
+)
+save(result, file = "/media/thierry_onkelinx/CE74C8F474C8E077/analysis/output/abv.rda")
+result <- get_result(
+  x = "/media/thierry_onkelinx/CE74C8F474C8E077/analysis/abv", #nolint
   datasource.id = datasource.id,
   keep.fingerprint = FALSE,
   n.cluster = parallel::detectCores() - 1
 )
 save(result, file = "~/analysis/output/abv.rda") #nolint
+#nolint
+
+get_result("/media/thierry_onkelinx/CE74C8F474C8E077/analysis/abv/068e6562540bd354e874ffd53c00d6897c97eacc.rda", datasource.id = datasource.id,
+  keep.fingerprint = FALSE)

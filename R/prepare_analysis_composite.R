@@ -75,7 +75,7 @@ prepare_analysis_composite <- function(dataset, raw.connection, analysis.path){
     analysis.date = max(dataset$AnalysisDate)
   )
   file.fingerprint <- get_file_fingerprint(analysis)
-  filename <- paste0(analysis.path, file.fingerprint, ".rda")
+  filename <- paste0(analysis.path, "/", file.fingerprint, ".rda")
   if (!file.exists(filename)) {
     save(analysis, file = filename)
   }
