@@ -178,14 +178,15 @@ prepare_analysis_dataset <- function(
           stratum.var = "fStratum",
           formula = ~ 0 + fStratum + cYear:fStratum
         )
+        names(lc.trend[[1]]) <- c(min(dataset$Year):max(dataset$Year), "Trend")
       } else {
         lc.trend <- cbind(
           "(Intercept)" = 1,
           cYear = min(dataset$cYear):max(dataset$cYear)
         )
+        rownames(lc.trend) <- c(min(dataset$Year):max(dataset$Year))
         lc.trend <- rbind(lc.trend, Trend = c(0, 1))
       }
-      rownames(lc.trend) <- c(min(dataset$Year):max(dataset$Year), "Trend")
       if (multi.stratum) {
         trend <- c(
           "0 + fStratum +
@@ -230,6 +231,15 @@ prepare_analysis_dataset <- function(
       trend.name <- c("AR1(Year|Stratum)", "RW1(Year|Stratum)", "Year:Stratum")
       if (max(dataset$Cycle) == 0) {
         lc <- list(lc.index, lc.index, lc.trend)
+        if (multi.stratum) {
+          replicate.name <- list(
+            list(cYear = levels(dataset$fStratum)),
+            list(cYear = levels(dataset$fStratum)),
+            list()
+          )
+        } else {
+          replicate.name <- rep(list(list()), 3)
+        }
       } else {
         cycle.label <- sort(unique(dataset$Cycle)) * 3 + 2007
         cycle.label <- sprintf("%i - %i", cycle.label, cycle.label + 2)
@@ -262,14 +272,24 @@ prepare_analysis_dataset <- function(
             stratum.var = "fStratum",
             formula = ~ 0 + fStratum + Cycle:fStratum
           )
+          names(lc.cycletrend[[1]]) <- c(cycle.label, "Trend")
+          replicate.name <- list(
+            list(cYear = levels(dataset$fStratum)),
+            list(cYear = levels(dataset$fStratum)),
+            list(),
+            list(Cycle = levels(dataset$fStratum)),
+            list(Cycle = levels(dataset$fStratum)),
+            list()
+          )
         } else {
           lc.cycletrend <- cbind(
             "(Intercept)" = 1,
             Cycle = min(dataset$Cycle):max(dataset$Cycle)
           )
+          rownames(lc.cycletrend) <- cycle.label
           lc.cycletrend <- rbind(lc.cycletrend, Trend = c(0, 3))
+          replicate.name <- rep(list(list()), 6)
         }
-        rownames(lc.cycletrend) <- c(cycle.label, "Trend")
         lc <- list(lc.index, lc.index, lc.trend, lc.cycle, lc.cycle, lc.cycletrend)
         if (multi.stratum) {
           trend <- c(
@@ -384,6 +404,7 @@ prepare_analysis_dataset <- function(
             last.imported.year = last.year,
             data = data,
             parent = parent,
+            replicate.name = replicate.name[[i]],
             lin.comb = lc[[i]]
           )
           file.fingerprint <- get_file_fingerprint(analysis)
