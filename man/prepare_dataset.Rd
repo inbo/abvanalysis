@@ -25,4 +25,3 @@ prepare_dataset(result.channel, source.channel, attribute.connection,
 Prepare all datasets
 Prepare all datasets and store the version into a git repository
 }
-

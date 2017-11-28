@@ -18,4 +18,3 @@ get_linear_lincomb(dataset, time.var, stratum.var = "fStratum", formula)
 \description{
 Calculate the matrix for linear combinations of strata
 }
-

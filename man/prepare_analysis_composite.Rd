@@ -16,4 +16,3 @@ prepare_analysis_composite(dataset, raw.connection, analysis.path)
 \description{
 Prepare the analysis files for the composite indices
 }
-

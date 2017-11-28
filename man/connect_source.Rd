@@ -12,4 +12,3 @@ connect_source(result.channel)
 \description{
 Connect to the source data
 }
-

@@ -31,4 +31,3 @@ This analysis fits an unweighted model but adds the stratum effect. The
    indices per year of the different strata are combined with a linear
    combination into a single index per year.
 }
-

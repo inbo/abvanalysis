@@ -19,4 +19,3 @@ prepare_dataset_species(source.channel, result.channel, raw.connection,
 \description{
 Read the species groups and save them to git and the results database
 }
-

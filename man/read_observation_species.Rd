@@ -14,4 +14,3 @@ read_observation_species(species.id, source.channel)
 \description{
 Read the observations of a given species
 }
-

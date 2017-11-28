@@ -23,4 +23,3 @@ connection.}
 \description{
 Make a git connection to the raw data
 }
-

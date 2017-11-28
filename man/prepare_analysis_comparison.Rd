@@ -16,4 +16,3 @@ prepare_analysis_comparison(dataset, raw.connection, analysis.path)
 \description{
 Prepare comparison among models
 }
-

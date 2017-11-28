@@ -21,4 +21,3 @@ prepare_dataset_observation(source.channel, result.channel, raw.connection,
 \description{
 Read the observations and save them to git and the results database
 }
-

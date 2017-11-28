@@ -20,4 +20,3 @@ prepare_analysis(raw.connection, analysis.path = ".", min.observation = 100,
 \description{
 Prepare all datasets and a to do list of models
 }
-

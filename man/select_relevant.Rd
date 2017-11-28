@@ -15,4 +15,3 @@ select_relevant(observation, observation.species)
 \description{
 Relevant locations have at least two observations in different years. Relevant periods have average numbers of at least 5% of the most important period.
 }
-

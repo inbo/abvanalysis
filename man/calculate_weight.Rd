@@ -17,4 +17,3 @@ calculate_weight(observation, attribute.connection, result.channel)
 \description{
 Adds the survey weights and the stratum to the observations
 }
-

@@ -12,4 +12,3 @@ result_datasource_id(result.channel)
 \description{
 Get the id of the data source of the results
 }
-

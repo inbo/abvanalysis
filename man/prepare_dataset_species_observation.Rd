@@ -27,4 +27,3 @@ prepare_dataset_species_observation(this.species, observation, result.channel,
 \description{
 Read the counts and save them to git
 }
-

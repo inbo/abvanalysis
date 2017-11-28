@@ -14,4 +14,3 @@ read_observation(source.channel, result.channel)
 \description{
 Return the set of all visited locations
 }
-
