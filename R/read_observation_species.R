@@ -1,27 +1,11 @@
 #' Read the observations of a given species
 #' @export
 #' @importFrom RODBC sqlQuery
-#' @importFrom n2khelper check_dbtable_variable
 #' @importFrom assertthat assert_that is.count
 #' @param species.id The external id of the species
 #' @inheritParams prepare_dataset
 read_observation_species <- function(species.id, source.channel){
   assert_that(is.count(species.id))
-  check_dbtable_variable(
-    table = "tblWaarneming",
-    variable = c("WRNG_ID", "WRNG_UCWT_CDE", "WRNG_WGST_CDE"),
-    channel = source.channel
-  )
-  check_dbtable_variable(
-    table = "tblWaarnemingPunt",
-    variable = c("WRPT_PTN", "WRPT_WRNG_ID", "WRPT_BZT"),
-    channel = source.channel
-  )
-  check_dbtable_variable(
-    table = "tblWaarnemingMeting",
-    variable = c("WRME_WRNG_ID", "WRME_PNT", "WRME_ANT", "WRME_SPEC_CDE"),
-    channel = source.channel
-  )
 
   sql <- paste0("
     SELECT

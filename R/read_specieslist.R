@@ -2,7 +2,6 @@
 #' @return A list with two components: \code{Species} holds the names of all species, \code{Speciesgroup} lists the species per user defined group.
 #' @export
 #' @inheritParams prepare_dataset
-#' @importFrom n2khelper check_dbtable_variable
 #' @importFrom RODBC sqlQuery
 #' @examples
 #' \dontrun{
@@ -14,25 +13,6 @@
 #'  )
 #' }
 read_specieslist <- function(source.channel, result.channel){
-  check_dbtable_variable(
-    table = "tblSoort",
-    variable = c("SPEC_CDE", "SPEC_NAM_WET", "SPEC_NAM_NED", "SPEC_NAM_ENG", "SPEC_NAM_FRA"),
-    schema = "dbo",
-    channel = source.channel
-  )
-  check_dbtable_variable(
-    table = "SoortIndicatorType",
-    variable = c("SoortCode", "IndicatorTypeCode"),
-    schema = "dbo",
-    channel = source.channel
-  )
-  check_dbtable_variable(
-    table = "IndicatorType",
-    variable = c("Code", "Beschrijving"),
-    schema = "dbo",
-    channel = source.channel
-  )
-  
   sql <- "
     SELECT
       SPEC_CDE AS ExternalCode,
@@ -49,7 +29,7 @@ read_specieslist <- function(source.channel, result.channel){
   species$TableName <- "tblSoort"
   species$PrimaryKey <- "SPEC_CDE"
   species$DatasourceID <- datasource_id(result.channel = result.channel)
-  
+
   sql <- "
     SELECT
       Beschrijving AS Description,
