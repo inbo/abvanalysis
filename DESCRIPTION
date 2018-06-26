@@ -8,13 +8,14 @@ Depends:
 License: GPL-3
 LazyData: true
 Imports:
+    assertthat,
+    digest (>= 0.6.3),
+    dplyr,
+    lubridate,
     n2kanalysis,
     n2khelper,
-    lubridate,
     plyr,
     reshape2,
-    assertthat,
-    dplyr,
-    digest (>= 0.6.3),
+    rlang,
     RODBC
 RoxygenNote: 6.0.1
