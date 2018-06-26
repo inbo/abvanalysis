@@ -3,8 +3,10 @@
 #' @export
 #' @importFrom assertthat assert_that is.count
 #' @importFrom n2khelper odbc_get_multi_id connect_result
+#' @importFrom digest sha1
 #' @importFrom n2kanalysis mark_obsolete_dataset
-#' @importFrom RODBC odbcClose
+#' @importFrom dplyr data_frame %>% rowwise mutate select
+#' @importFrom rlang .data
 prepare_dataset_observation <- function(
   source.channel, result.channel, raw.connection, attribute.connection, scheme.id
 ){
@@ -15,28 +17,29 @@ prepare_dataset_observation <- function(
     source.channel = source.channel,
     result.channel = result.channel
   )
-  data.field.type <- odbc_get_multi_id(
-    data = data.frame(Description = "Observation"),
-    id.field = "ID",
-    merge.field = "Description",
-    table = "DatafieldType",
-    channel = result.channel,
-    create = TRUE,
-    select = TRUE
+  datafield.type <- data_frame(
+    description = "integer"
   )
-  data.field <- unique(observation[, "DatasourceID", drop = FALSE])
-  data.field$TableName <- "tblWaarnemingPunt"
-  data.field$PrimaryKey <- "WRPT_ID"
-  data.field$TypeID <- data.field.type$ID
-  odbc_get_multi_id(
-    data = data.field,
-    id.field = "ID",
-    merge.field = c("DatasourceID", "TypeID"),
-    table = "Datafield",
-    channel = result.channel,
-    create = TRUE,
-    select = FALSE
-  )
+  datafield <- data_frame(
+    table_name = "tblWaarneming",
+    primary_key = "WRPT_ID",
+    datafield_type = "character",
+    datasource = unique(observation$DatasourceID)
+  ) %>%
+    rowwise() %>%
+    mutate(
+      fingerprint = sha1(
+        c(
+          .data$table_name,
+          .data$primary_key,
+          .data$datafield_type,
+          .data$datasource
+        )
+      )
+    )
+  datafield %>%
+    select(datafield = .data$fingerprint, .data$datasource) %>%
+    inner_join(observation, by = c("datasource" = "DatasourceID"))
 
   # TO DO
   #   - check for observations < 2007
