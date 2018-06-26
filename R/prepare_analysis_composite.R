@@ -1,10 +1,12 @@
 #' Prepare the analysis files for the composite indices
 #' @inheritParams prepare_analysis_dataset
-#' @inheritParams prepare_analysis_lrt
 #' @inheritParams prepare_dataset
+#' @param dataset the raw dataset
 #' @export
 #' @importFrom n2kanalysis n2k_composite
 #' @importFrom assertthat assert_that is.count
+#' @importFrom dplyr %>% add_rownames mutate_ select_ arrange_ filter_
+#' @importFrom utils head
 prepare_analysis_composite <- function(dataset, raw.connection, analysis.path){
   analysis.path <- check_path(paste0(analysis.path, "/"), type = "directory")
   check_dataframe_variable(
@@ -27,71 +29,40 @@ prepare_analysis_composite <- function(dataset, raw.connection, analysis.path){
   dataset$ParentStatusFingerprint <- dataset$StatusFingerprint
   dataset$ParentStatus <- dataset$Status
 
-  extractor <- switch(
-    dataset$Covariate[1],
-    "fCycle" = function(model){
-      if (!require(dplyr)) {
-        stop("'dplyr' is required")
-      }
-      if (!require(INLA)) {
-        stop("'INLA' is required")
-      }
-      parameter <- model$summary.lincomb.derived %>%
-        add_rownames("Value") %>%
-        mutate_(Variance = ~sd ^ 2) %>%
-        select_(~Value, Estimate = ~mean, ~Variance) %>%
-        arrange_(~Value)
-      reference <- parameter %>%
-        head(1)
-      parameter %>%
-        mutate_(Estimate = ~Estimate - reference$Estimate)
-    },
-    "cYear" = function(model){
-      if (!require(dplyr)) {
-        stop("'dplyr' is required")
-      }
-      if (!require(INLA)) {
-        stop("'INLA' is required")
-      }
-      parameter <- model$summary.lincomb.derived %>%
-        add_rownames("Value") %>%
-        mutate_(Variance = ~sd ^ 2) %>%
-        select_(~Value, Estimate = ~mean, ~Variance)
-      reference <- parameter %>%
-        filter_(~Value != "Trend") %>%
-        mutate_(Year = ~as.numeric(Value)) %>%
-        arrange_(~Year) %>%
-        head(1)
-      parameter %>%
-        mutate_(
-          Estimate = ~Estimate - ifelse(Value == "Trend", 0, reference$Estimate)
-        )
-    },
-    "fYear" = function(model){
-      if (!require(dplyr)) {
-        stop("'dplyr' is required")
-      }
-      if (!require(INLA)) {
-        stop("'INLA' is required")
-      }
-      parameter <- model$summary.lincomb.derived %>%
-        add_rownames("Value") %>%
-        mutate_(Variance = ~sd ^ 2) %>%
-        select_(~Value, Estimate = ~mean, ~Variance)
-      reference <- parameter %>%
-        mutate_(Year = ~as.numeric(Value)) %>%
-        arrange_(~Year) %>%
-        head(1)
-      parameter %>%
-        mutate_(Estimate = ~Estimate - reference$Estimate)
+  extractor <- function(model){
+    if (!require(dplyr)) {
+      stop("'dplyr' is required")
     }
-  )
+    if (!require(INLA)) {
+      stop("'INLA' is required")
+    }
+    parameter <- model$summary.lincomb.derived %>%
+      add_rownames("Value") %>%
+      select_(~Value, Estimate = ~mean, Variance = ~sd) %>%
+      mutate_(
+        Variance = ~Variance ^ 2,
+        Number = ~suppressWarnings(as.integer(Value))
+      ) %>%
+      arrange_(~Number, ~Value) %>%
+      select_(~-Number)
+    reference <- parameter %>%
+      filter_(~Value != "Trend") %>%
+      head(1)
+    parameter %>%
+      mutate_(
+        Estimate = ~
+          ifelse(
+            Value == "Trend",
+            Estimate,
+            Estimate - reference$Estimate
+          )
+      )
+  }
 
   analysis <- n2k_composite(
-    parent.status = dataset[
-      ,
-      c("ParentAnalysis", "ParentStatusFingerprint", "ParentStatus")
-    ],
+    parent.status = dataset %>%
+      select_(~ParentAnalysis, ~ParentStatusFingerprint, ~ParentStatus) %>%
+      as.data.frame(),
     seed = min(dataset$Seed),
     scheme.id = scheme.id,
     species.group.id = dataset$SpeciesGroupID[1],
@@ -104,7 +75,7 @@ prepare_analysis_composite <- function(dataset, raw.connection, analysis.path){
     analysis.date = max(dataset$AnalysisDate)
   )
   file.fingerprint <- get_file_fingerprint(analysis)
-  filename <- paste0(analysis.path, file.fingerprint, ".rda")
+  filename <- paste0(analysis.path, "/", file.fingerprint, ".rda")
   if (!file.exists(filename)) {
     save(analysis, file = filename)
   }

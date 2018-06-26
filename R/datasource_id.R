@@ -4,8 +4,8 @@
 #' @export
 datasource_id <- function(result.channel){
   odbc_get_id(
-    table = "Datasource",
-    variable = "Description",
+    table = "datasource",
+    variable = "description",
     value = "Source data ABV",
     channel = result.channel
   )
@@ -17,8 +17,8 @@ datasource_id <- function(result.channel){
 #' @export
 result_datasource_id <- function(result.channel){
   odbc_get_id(
-    table = "Datasource",
-    variable = "Description",
+    table = "datasource",
+    variable = "description",
     value = "Results",
     channel = result.channel
   )

@@ -1,17 +1,21 @@
 Package: abvanalysis
 Title: Analysis of the Common Breeding Bird Survey
-Version: 0.0
+Version: 0.1
 Authors@R: c(person("Thierry", "Onkelinx", email = "thierry.onkelinx@inbo.be", role = c("aut", "cre")))
 Description: Read in the raw data and prepare analysis datasets.
-Depends: R (>= 3.1.2)
+Depends:
+    R (>= 3.1.2)
 License: GPL-3
 LazyData: true
 Imports:
-  n2kanalysis,
-  n2khelper,
-  lubridate,
-  plyr,
-  reshape2,
-  assertthat,
-  dplyr,
-  RODBC
+    assertthat,
+    digest (>= 0.6.3),
+    dplyr,
+    lubridate,
+    n2kanalysis,
+    n2khelper,
+    plyr,
+    reshape2,
+    rlang,
+    RODBC
+RoxygenNote: 6.0.1

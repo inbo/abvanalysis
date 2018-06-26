@@ -2,14 +2,15 @@
 #' @inheritParams prepare_analysis_dataset
 #' @inheritParams prepare_dataset
 #' @export
-#' @importFrom n2khelper check_single_strictly_positive_integer check_path list_files_git git_sha
+#' @importFrom n2khelper check_path list_files_git git_sha
 #' @importFrom n2kanalysis status
-#' @importFrom plyr d_ply
 #' @importFrom assertthat assert_that is.count
+#' @importFrom dplyr %>% bind_rows do_ select_ group_by_ inner_join
 prepare_analysis <- function(
-  raw.connection, analysis.path = ".", min.observation = 100
+  raw.connection, analysis.path = ".", min.observation = 100, min.stratum = 3
 ){
   assert_that(is.count(min.observation))
+  assert_that(is.count(min.stratum))
   path <- check_path(
     paste0(analysis.path, "/"),
     type = "directory",
@@ -29,7 +30,7 @@ prepare_analysis <- function(
     df = observation,
     variable = c(
       "ObservationID", "DatasourceID", "LocationID", "SubLocationID", "Year",
-      "Period", "Weight", "Stratum"
+      "Period", "Stratum"
     ),
     name = "observation.txt"
   )
@@ -57,34 +58,37 @@ prepare_analysis <- function(
     warning("Nothing to do")
     return(invisible(NULL))
   }
-  analysis <- do.call(rbind, lapply(
+  analysis <- lapply(
     rawdata.files,
     prepare_analysis_dataset,
     min.observation = min.observation,
+    min.stratum = min.stratum,
     observation = observation,
     raw.connection = raw.connection,
     analysis.path = analysis.path
-  ))
+  ) %>%
+    bind_rows()
   if (nrow(analysis) == 0) {
     return(invisible(NULL))
   }
-  current.status <- status(analysis.path)
-  analysis <- merge(
-    analysis,
-    current.status[, c("FileFingerprint", "Status")]
-  )
+  analysis <- status(analysis.path) %>%
+    select_(~FileFingerprint, ~Status) %>%
+    inner_join(analysis, by = "FileFingerprint")
 
   message("\nPrepare model comparison")
   utils::flush.console()
-  d_ply(
-    .data = analysis,
-    .variables = c("LocationGroupID", "SpeciesGroupID"),
-    .fun = prepare_analysis_comparison,
-    raw.connection = raw.connection,
-    analysis.path = analysis.path
-  )
+  analysis %>%
+    group_by_(~LocationGroupID, ~SpeciesGroupID) %>%
+    do_(
+      Output = ~prepare_analysis_comparison(
+        .,
+        raw.connection = raw.connection,
+        analysis.path = analysis.path
+      )
+    )
 
-  analysis <- analysis[analysis$Covariate %in% c("fYear", "fCycle"), ]
+  message("\nPrepare Composite indices")
+  utils::flush.console()
   species.id <- read_delim_git(
     file = "species.txt",
     connection = raw.connection
@@ -94,9 +98,6 @@ prepare_analysis <- function(
     variable = c("SpeciesGroupID", "SpeciesID"),
     name = "species.txt"
   )
-  analysis <- merge(analysis, species.id)
-  analysis$SpeciesGroupID <- NULL
-
   speciesgroupid <- read_delim_git(
     file = "speciesgroup.txt",
     connection = raw.connection
@@ -106,17 +107,25 @@ prepare_analysis <- function(
     variable = c("SpeciesGroupID", "SpeciesID"),
     name = "species.txt"
   )
-  analysis <- merge(analysis, speciesgroupid)
-
-  message("Prepare Composite indices")
-  utils::flush.console()
-  d_ply(
-    .data = analysis,
-    .variables = c("LocationGroupID", "SpeciesGroupID", "Covariate"),
-    .fun = prepare_analysis_composite,
-    raw.connection = raw.connection,
-    analysis.path = analysis.path
-  )
+  analysis %>%
+    inner_join(
+      species.id %>%
+        select_(~SpeciesGroupID, ~SpeciesID),
+      by = "SpeciesGroupID"
+    ) %>%
+    select_(~-SpeciesGroupID) %>%
+    inner_join(
+      speciesgroupid,
+      by = "SpeciesID"
+    ) %>%
+    group_by_(~LocationGroupID, ~SpeciesGroupID, ~Covariate) %>%
+    do_(
+      Output = ~prepare_analysis_composite(
+        .,
+        raw.connection = raw.connection,
+        analysis.path = analysis.path
+      )
+    )
 
   return(invisible(NULL))
 }

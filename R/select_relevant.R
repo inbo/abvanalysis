@@ -1,19 +1,19 @@
 #' Select the relevant observation of a species
-#' 
+#'
 #' Relevant locations have at least two observations in different years. Relevant periods have average numbers of at least 5% of the most important period.
 #' @param observation.species The output from \code{\link{read_observation_species}}
 #' @inheritParams calculate_weight
-#' @importFrom n2kanalysis select_factor_count_strictly_positive select_factor_threshold
+#' @importFrom n2kanalysis select_factor_count_strictly_positive
 #' @importFrom n2khelper check_dataframe_variable
 #' @export
 select_relevant <- function(observation, observation.species){
   check_dataframe_variable(
-    df = observation, 
+    df = observation,
     variable = c("ObservationID", "LocationID", "Year", "Period"),
     name = "observation"
   )
   check_dataframe_variable(
-    df = observation.species, 
+    df = observation.species,
     variable = c("ObservationID", "Count"),
     name = "observation.species"
   )
