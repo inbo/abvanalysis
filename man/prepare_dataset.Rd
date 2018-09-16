@@ -2,26 +2,29 @@
 % Please edit documentation in R/prepare_dataset.R
 \name{prepare_dataset}
 \alias{prepare_dataset}
-\title{Prepare all datasets
-Prepare all datasets and store the version into a git repository}
+\title{Prepare all datasets}
 \usage{
-prepare_dataset(result.channel, source.channel, attribute.connection,
-  raw.connection, scheme.id, verbose = TRUE)
+prepare_dataset(result, origin, repo, scheme.id, end.date = Sys.time(),
+  verbose = TRUE, push = FALSE, ...)
 }
 \arguments{
-\item{result.channel}{An open RODBC connection to the results database}
+\item{result}{An open ODBC connection to the results database}
 
-\item{source.channel}{An open ODBC connection to the source database}
+\item{origin}{`dbplyr::src_dbi` connection to the source database}
 
-\item{attribute.connection}{a git-connection object to the attribute data}
+\item{repo}{a path to a repository or a \code{git_repository}
+object. Default is '.'}
 
-\item{raw.connection}{a git-connection object to write the output to}
+\item{scheme.id}{the fingerprint of the scheme}
 
-\item{scheme.id}{The id of the scheme}
+\item{end.date}{the latest date to import. Default to now.}
 
-\item{verbose}{Display a progress bar when TRUE (default)}
+\item{verbose}{display the progress}
+
+\item{push}{Logical indicating whether to push the commit. Defaults to FALSE.}
+
+\item{...}{arguments passed to \code{\link[git2r]{commit}} and \code{\link[git2r]{push}}}
 }
 \description{
-Prepare all datasets
 Prepare all datasets and store the version into a git repository
 }

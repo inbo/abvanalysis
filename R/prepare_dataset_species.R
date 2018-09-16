@@ -1,218 +1,145 @@
 #' Read the species groups and save them to git and the results database
 #' @inheritParams prepare_dataset
+#' @importFrom DBI dbQuoteString dbGetQuery
+#' @importFrom dplyr %>% transmute select mutate bind_rows
+#' @importFrom rlang .data
+#' @importFrom n2kupdate store_species_group_species
+#' @importFrom git2rdata rm_data write_vc
 #' @export
-#' @importFrom n2khelper get_nbn_key_multi get_nbn_name odbc_get_multi_id connect_result
-#' @importFrom n2kanalysis mark_obsolete_dataset
-#' @importFrom reshape2 dcast
-#' @importFrom assertthat assert_that is.count
-prepare_dataset_species <- function(
-  source.channel, result.channel, raw.connection, scheme.id
-){
-  assert_that(is.count(scheme.id))
-
-  import.date <- Sys.time()
-  species.list <- read_specieslist(
-    source.channel = source.channel,
-    result.channel = result.channel
-  )
-
-  species <- get_nbn_key_multi(species.list$Species, orders = c("la", "nl", "en"))
-  species$Description <- species$DutchName
-
-  data.field.type <- data.frame(Description = "SourceSpecies")
-  data.field.type <- odbc_get_multi_id(
-    data = data.field.type,
-    id.field = "ID",
-    merge.field = "Description",
-    table = "DatafieldType",
-    channel = result.channel,
-    create = TRUE,
-    select = TRUE
-  )
-  data.field <- unique(species[, c("DatasourceID", "TableName", "PrimaryKey")])
-  data.field$TypeID <- data.field.type$ID
-  data.field <- odbc_get_multi_id(
-    data = data.field,
-    id.field = "ID",
-    merge.field = c("DatasourceID", "TypeID"),
-    table = "Datafield",
-    channel = result.channel,
-    create = TRUE,
-    select = TRUE
-  )
-  colnames(data.field) <- gsub("^ID$", "DatafieldID", colnames(data.field))
-  species <- merge(species, data.field)
-
-  database.id <- odbc_get_multi_id(
-    data = species[, c("ExternalCode", "DatafieldID", "Description")],
-    id.field = "ID", merge.field = c("ExternalCode", "DatafieldID"),
-    table = "Sourcespecies",
-    channel = result.channel,
-    create = TRUE,
-    select = TRUE
-  )
-  species <- merge(database.id, species)
-  colnames(species) <- gsub("^ID$", "SourcespeciesID", colnames(species))
-  species$Description <- NULL
-
-
-  nbn.species <- dcast(
-    get_nbn_name(species$NBNKey),
-    formula = NBNKey ~ Language,
-    value.var = "Name"
-  )
-  colnames(nbn.species) <- gsub("^en$", "EnglishName", colnames(nbn.species))
-  colnames(nbn.species) <- gsub("^la$", "ScientificName", colnames(nbn.species))
-  colnames(nbn.species) <- gsub("^nl$", "DutchName", colnames(nbn.species))
-  colnames(nbn.species) <- gsub("^fr$", "FrenchName", colnames(nbn.species))
-
-  database.id <- odbc_get_multi_id(
-    data = nbn.species,
-    id.field = "ID", merge.field = "NBNKey",
-    table = "Species",
-    channel = result.channel,
-    create = TRUE,
-    select = TRUE
-  )
-  colnames(database.id) <- gsub("^ID$", "SpeciesID", colnames(database.id))
-  nbn.species <- merge(nbn.species, database.id)
-
-  species <- merge(species, database.id)
-  odbc_get_multi_id(
-    data = species[, c("SpeciesID", "SourcespeciesID")],
-    id.field = "ID", merge.field = c("SpeciesID", "SourcespeciesID"),
-    table = "SpeciesSourcespecies",
-    channel = result.channel,
-    create = TRUE,
-    select = FALSE
-  )
-
-
-  #define each species as a species group
-  nbn.species$Description <- nbn.species$DutchName
-  if (anyNA(nbn.species$Description)) {
-    warning(
-      "Species without DutchName in NBN:\n",
-      paste(
-        nbn.species$NBNKey[is.na(nbn.species$Description)],
-        nbn.species$ScientificName[is.na(nbn.species$Description)],
-        collapse = "\n"
-      )
+prepare_dataset_species <- function(origin, result, repo, scheme.id, end.date){
+  sprintf("
+    WITH cte AS (
+      SELECT fo.species_id
+      FROM projects_project AS pp
+      INNER JOIN fieldwork_visit AS fv ON pp.id = fv.project_id
+      INNER JOIN fieldwork_sample AS fs ON fv.id = fs.visit_id
+      INNER JOIN fieldwork_observation AS fo ON fs.id = fo.sample_id
+      WHERE
+        pp.name = 'Algemene Broedvogelmonitoring (ABV)' AND
+        fv.validation_status != -1 AND
+        fv.start_date <= %s AND
+        fs.not_counted = FALSE
+      GROUP BY species_id
     )
-    nbn.species$Description[is.na(nbn.species$Description)] <- nbn.species$ScientificName[is.na(nbn.species$Description)]
-  }
-  if (anyNA(nbn.species$Description)) {
-    stop("At least one species with neither DutchName and ScienticName. NA is not acceptable as Speciesgroup Description")
-  }
-  species.group <- data.frame(
-    Description = nbn.species$Description,
-    SchemeID = scheme.id
-  )
-  database.id <- odbc_get_multi_id(
-    data = species.group,
-    id.field = "ID",
-    merge.field = c("Description", "SchemeID"),
-    table = "SpeciesGroup",
-    channel = result.channel,
-    create = TRUE,
-    select = TRUE
-  )
-  species.group <- merge(database.id, species.group)
-  colnames(species.group) <- gsub("^ID", "SpeciesGroupID", colnames(species.group))
 
-  species.group.species <- merge(
-    species.group[, c("Description", "SpeciesGroupID")],
-    nbn.species[, c("Description", "SpeciesID")]
+    SELECT
+      'S' || s.id AS local_id,
+      s.id AS external_code,
+      s.scientific_name,
+      s.name AS nl,
+      s.reference_inbo AS nbn_key
+    FROM cte
+    INNER JOIN species_species AS s ON cte.species_id = s.id
+    WHERE s.reference_inbo IS NOT NULL",
+    dbQuoteString(origin$con, as.character(end.date))
+  ) %>%
+    dbGetQuery(conn = origin$con) -> source_species
+  source_species %>%
+    transmute(
+      source_species_local_id = .data$local_id,
+      species_local_id = .data$local_id
+    ) -> source_species_species
+  source_species %>%
+    select(-"external_code") -> species
+  source_species %>%
+    select("local_id", "external_code", description = "nl") %>%
+    mutate(datafield_local_id = 1) -> source_species
+  language <- data.frame(
+    code = "nl",
+    description = "Nederlands",
+    stringsAsFactors = FALSE
   )
-  species.group.species$Description <- NULL
-  odbc_get_multi_id(
-    data = species.group.species,
-    id.field = "ID",
-    merge.field = c("SpeciesGroupID", "SpeciesID"),
-    table = "SpeciesGroupSpecies",
-    channel = result.channel,
-    create = TRUE,
-    select = FALSE
+  dbGetQuery(result$con, "
+    SELECT fingerprint AS datasource
+    FROM datasource
+    WHERE description = 'Source data ABV'
+  ") -> datasource
+  data.frame(
+    local_id = 1,
+    datasource = datasource$datasource,
+    table_name = "species_species",
+    primary_key = "id",
+    datafield_type = "integer",
+    stringsAsFactors = FALSE
+  ) -> datafield
+  dbGetQuery(
+    origin$con, "
+    SELECT
+      'G' || id AS local_id,
+      REGEXP_REPLACE(name, '(.*) \\(ABV\\)', '\\1') AS description
+    FROM species_group
+    WHERE REGEXP_REPLACE(name, '.* \\((.*)\\)$', '\\1') = 'ABV'
+  ") %>%
+    bind_rows(
+      species %>%
+      select("local_id", description = "nl")
+    ) %>%
+    mutate(scheme = scheme.id) -> species_group
+  dbGetQuery(
+    origin$con, "
+    SELECT
+      'G' || sg.id AS species_group_local_id,
+      'S' || sgs.species_id AS species_local_id
+    FROM species_group AS sg
+    INNER JOIN species_speciesgrouprelation AS sgs ON sg.id = sgs.group_id
+    WHERE REGEXP_REPLACE(sg.name, '.* \\((.*)\\)$', '\\1') = 'ABV'
+  ") %>%
+    bind_rows(
+      species %>%
+        transmute(
+          species_group_local_id = .data$local_id,
+          species_local_id = .data$local_id
+        )
+    ) -> species_group_species
+  stored <- store_species_group_species(
+    species = species,
+    language = language,
+    source_species = source_species,
+    source_species_species = source_species_species,
+    datafield = datafield,
+    species_group = species_group,
+    species_group_species = species_group_species,
+    conn = result$con
   )
 
-  output <- merge(
-    species.group.species,
-    species[, c("SpeciesID", "ExternalCode", "DatasourceID", "DatafieldID")]
-  )
+  rm_data(repo, "species", stage = TRUE)
+  sprintf("
+    SELECT sg.fingerprint
+    FROM species_group AS sg
+    INNER JOIN scheme AS s ON sg.scheme = s.id
+    WHERE s.fingerprint = %s",
+    dbQuoteString(result$con, scheme.id)
+  ) %>%
+    dbGetQuery(conn = result$con) %>%
+    write_vc(
+      file = "species/species_group",
+      root = repo,
+      sorting = "fingerprint",
+      stage = TRUE
+    ) -> sg_hash
+  sprintf("
+    SELECT sg.fingerprint AS species_group, sp.fingerprint AS species
+    FROM species_group AS sg
+    INNER JOIN scheme AS s ON sg.scheme = s.id
+    INNER JOIN species_group_species AS sgs on sg.id = sgs.species_group
+    INNER JOIN species AS sp ON sgs.species = sp.id
+    WHERE
+      s.fingerprint = %s AND
+      sgs.destroy IS NULL",
+    dbQuoteString(result$con, scheme.id)
+  ) %>%
+    dbGetQuery(conn = result$con) %>%
+    write_vc(
+      file = "species/species_group_species",
+      root = repo,
+      sorting = c("species_group", "species"),
+      stage = TRUE
+    ) -> sgs_hash
+  rm_data(repo, "species", type = "yml", stage = TRUE)
 
-  # Define other speciesgroups
-  species.group <- data.frame(
-    Description = unique(species.list$Speciesgroup$Description),
-    SchemeID = scheme.id
+  list(
+    species = stored$species %>%
+      select("nbn_key", "fingerprint"),
+    hash = c(sg_hash, sgs_hash)
   )
-  database.id <- odbc_get_multi_id(
-    data = species.group,
-    id.field = "ID",
-    merge.field = c("Description", "SchemeID"),
-    table = "SpeciesGroup",
-    channel = result.channel,
-    create = TRUE,
-    select = TRUE
-  )
-  species.group <- merge(database.id, species.group)
-  colnames(species.group) <- gsub("^ID", "SpeciesGroupID", colnames(species.group))
-
-  species.group.species <- merge(
-    species.group[, c("Description", "SpeciesGroupID")],
-    species.list$Speciesgroup
-  )
-  species.group.species$Description <- NULL
-  species.group.species <- merge(
-    species.group.species,
-    species[, c("ExternalCode", "SpeciesID")]
-  )
-  species.group.species$ExternalCode <- NULL
-  odbc_get_multi_id(
-    data = species.group.species,
-    id.field = "ID",
-    merge.field = c("SpeciesGroupID", "SpeciesID"),
-    table = "SpeciesGroupSpecies",
-    channel = result.channel,
-    create = TRUE,
-    select = FALSE
-  )
-
-  species.group.species <- species.group.species[
-    order(species.group.species$SpeciesGroupID, species.group.species$SpeciesID),
-    c("SpeciesGroupID", "SpeciesID")
-  ]
-
-  output$Seed <- sample(.Machine$integer.max, nrow(output))
-
-  species.sha <- write_delim_git(
-    x = output[
-      order(output$SpeciesGroupID, output$SpeciesID),
-      c("SpeciesGroupID", "SpeciesID", "Seed")
-    ],
-    file = "species.txt",
-    connection = raw.connection
-  )
-  species.group.sha <- write_delim_git(
-    x = species.group.species, file = "speciesgroup.txt", connection = raw.connection
-  )
-  dataset <- data.frame(
-    FileName = c("species.txt", "speciesgroup.txt"),
-    PathName = raw.connection@LocalPath,
-    Fingerprint = c(species.sha, species.group.sha),
-    ImportDate = import.date,
-    Obsolete = FALSE
-  )
-  odbc_get_multi_id(
-    data = dataset,
-    id.field = "ID",
-    merge.field = c("FileName", "PathName", "Fingerprint"),
-    table = "Dataset",
-    channel = result.channel,
-    create = TRUE,
-    select = FALSE
-  )
-  mark_obsolete_dataset(channel = result.channel)
-  output$ExternalCode <- as.integer(output$ExternalCode)
-
-  return(output)
 }

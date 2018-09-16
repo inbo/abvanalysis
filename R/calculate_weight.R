@@ -6,7 +6,8 @@
 #' @inheritParams connect_source
 #' @inheritParams prepare_dataset
 #' @export
-#' @importFrom n2khelper check_dataframe_variable git_connect read_delim_git
+#' @importFrom n2khelper check_dataframe_variable git_connect
+#' @importFrom git2rdata read_vc
 #' @importFrom dplyr %>% group_by_ mutate_ n select_ semi_join inner_join
 calculate_weight <- function(observation, attribute.connection, result.channel){
   check_dataframe_variable(

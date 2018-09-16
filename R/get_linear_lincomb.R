@@ -30,20 +30,17 @@ get_linear_lincomb <- function(
     merge(
       unique(dataset[, time.var, drop = FALSE])
     )
-  mm <- available.weight %>%
-    model.matrix(object = formula) %>%
-    as.data.frame() %>%
-    '*'(available.weight$Weight) %>%
-    bind_cols(
+  mm <- model.matrix(object = formula, available.weight)
+  mm <- as.data.frame(mm) * available.weight$Weight
+  mm <- bind_cols(
+      mm,
       available.weight %>%
         select_(ID = time.var)
     ) %>%
     group_by_(~ID) %>%
     summarise_each(funs = funs(sum))
-  mm.trend <- trend.weight %>%
-    model.matrix(object = formula) %>%
-    as.data.frame() %>%
-    '*'(trend.weight$Weight)
+  mm.trend <- model.matrix(object = formula, trend.weight)
+  mm.trend <-  as.data.frame(mm.trend) * trend.weight$Weight
   mm.trend[, -grep(":", colnames(mm.trend))] <- 0
   mm.trend <- mm.trend %>%
     summarise_each(funs = funs(sum)) %>%

@@ -7,6 +7,7 @@
 #' @importFrom assertthat assert_that is.count
 #' @importFrom dplyr %>% add_rownames mutate_ select_ arrange_ filter_
 #' @importFrom utils head
+#' @importFrom git2rdata read_vc
 prepare_analysis_composite <- function(dataset, raw.connection, analysis.path){
   analysis.path <- check_path(paste0(analysis.path, "/"), type = "directory")
   check_dataframe_variable(

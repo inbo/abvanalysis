@@ -32,12 +32,10 @@ get_nonlinear_lincomb <- function(
       fPeriod = ~sort(unique(dataset$fPeriod))[1]
     ) %>%
     select_(~-TotalWeight)
-  weights <-
-    available.weight %>%
-      model.matrix(object = formula) %>%
-    '*'(available.weight$Weight) %>%
-    as.data.frame() %>%
-    bind_cols(
+  weights <- model.matrix(object = formula, available.weight)
+  weights <- weights * available.weight$Weight
+  weights <- bind_cols(
+      as.data.frame(weights),
       available.weight %>%
         select_(ID = time.var)
     ) %>%

@@ -6,9 +6,10 @@
 #' @return A data.frame with the species id number of rows in the analysis
 #'    dataset, number of precenses in the analysis datset and SHA-1 of the
 #'    analysis dataset or NULL if not enough data.
-#' @importFrom n2khelper check_path check_dataframe_variable git_recent
+#' @importFrom n2khelper check_path check_dataframe_variable
 #' @importFrom assertthat assert_that is.count
 #' @importFrom plyr ddply
+#' @importFrom git2rdata read_vc
 #' @importClassesFrom n2kanalysis n2kInlaNbinomial
 #' @importFrom n2kanalysis n2k_inla_nbinomial
 #' @importMethodsFrom n2kanalysis get_file_fingerprint get_status_fingerprint get_seed
@@ -64,9 +65,9 @@ prepare_analysis_dataset <- function(
     variable = c("ObservationID", "Count"),
     name = rawdata.file
   )
-  analysis.date <- git_recent(
+  analysis.date <- recent_commit(
     file = rawdata.file,
-    connection = raw.connection
+    connection = raw.connection@Repository
   )$Date
   speciesgroup.id <- as.integer(gsub("\\.txt$", "", rawdata.file))
   species.id <- read_delim_git("species.txt", connection = raw.connection)

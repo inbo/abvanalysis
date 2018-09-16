@@ -9,13 +9,21 @@ License: GPL-3
 LazyData: true
 Imports:
     assertthat,
+    DBI,
     digest (>= 0.6.3),
     dplyr,
+    git2rdata,
     lubridate,
     n2kanalysis,
     n2khelper,
+    n2kupdate,
     plyr,
-    reshape2,
+    purrr,
     rlang,
-    RODBC
+    tibble,
+    tidyr
+Remotes:
+  inbo/n2kanalysis,
+  inbo/n2khelper,
+  inbo/n2kupdate
 RoxygenNote: 6.0.1

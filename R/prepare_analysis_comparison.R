@@ -3,7 +3,8 @@
 #' @inheritParams prepare_dataset
 #' @param dataset A data.frame with the parent analyses
 #' @export
-#' @importFrom n2khelper check_path check_dataframe_variable read_delim_git
+#' @importFrom n2khelper check_path check_dataframe_variable
+#' @importFrom git2rdata read_vc
 #' @importFrom assertthat assert_that is.count
 #' @importFrom dplyr %>% rename_ arrange_ filter_
 #' @importFrom n2kanalysis n2k_inla_comparison

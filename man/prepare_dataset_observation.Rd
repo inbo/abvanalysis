@@ -4,19 +4,19 @@
 \alias{prepare_dataset_observation}
 \title{Read the observations and save them to git and the results database}
 \usage{
-prepare_dataset_observation(source.channel, result.channel, raw.connection,
-  attribute.connection, scheme.id)
+prepare_dataset_observation(origin, result, repo, end.date, species)
 }
 \arguments{
-\item{source.channel}{An open ODBC connection to the source database}
+\item{origin}{`dbplyr::src_dbi` connection to the source database}
 
-\item{result.channel}{An open RODBC connection to the results database}
+\item{result}{An open ODBC connection to the results database}
 
-\item{raw.connection}{a git-connection object to write the output to}
+\item{repo}{a path to a repository or a \code{git_repository}
+object. Default is '.'}
 
-\item{attribute.connection}{a git-connection object to the attribute data}
+\item{end.date}{the latest date to import. Default to now.}
 
-\item{scheme.id}{The id of the scheme}
+\item{species}{a data.frame with the NBN key and fingerprint for each species}
 }
 \description{
 Read the observations and save them to git and the results database

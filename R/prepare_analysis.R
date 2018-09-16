@@ -2,10 +2,11 @@
 #' @inheritParams prepare_analysis_dataset
 #' @inheritParams prepare_dataset
 #' @export
-#' @importFrom n2khelper check_path list_files_git git_sha
+#' @importFrom n2khelper check_path
 #' @importFrom n2kanalysis status
 #' @importFrom assertthat assert_that is.count
 #' @importFrom dplyr %>% bind_rows do_ select_ group_by_ inner_join
+#' @importFrom git2rdata read_vc
 prepare_analysis <- function(
   raw.connection, analysis.path = ".", min.observation = 100, min.stratum = 3
 ){
@@ -50,8 +51,8 @@ prepare_analysis <- function(
 
   message("Prepare analysis per species")
   utils::flush.console()
-  rawdata.files <- list_files_git(
-    connection = raw.connection,
+  rawdata.files <- list.files(
+    raw.connection@Repository$repository,
     pattern = "^[0-9]*\\.txt$"
   )
   if (length(rawdata.files) == 0) {

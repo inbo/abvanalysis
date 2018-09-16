@@ -9,8 +9,6 @@ prepare_analysis_comparison(dataset, raw.connection, analysis.path)
 \arguments{
 \item{dataset}{A data.frame with the parent analyses}
 
-\item{raw.connection}{a git-connection object to write the output to}
-
 \item{analysis.path}{the path to store the rda files for the analysis}
 }
 \description{
