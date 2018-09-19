@@ -93,10 +93,10 @@ prepare_dataset_observation <- function(
   ) %>%
     dbGetQuery(conn = origin$con) %>%
     semi_join(observations, by = "sample_id") %>%
-    group_by(nbn_key) %>%
+    group_by(.data$nbn_key) %>%
     nest() %>%
-    mutate(n = map_int(data, nrow)) %>%
-    filter(n >= 100) %>%
+    mutate(n = map_int(.data$data, nrow)) %>%
+    filter(.data$n >= 100) %>%
     inner_join(species, by = "nbn_key") %>%
     mutate(
       fingerprint = paste0("observation/", .data$fingerprint),

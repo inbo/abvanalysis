@@ -1,46 +1,52 @@
 #' Calculate the matrix for linear combinations of strata
 #' @param dataset the raw dataset
+#' @param stratum_weights a dataframe with stratum weights
 #' @param time.var the name of the time variable
 #' @param stratum.var the name of the stratum variable
-#' @param formula the formula for the model.matrix
+#' @param label.var an optional variable used to label the time variable, `time.var` will be used when missing
 #' @export
-#' @importFrom n2khelper check_dataframe_variable
-#' @importFrom dplyr %>% group_by_ summarise_ inner_join mutate_ select_ bind_cols summarise_each
-#' @importFrom stats model.matrix
+#' @importFrom assertthat assert_that is.string has_name
+#' @importFrom dplyr %>%
 get_nonlinear_lincomb <- function(
   dataset,
+  stratum_weights,
   time.var,
-  stratum.var = "fStratum",
-  formula
+  label.var,
+  stratum.var = "stratum"
 ){
-  check_dataframe_variable(
-    df = dataset,
-    variable = c(time.var, stratum.var, "Weight", "fPeriod")
+  assert_that(is.string(time.var))
+  assert_that(is.string(stratum.var))
+  if (missing(label.var)) {
+    label.var <- time.var
+  } else {
+    assert_that(is.string(label.var))
+  }
+  assert_that(
+    inherits(dataset, "data.frame"),
+    has_name(dataset, time.var),
+    has_name(dataset, label.var)
+  )
+  assert_that(
+    inherits(stratum_weights, "data.frame"),
+    has_name(stratum_weights, "weight"),
+    has_name(stratum_weights, stratum.var)
   )
 
-  available.weight <- dataset %>%
-    group_by_(time.var, stratum.var, ~Weight) %>%
-    summarise_() %>%
-    group_by_(time.var, stratum.var) %>%
-    summarise_(Weight = ~mean(Weight))
-  available.weight <- available.weight %>%
-    group_by_(time.var) %>%
-    summarise_(TotalWeight = ~sum(Weight)) %>%
-    inner_join(available.weight, by = time.var) %>%
-    mutate_(
-      Weight = ~Weight / TotalWeight,
-      fPeriod = ~sort(unique(dataset$fPeriod))[1]
-    ) %>%
-    select_(~-TotalWeight)
-  weights <- model.matrix(object = formula, available.weight)
-  weights <- weights * available.weight$Weight
-  weights <- bind_cols(
-      as.data.frame(weights),
-      available.weight %>%
-        select_(ID = time.var)
-    ) %>%
-    group_by_(~ID) %>%
-    summarise_each(funs = funs(sum))
-  rownames(weights) <- weights$ID
-  as.matrix(weights[, -1])
+  min(dataset[[time.var]]):max(dataset[[time.var]]) %>%
+    length() %>%
+    diag() %>%
+    outer(stratum_weights$weight) %>%
+    apply(3, as.data.frame) %>%
+    unlist(recursive = FALSE) %>%
+    do.call(what = cbind) -> lc
+  rownames(lc) <- min(dataset[[label.var]]):max(dataset[[label.var]])
+  colnames(lc) <- outer(
+    min(dataset[[time.var]]):max(dataset[[time.var]]) %>%
+    sprintf(fmt = "%2$s%1$s:", time.var),
+    stratum_weights[[stratum.var]] %>%
+      sprintf(fmt = "stratum%s"),
+    FUN = "paste0"
+  ) %>%
+  as.vector()
+  return(lc)
 }

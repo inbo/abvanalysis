@@ -77,7 +77,7 @@ prepare_dataset_location <- function(origin, result, repo, scheme.id, end.date) 
       .data$datafield_local_id
     ) -> strata
   import_locations %>%
-    mutate(hok = gsub("ABV_", "", description)) %>%
+    mutate(hok = gsub("ABV_", "", .data$description)) %>%
     inner_join(
       import_habitat %>%
         select("local_id", stratum = "description"),

@@ -1,86 +1,52 @@
 #' Prepare comparison among models
+#' @param frequency a indicator of the frequency of the analysis
+#' @param models a data.frame with the metadata of the models
+#' @inheritParams n2kanalysis::store_model
 #' @inheritParams prepare_analysis_dataset
-#' @inheritParams prepare_dataset
-#' @param dataset A data.frame with the parent analyses
 #' @export
-#' @importFrom n2khelper check_path check_dataframe_variable
-#' @importFrom git2rdata read_vc
-#' @importFrom assertthat assert_that is.count
-#' @importFrom dplyr %>% rename_ arrange_ filter_
+#' @importFrom assertthat assert_that is.string has_name
+#' @importFrom utils flush.console
 #' @importFrom n2kanalysis n2k_inla_comparison
-prepare_analysis_comparison <- function(dataset, raw.connection, analysis.path){
-  analysis.path <- check_path(paste0(analysis.path, "/"), type = "directory")
-  check_dataframe_variable(
-    df = dataset,
-    variable = c("LocationGroupID", "SpeciesGroupID", "Covariate", "FileFingerprint", "StatusFingerprint", "Seed"),
-    name = "dataset"
+#' @importFrom dplyr %>% select
+prepare_analysis_comparison <- function(
+  frequency, species_group, location_group, models,
+  base, project, overwrite = FALSE
+){
+  assert_that(is.string(frequency))
+  assert_that(is.string(species_group))
+  assert_that(is.string(location_group))
+  assert_that(
+    inherits(models, "data.frame"),
+    has_name(models, "fingerprint"),
+    has_name(models, "status_fingerprint"),
+    has_name(models, "status"),
+    has_name(models, "seed"),
+    has_name(models, "scheme"),
+    has_name(models, "first_imported_year"),
+    has_name(models, "last_imported_year"),
+    has_name(models, "analysis_date")
   )
+  message(location_group, " ", species_group, " ", frequency)
+  flush.console()
 
-  metadata <- read_delim_git("metadata.txt", connection = raw.connection)
-  scheme.id <- metadata$Value[metadata$Key == "SchemeID"]
-  assert_that(is.count(scheme.id))
-  first.year <- metadata$Value[metadata$Key == "FirstImportedYear"]
-  assert_that(is.count(first.year))
-  last.year <- metadata$Value[metadata$Key == "LastImportedYear"]
-  assert_that(is.count(last.year))
-  dataset <- dataset %>%
-    rename_(
-      ParentAnalysis = ~FileFingerprint,
-      ParentStatusFingerprint = ~StatusFingerprint,
-      ParentStatus = ~ Status
-    ) %>%
-    arrange_(~ParentAnalysis)
-  seed  <- dataset$Seed[1]
-  species.group.id <- dataset$SpeciesGroupID[1]
-  location.group.id <- dataset$LocationGroupID[1]
-  analysis.date <- dataset$AnalysisDate[1]
-
-  dataset.year <- dataset %>%
-    filter_(~ grepl("Year", Covariate))
-  if (nrow(dataset.year) > 1) {
-    analysis <- n2k_inla_comparison(
-      parent = dataset.year$ParentAnalysis,
-      parent.status = dataset.year %>%
-        select_(~ParentAnalysis, ~ParentStatusFingerprint, ~ParentStatus) %>%
-        as.data.frame(),
-      seed = seed,
-      scheme.id = scheme.id,
-      species.group.id = species.group.id,
-      location.group.id = location.group.id,
-      model.type = "inla comparison: Year",
-      formula = "~ Year",
-      first.imported.year = first.year,
-      last.imported.year = last.year,
-      analysis.date = analysis.date
-    )
-    file.fingerprint <- get_file_fingerprint(analysis)
-    filename <- paste0(analysis.path, "/", file.fingerprint, ".rda")
-    if (!file.exists(filename)) {
-      save(analysis, file = filename)
-    }
-  }
-  this.dataset <- dataset %>%
-    filter_(~ grepl("Cycle", Covariate))
-  if (nrow(this.dataset) > 1) {
-    analysis <- n2k_inla_comparison(
-      parent = this.dataset$ParentAnalysis,
-      parent.status = this.dataset %>%
-        select_(~ParentAnalysis, ~ParentStatusFingerprint, ~ParentStatus) %>%
-        as.data.frame(),
-      seed = seed,
-      scheme.id = scheme.id,
-      species.group.id = species.group.id,
-      location.group.id = location.group.id,
-      model.type = "inla comparison: Cycle",
-      formula = "~ Cycle",
-      first.imported.year = first.year,
-      last.imported.year = last.year,
-      analysis.date = analysis.date
-    )
-    file.fingerprint <- get_file_fingerprint(analysis)
-    filename <- paste0(analysis.path, "/", file.fingerprint, ".rda")
-    if (!file.exists(filename)) {
-      save(analysis, file = filename)
-    }
-  }
+  n2k_inla_comparison(
+    result.datasource.id = models$result_datasource[1],
+    parent = models$fingerprint,
+    parent.status = models %>%
+      select(
+        ParentAnalysis = "fingerprint",
+        ParentStatusFingerprint = "status_fingerprint",
+        ParentStatus = "status"
+      ),
+    seed = models$seed[1],
+    scheme.id = models$scheme[1],
+    species.group.id = species_group,
+    location.group.id = location_group,
+    model.type = paste("inla comparison:", frequency),
+    formula = paste("~", frequency),
+    first.imported.year = models$first_imported_year[1],
+    last.imported.year = models$last_imported_year[1],
+    analysis.date = models$analysis_date[1]
+  ) %>%
+    storage(base = base, project = project, overwrite = overwrite)
 }

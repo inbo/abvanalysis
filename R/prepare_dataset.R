@@ -15,7 +15,10 @@
 #' @importFrom purrr map pmap map_chr map_dfr
 #' @importFrom tidyr unnest nest
 #' @importFrom n2kanalysis n2k_import
-#' @importFrom n2kupdate store_n2kImport
+#' @importFrom n2kupdate store_n2kImport store_datafield
+#' @importFrom methods slot
+#' @importFrom dplyr %>% mutate transmute n select filter group_by inner_join
+#' @importFrom rlang .data
 prepare_dataset <- function(
   result,
   origin,
@@ -140,6 +143,21 @@ prepare_dataset <- function(
       ),
       hash = map_chr(.data$import, store_n2kImport, conn = result$con)
     ) -> imports
+  dbGetQuery(
+    result$con,
+    "SELECT fingerprint FROM datasource WHERE description = 'Source data ABV'"
+  ) -> datasource
+  df <- store_datafield(
+    datafield = data.frame(
+      local_id = c("sample", "observation"),
+      datasource = datasource$fingerprint,
+      table_name = c("fieldwork_sample", "fieldwork_observation"),
+      primary_key = "id",
+      datafield_type = "integer",
+      stringsAsFactors = FALSE
+    ),
+    conn = result$con
+  )
   rm_data(root = repo, path = "metadata", stage = TRUE)
   map_dfr(imports$import, slot, "AnalysisMetadata") %>%
     select(
@@ -150,13 +168,19 @@ prepare_dataset <- function(
       location_group = "LocationGroupID",
       first_imported_year = "FirstImportedYear",
       last_imported_year = "LastImportedYear",
+      analysis_date = "AnalysisDate",
       seed = "Seed",
       file_fingerprint = "FileFingerprint"
   ) %>%
+    mutate(
+      sample_df = df$fingerprint[df$local_id == "sample"],
+      observation_df = df$fingerprint[df$local_id == "observation"]
+    ) %>%
     write_vc(
       file = "metadata/metadata",
       root = repo,
       sorting = "file_fingerprint",
+      override = TRUE,
       stage = TRUE
     )
   rm_data(root = repo, path = "metadata", type = "yml", stage = TRUE)

@@ -1,130 +1,239 @@
 #' Prepare all datasets and a to do list of models
-#' @inheritParams prepare_analysis_dataset
 #' @inheritParams prepare_dataset
+#' @inheritParams select_relevant
+#' @inheritParams n2kanalysis::store_model
 #' @export
-#' @importFrom n2khelper check_path
-#' @importFrom n2kanalysis status
-#' @importFrom assertthat assert_that is.count
-#' @importFrom dplyr %>% bind_rows do_ select_ group_by_ inner_join
 #' @importFrom git2rdata read_vc
+#' @importFrom dplyr %>% semi_join filter inner_join rename add_count ungroup anti_join
 prepare_analysis <- function(
-  raw.connection, analysis.path = ".", min.observation = 100, min.stratum = 3
+  repo, base, project, overwrite = FALSE,
+  min.observation = 100, min.stratum = 3, min.cycle = 2, proportion = 0.15
 ){
-  assert_that(is.count(min.observation))
-  assert_that(is.count(min.stratum))
-  path <- check_path(
-    paste0(analysis.path, "/"),
-    type = "directory",
-    error = FALSE
-  )
-  if (is.logical(path)) {
-    dir.create(path = analysis.path, recursive = TRUE)
-    path <- check_path(paste0(analysis.path, "/"), type = "directory")
-  }
-  analysis.path <- path
+  message("Read data from repository")
+  flush.console()
 
-  observation <- read_delim_git(
-    file = "observation.txt",
-    connection = raw.connection
-  )
-  check_dataframe_variable(
-    df = observation,
-    variable = c(
-      "ObservationID", "DatasourceID", "LocationID", "SubLocationID", "Year",
-      "Period", "Stratum"
-    ),
-    name = "observation.txt"
-  )
-
-  locationgrouplocation <- read_delim_git(
-    file = "locationgrouplocation.txt",
-    connection = raw.connection
-  )
-  check_dataframe_variable(
-    df = locationgrouplocation,
-    variable = c("LocationID", "LocationGroupID"),
-    name = "locationgrouplocation.txt"
-  )
-
-  observation <- merge(observation, locationgrouplocation)
-  rm(locationgrouplocation)
-
-  message("Prepare analysis per species")
-  utils::flush.console()
-  rawdata.files <- list.files(
-    raw.connection@Repository$repository,
-    pattern = "^[0-9]*\\.txt$"
-  )
-  if (length(rawdata.files) == 0) {
+  raw_metadata <- read_vc(file = "metadata/metadata", root = repo)
+  if (nrow(raw_metadata) == 0) {
     warning("Nothing to do")
     return(invisible(NULL))
   }
-  analysis <- lapply(
-    rawdata.files,
-    prepare_analysis_dataset,
-    min.observation = min.observation,
-    min.stratum = min.stratum,
-    observation = observation,
-    raw.connection = raw.connection,
-    analysis.path = analysis.path
-  ) %>%
-    bind_rows()
-  if (nrow(analysis) == 0) {
-    return(invisible(NULL))
-  }
-  analysis <- status(analysis.path) %>%
-    select_(~FileFingerprint, ~Status) %>%
-    inner_join(analysis, by = "FileFingerprint")
+  assert_that(
+    has_name(raw_metadata, "file_fingerprint"),
+    msg = "no 'file_fingerprint' in data 'metadata/metadata'"
+  )
+  assert_that(
+    has_name(raw_metadata, "scheme"),
+    msg = "no 'scheme' in data 'metadata/metadata'"
+  )
+  assert_that(
+    has_name(raw_metadata, "result_datasource"),
+    msg = "no 'result_datasource' in data 'metadata/metadata'"
+  )
+  assert_that(
+    has_name(raw_metadata, "species_group"),
+    msg = "no 'species_group' in data 'metadata/metadata'"
+  )
+  assert_that(
+    has_name(raw_metadata, "location_group"),
+    msg = "no 'location_group in data 'metadata/metadata'"
+  )
+  assert_that(
+    has_name(raw_metadata, "first_imported_year"),
+    msg = "no 'first_imported_year' in data 'metadata/metadata'"
+  )
+  assert_that(
+    has_name(raw_metadata, "last_imported_year"),
+    msg = "no 'last_imported_year' in data 'metadata/metadata'"
+  )
+  assert_that(
+    has_name(raw_metadata, "seed"),
+    msg = "no 'seed' in data 'metadata/metadata'"
+  )
+  assert_that(
+    has_name(raw_metadata, "analysis_date"),
+    msg = "no 'analysis_date' in data 'metadata/metadata'"
+  )
 
-  message("\nPrepare model comparison")
-  utils::flush.console()
-  analysis %>%
-    group_by_(~LocationGroupID, ~SpeciesGroupID) %>%
-    do_(
-      Output = ~prepare_analysis_comparison(
-        .,
-        raw.connection = raw.connection,
-        analysis.path = analysis.path
+  raw_l <- read_vc(file = "location/location", root = repo)
+  assert_that(
+    has_name(raw_l, "location"),
+    msg = "no 'location' in data 'location/location'"
+  )
+  assert_that(
+    has_name(raw_l, "parent"),
+    msg = "no 'parent' in data 'location/location'"
+  )
+
+  locationgrouplocation <- read_vc(
+    file = "location/location_group_location", root = repo
+  )
+  assert_that(
+    has_name(locationgrouplocation, "location_group"),
+    msg = "no 'location_group' in data 'location/location_group_location'"
+  )
+  assert_that(
+    has_name(locationgrouplocation, "location"),
+    msg = "no 'location' in data 'location/location_group_location'"
+  )
+
+  strata <- read_vc(file = "location/strata", root = repo)
+  assert_that(
+    has_name(strata, "fingerprint"),
+    msg = "no 'fingerprint' in data 'location/strata'"
+  )
+  assert_that(
+    has_name(strata, "n"),
+    msg = "no 'n' in data 'location/strata'"
+  )
+
+  raw_visit <- read_vc(file = "observation/visit", root = repo)
+  assert_that(
+    has_name(raw_visit, "sample_id"),
+    msg = "no 'sample_id' in data 'observation/visit'"
+  )
+  assert_that(
+    has_name(raw_visit, "location"),
+    msg = "no 'location' in data 'observation/visit'"
+  )
+  assert_that(
+    has_name(raw_visit, "sublocation"),
+    msg = "no 'sublocation' in data 'observation/visit'"
+  )
+  assert_that(
+    has_name(raw_visit, "year"),
+    msg = "no 'year' in data 'observation/visit'"
+  )
+  assert_that(
+    has_name(raw_visit, "period"),
+    msg = "no 'period' in data 'observation/visit'"
+  )
+
+  raw_sgs <- read_vc(file = "species/species_group_species", root = repo)
+  assert_that(
+    has_name(raw_sgs, "species_group"),
+    msg = "no 'species_group' in data 'species/species_group_species'"
+  )
+  assert_that(
+    has_name(raw_sgs, "species"),
+    msg = "no 'species' in data 'species/species_group_species'"
+  )
+
+  message("Data wrangling")
+  flush.console()
+
+  raw_l %>%
+    semi_join(
+      raw_l %>%
+        filter(.data$parent == ""),
+      by = c("parent" = "location")
+    ) %>%
+    group_by(.data$parent) %>%
+    add_count() %>%
+    ungroup() %>%
+    rename(stratum = "parent", n_sample = "n") %>%
+    inner_join(
+      strata %>%
+        rename(n_stratum = "n"),
+      by = c("stratum" = "fingerprint")
+    ) %>%
+    inner_join(
+      raw_l %>%
+        rename(sublocation = "location"),
+      by = c("location" = "parent")
+    ) %>%
+    inner_join(raw_visit, by = c("location", "sublocation")) -> observation
+
+  message("Prepare analysis per species")
+  flush.console()
+  raw_metadata %>%
+    inner_join(raw_sgs, by = "species_group") -> base_analysis
+  base_analysis %>%
+    group_by(.data$species_group, .data$location_group) %>%
+    arrange(.data$location_group, .data$species_group) %>%
+    nest(.key = "metadata") %>%
+    mutate(
+      stored = pmap(
+        list(
+          species_group = .data$species_group,
+          location_group = .data$location_group,
+          metadata = .data$metadata
+        ),
+        prepare_analysis_dataset,
+        observation = observation,
+        repo = repo,
+        base = base,
+        project = project,
+        overwrite = overwrite,
+        min.observation = min.observation,
+        min.stratum = min.stratum,
+        min.cycle = min.cycle,
+        proportion = proportion
+      )
+    ) %>%
+    select(-"metadata") %>%
+    unnest() %>%
+    inner_join(
+      base_analysis %>%
+        select(
+          "species_group", "location_group", "scheme", "result_datasource",
+          "seed", "first_imported_year", "last_imported_year", "analysis_date"
+        ),
+      by = c("species_group", "location_group")
+    ) -> base_analysis
+
+  message("Prepare model comparison")
+  flush.console()
+  base_analysis %>%
+    nest(
+      "type", "fingerprint", "status", "status_fingerprint", "scheme", "seed",
+      "result_datasource", "first_imported_year", "last_imported_year",
+      "analysis_date"
+    ) %>%
+    mutate(
+      stored = pmap(
+        list(
+          frequency = .data$frequency,
+          species_group = .data$species_group,
+          location_group = .data$location_group,
+          models = .data$data
+        ),
+        prepare_analysis_comparison,
+        base = base,
+        project = project,
+        overwrite = overwrite
       )
     )
 
   message("\nPrepare Composite indices")
-  utils::flush.console()
-  species.id <- read_delim_git(
-    file = "species.txt",
-    connection = raw.connection
-  )
-  check_dataframe_variable(
-    df = species.id,
-    variable = c("SpeciesGroupID", "SpeciesID"),
-    name = "species.txt"
-  )
-  speciesgroupid <- read_delim_git(
-    file = "speciesgroup.txt",
-    connection = raw.connection
-  )
-  check_dataframe_variable(
-    df = speciesgroupid,
-    variable = c("SpeciesGroupID", "SpeciesID"),
-    name = "species.txt"
-  )
-  analysis %>%
+  flush.console()
+
+  raw_sgs %>%
+    anti_join(raw_metadata, by = "species_group") %>%
     inner_join(
-      species.id %>%
-        select_(~SpeciesGroupID, ~SpeciesID),
-      by = "SpeciesGroupID"
+      raw_sgs %>%
+        rename(parent = "species_group"),
+      by = "species"
     ) %>%
-    select_(~-SpeciesGroupID) %>%
-    inner_join(
-      speciesgroupid,
-      by = "SpeciesID"
+    select(-"species") %>%
+    inner_join(base_analysis, by = c("parent" = "species_group")) %>%
+    nest(
+      "fingerprint", "status", "status_fingerprint", "scheme", "seed",
+      "result_datasource", "first_imported_year", "last_imported_year",
+      "analysis_date", "parent"
     ) %>%
-    group_by_(~LocationGroupID, ~SpeciesGroupID, ~Covariate) %>%
-    do_(
-      Output = ~prepare_analysis_composite(
-        .,
-        raw.connection = raw.connection,
-        analysis.path = analysis.path
+    mutate(
+      stored = pmap(
+        list(
+          frequency = .data$frequency,
+          type = .data$type,
+          species_group = .data$species_group,
+          location_group = .data$location_group,
+          models = .data$data
+        ),
+        prepare_analysis_composite,
+        base = base,
+        project = project,
+        overwrite = overwrite
       )
     )
 

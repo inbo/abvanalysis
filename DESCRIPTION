@@ -14,6 +14,7 @@ Imports:
     dplyr,
     git2rdata,
     lubridate,
+    methods,
     n2kanalysis,
     n2khelper,
     n2kupdate,

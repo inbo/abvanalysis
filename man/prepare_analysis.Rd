@@ -4,16 +4,27 @@
 \alias{prepare_analysis}
 \title{Prepare all datasets and a to do list of models}
 \usage{
-prepare_analysis(raw.connection, analysis.path = ".", min.observation = 100,
-  min.stratum = 3)
+prepare_analysis(repo, base, project, overwrite = FALSE,
+  min.observation = 100, min.stratum = 3, min.cycle = 2,
+  proportion = 0.15)
 }
 \arguments{
-\item{analysis.path}{the path to store the rda files for the analysis}
+\item{repo}{a path to a repository or a \code{git_repository}
+object. Default is '.'}
 
-\item{min.observation}{The minimum number of positive observations
-(Count > 0)}
+\item{base}{the base location to store the model}
 
-\item{min.stratum}{minimum of locations per stratum. Strata with less locations will be dropped from the analysis}
+\item{project}{will be a relative path within the base location}
+
+\item{overwrite}{should an existing object be overwritten? Defaults to TRUE}
+
+\item{min.observation}{the required minimum number of occassion where the present was observed, defaults to 100}
+
+\item{min.stratum}{the required minimum number of relevant locations per stratum, defaults to 3}
+
+\item{min.cycle}{the required minimum number of cycles in which the species was present at a location. defaults to 2}
+
+\item{proportion}{minimum proportion of the least important period, defaults to 0.15}
 }
 \description{
 Prepare all datasets and a to do list of models

@@ -1,34 +1,35 @@
 #' Prepare the analysis files for the composite indices
 #' @inheritParams prepare_analysis_dataset
+#' @inheritParams prepare_analysis_comparison
 #' @inheritParams prepare_dataset
-#' @param dataset the raw dataset
+#' @inheritParams n2kanalysis::store_model
+#' @param type the model type
 #' @export
+#' @importFrom assertthat assert_that is.string has_name
 #' @importFrom n2kanalysis n2k_composite
-#' @importFrom assertthat assert_that is.count
-#' @importFrom dplyr %>% add_rownames mutate_ select_ arrange_ filter_
-#' @importFrom utils head
-#' @importFrom git2rdata read_vc
-prepare_analysis_composite <- function(dataset, raw.connection, analysis.path){
-  analysis.path <- check_path(paste0(analysis.path, "/"), type = "directory")
-  check_dataframe_variable(
-    df = dataset,
-    variable = c(
-      "LocationGroupID", "SpeciesGroupID", "Covariate", "FileFingerprint",
-      "StatusFingerprint", "Seed"
-    ),
-    name = "dataset"
+#' @importFrom dplyr %>% add_rownames select mutate arrange filter slice
+#' @importFrom rlang .data
+prepare_analysis_composite <- function(
+  frequency, type, species_group, location_group, models,
+  base, project, overwrite = FALSE
+){
+  assert_that(is.string(frequency))
+  assert_that(is.string(type))
+  assert_that(is.string(species_group))
+  assert_that(is.string(location_group))
+  assert_that(
+    inherits(models, "data.frame"),
+    has_name(models, "fingerprint"),
+    has_name(models, "status_fingerprint"),
+    has_name(models, "status"),
+    has_name(models, "seed"),
+    has_name(models, "scheme"),
+    has_name(models, "first_imported_year"),
+    has_name(models, "last_imported_year"),
+    has_name(models, "analysis_date")
   )
-
-  metadata <- read_delim_git("metadata.txt", connection = raw.connection)
-  scheme.id <- metadata$Value[metadata$Key == "SchemeID"]
-  assert_that(is.count(scheme.id))
-  first.year <- metadata$Value[metadata$Key == "FirstImportedYear"]
-  assert_that(is.count(first.year))
-  last.year <- metadata$Value[metadata$Key == "LastImportedYear"]
-  assert_that(is.count(last.year))
-  dataset$ParentAnalysis <- dataset$FileFingerprint
-  dataset$ParentStatusFingerprint <- dataset$StatusFingerprint
-  dataset$ParentStatus <- dataset$Status
+  message(location_group, " ", species_group, " ", frequency, " ", "type")
+  flush.console()
 
   extractor <- function(model){
     if (!require(dplyr)) {
@@ -39,45 +40,46 @@ prepare_analysis_composite <- function(dataset, raw.connection, analysis.path){
     }
     parameter <- model$summary.lincomb.derived %>%
       add_rownames("Value") %>%
-      select_(~Value, Estimate = ~mean, Variance = ~sd) %>%
-      mutate_(
-        Variance = ~Variance ^ 2,
-        Number = ~suppressWarnings(as.integer(Value))
+      select("Value", Estimate = "mean", Variance = "sd") %>%
+      mutate(
+        Variance = .data$Variance ^ 2,
+        Number = suppressWarnings(as.integer(.data$Value))
       ) %>%
-      arrange_(~Number, ~Value) %>%
-      select_(~-Number)
+      arrange("Number", "Value") %>%
+      select(-"Number")
     reference <- parameter %>%
-      filter_(~Value != "Trend") %>%
-      head(1)
+      filter(.data$Value != "Trend") %>%
+      slice(1)
     parameter %>%
-      mutate_(
-        Estimate = ~
+      mutate(
+        Estimate =
           ifelse(
-            Value == "Trend",
-            Estimate,
-            Estimate - reference$Estimate
+            .data$Value == "Trend",
+            .data$Estimate,
+            .data$Estimate - reference$Estimate
           )
       )
   }
 
-  analysis <- n2k_composite(
-    parent.status = dataset %>%
-      select_(~ParentAnalysis, ~ParentStatusFingerprint, ~ParentStatus) %>%
-      as.data.frame(),
-    seed = min(dataset$Seed),
-    scheme.id = scheme.id,
-    species.group.id = dataset$SpeciesGroupID[1],
-    location.group.id = dataset$LocationGroupID[1],
-    model.type = paste("composite index:", dataset$Covariate[1]),
-    formula = paste("~", dataset$Covariate[1]),
-    first.imported.year = first.year,
-    last.imported.year = last.year,
+  n2k_composite(
+    result.datasource.id = models$result_datasource[1],
+    parent = models$fingerprint,
+    parent.status = models %>%
+      select(
+        ParentAnalysis = "fingerprint",
+        ParentStatusFingerprint = "status_fingerprint",
+        ParentStatus = "status"
+      ),
+    seed = models$seed[1],
+    scheme.id = models$scheme[1],
+    species.group.id = species_group,
+    location.group.id = location_group,
+    first.imported.year = models$first_imported_year[1],
+    last.imported.year = models$last_imported_year[1],
+    model.type = paste("composite index:", frequency, type),
+    formula = paste("~", frequency),
     extractor = extractor,
-    analysis.date = max(dataset$AnalysisDate)
-  )
-  file.fingerprint <- get_file_fingerprint(analysis)
-  filename <- paste0(analysis.path, "/", file.fingerprint, ".rda")
-  if (!file.exists(filename)) {
-    save(analysis, file = filename)
-  }
+    analysis.date = max(models$analysis_date)
+  ) %>%
+    storage(base = base, project = project, overwrite = overwrite)
 }

@@ -1,52 +1,55 @@
 #' Calculate the matrix for linear combinations of strata
 #' @inheritParams get_nonlinear_lincomb
+#' @param formula the formula for the trend component
 #' @export
-#' @importFrom n2khelper check_dataframe_variable
-#' @importFrom dplyr %>% group_by_ summarise_ summarise_each inner_join mutate_ select_ bind_cols funs
+#' @importFrom assertthat assert_that is.string has_name
+#' @importFrom dplyr %>% select distinct inner_join bind_cols rename mutate bind_rows group_by summarise_all funs
+#' @importFrom rlang !! :=
 #' @importFrom stats model.matrix
 get_linear_lincomb <- function(
   dataset,
   time.var,
-  stratum.var = "fStratum",
+  stratum.var = "stratum",
+  stratum_weights,
   formula
 ){
-  check_dataframe_variable(
-    df = dataset,
-    variable = c(time.var, stratum.var, "Weight", "fPeriod")
+  assert_that(is.string(time.var))
+  assert_that(is.string(stratum.var))
+  assert_that(
+    inherits(dataset, "data.frame"),
+    has_name(dataset, time.var),
+    has_name(dataset, stratum.var)
+  )
+  assert_that(
+    inherits(stratum_weights, "data.frame"),
+    has_name(stratum_weights, "weight"),
+    has_name(stratum_weights, stratum.var)
   )
 
-  available.weight <- dataset %>%
-    group_by_(stratum.var) %>%
-    summarise_(Weight = ~mean(Weight)) %>%
-    mutate_(
-      Weight = ~Weight / sum(Weight),
-      fPeriod = ~sort(unique(dataset$fPeriod))[1]
-    )
-  trend.weight <- available.weight %>%
-    merge(
-      matrix(1, dimnames = list(1, time.var))
-    )
-  available.weight <- available.weight %>%
-    merge(
-      unique(dataset[, time.var, drop = FALSE])
-    )
-  mm <- model.matrix(object = formula, available.weight)
-  mm <- as.data.frame(mm) * available.weight$Weight
-  mm <- bind_cols(
-      mm,
-      available.weight %>%
-        select_(ID = time.var)
+  dataset %>%
+    select(stratum.var, time.var) %>%
+    distinct() %>%
+    inner_join(stratum_weights, by = stratum.var) -> all.weight
+  model.matrix(object = formula, all.weight) -> mm
+  (as.data.frame(mm) * all.weight$weight) %>%
+    bind_cols(
+      all.weight[, time.var, drop = FALSE]
     ) %>%
-    group_by_(~ID) %>%
-    summarise_each(funs = funs(sum))
+    rename(ID = time.var) %>%
+    mutate(ID = as.character(.data$ID)) %>%
+    group_by(.data$ID) %>%
+    summarise_all(.funs = funs(sum)) -> mm
+  stratum_weights %>%
+    mutate(!!time.var := 1) -> trend.weight
   mm.trend <- model.matrix(object = formula, trend.weight)
-  mm.trend <-  as.data.frame(mm.trend) * trend.weight$Weight
+  mm.trend <- as.data.frame(mm.trend) * trend.weight$weight
   mm.trend[, -grep(":", colnames(mm.trend))] <- 0
-  mm.trend <- mm.trend %>%
-    summarise_each(funs = funs(sum)) %>%
-    mutate_(ID = ~"Trend")
-  weights <- rbind(mm, mm.trend)
-  weights[, -1] %>%
+  mm.trend %>%
+    summarise_all(.funs = funs(sum)) %>%
+    mutate(ID = "Trend") %>%
+    bind_rows(mm) -> weights
+  weights %>%
+    select(-"ID") %>%
     as.list() %>%
     lapply(
       function(x){

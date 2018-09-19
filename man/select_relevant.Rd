@@ -4,14 +4,27 @@
 \alias{select_relevant}
 \title{Select the relevant observation of a species}
 \usage{
-select_relevant(observation, observation.species)
+select_relevant(observation, species, datafield, repo, min.observation = 100,
+  min.stratum = 3, min.cycle = 2, proportion = 0.15)
 }
 \arguments{
-\item{observation}{the dataframe with observations. Should be the output of
-\code{\link{read_observation}}}
+\item{observation}{the dataframe with the visits and location group}
 
-\item{observation.species}{The output from \code{\link{read_observation_species}}}
+\item{species}{the fingerprint of the species}
+
+\item{datafield}{a named vector with the datafield id for "sample" and "observation"}
+
+\item{repo}{a path to a repository or a \code{git_repository}
+object. Default is '.'}
+
+\item{min.observation}{the required minimum number of occassion where the present was observed, defaults to 100}
+
+\item{min.stratum}{the required minimum number of relevant locations per stratum, defaults to 3}
+
+\item{min.cycle}{the required minimum number of cycles in which the species was present at a location. defaults to 2}
+
+\item{proportion}{minimum proportion of the least important period, defaults to 0.15}
 }
 \description{
-Relevant locations have at least two observations in different years. Relevant periods have average numbers of at least 5% of the most important period.
+Relevant locations have at least two observations in different years. Relevant periods have average numbers of at least 15% of the most important period.
 }
