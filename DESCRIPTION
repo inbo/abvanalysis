@@ -1,6 +1,7 @@
 Package: abvanalysis
 Title: Analysis of the Common Breeding Bird Survey
-Version: 0.1
+Version: 0.2
+Date: 2018-09-19
 Authors@R: c(person("Thierry", "Onkelinx", email = "thierry.onkelinx@inbo.be", role = c("aut", "cre")))
 Description: Read in the raw data and prepare analysis datasets.
 Depends:
@@ -21,6 +22,7 @@ Imports:
     tibble,
     tidyr
 Remotes:
+  inbo/git2rdata,
   inbo/n2kanalysis,
   inbo/n2khelper,
   inbo/n2kupdate
