@@ -48,7 +48,7 @@ prepare_analysis_dataset <- function(
   )
 
   if (is.null(dataset)) {
-    message(" insufficient data")
+    message("insufficient data")
     n2k_inla_nbinomial(
       result.datasource.id = metadata$result_datasource,
       scheme.id = metadata$scheme,

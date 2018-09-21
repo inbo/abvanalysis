@@ -5,6 +5,7 @@
 #' @export
 #' @importFrom git2rdata read_vc
 #' @importFrom dplyr %>% semi_join filter inner_join rename add_count ungroup anti_join
+#' @importFrom n2kanalysis n2k_manifest store_manifest
 prepare_analysis <- function(
   repo, base, project, overwrite = FALSE,
   min.observation = 100, min.stratum = 3, min.cycle = 2, proportion = 0.15
@@ -202,7 +203,7 @@ prepare_analysis <- function(
         project = project,
         overwrite = overwrite
       )
-    )
+    ) -> comparison
 
   message("\nPrepare Composite indices")
   flush.console()
@@ -214,7 +215,8 @@ prepare_analysis <- function(
         rename(parent = "species_group"),
       by = "species"
     ) %>%
-    select(-"species") %>%
+    select(-"species") -> composite_sg
+  composite_sg %>%
     inner_join(base_analysis, by = c("parent" = "species_group")) %>%
     nest(
       "fingerprint", "status", "status_fingerprint", "scheme", "seed",
@@ -235,6 +237,35 @@ prepare_analysis <- function(
         project = project,
         overwrite = overwrite
       )
+    ) -> composite
+
+  message("Prepare manifests")
+  bind_rows(
+    base_analysis %>%
+      select(parent_sg = "species_group", "location_group", Fingerprint = "fingerprint"),
+    comparison %>%
+      transmute(
+        parent_sg = .data$species_group,
+        .data$location_group,
+        Fingerprint = map_chr(.data$stored, "fingerprint"),
+        Parent = map(.data$data, function(x){select(x, Parent = "fingerprint")})
+      ) %>%
+      unnest(),
+    composite %>%
+      transmute(
+        .data$location_group,
+        Fingerprint = map_chr(.data$stored, "fingerprint"),
+        map(.data$data, select, Parent = "fingerprint", parent_sg = "parent")
+      ) %>%
+      unnest()
+  ) %>%
+    inner_join(composite_sg, by = c("parent_sg" = "parent")) %>%
+    select(-"parent_sg") %>%
+    arrange(.data$Parent, .data$Fingerprint) %>%
+    nest("Parent", "Fingerprint") %>%
+    mutate(
+      manifest = map(.data$data, n2k_manifest),
+      stored = map_chr(.data$manifest, store_manifest, base = base, project = project)
     )
 
   return(invisible(NULL))
