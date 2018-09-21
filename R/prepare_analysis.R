@@ -207,7 +207,6 @@ prepare_analysis <- function(
 
   message("\nPrepare Composite indices")
   flush.console()
-
   raw_sgs %>%
     anti_join(raw_metadata, by = "species_group") %>%
     inner_join(
@@ -240,6 +239,7 @@ prepare_analysis <- function(
     ) -> composite
 
   message("Prepare manifests")
+  flush.console()
   bind_rows(
     base_analysis %>%
       select(parent_sg = "species_group", "location_group", Fingerprint = "fingerprint"),
@@ -259,7 +259,14 @@ prepare_analysis <- function(
       ) %>%
       unnest()
   ) %>%
-    inner_join(composite_sg, by = c("parent_sg" = "parent")) %>%
+    left_join(composite_sg, by = c("parent_sg" = "parent")) %>%
+    mutate(
+      species_group = ifelse(
+        is.na(.data$species_group),
+        .data$parent_sg,
+        .data$species_group
+      )
+    ) %>%
     select(-"parent_sg") %>%
     arrange(.data$Parent, .data$Fingerprint) %>%
     nest("Parent", "Fingerprint") %>%
