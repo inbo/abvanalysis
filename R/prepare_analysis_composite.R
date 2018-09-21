@@ -7,8 +7,9 @@
 #' @export
 #' @importFrom assertthat assert_that is.string has_name
 #' @importFrom n2kanalysis n2k_composite
-#' @importFrom dplyr %>% add_rownames select mutate arrange filter slice
+#' @importFrom dplyr %>% select mutate arrange filter slice
 #' @importFrom rlang .data
+#' @importFrom tibble rownames_to_column
 prepare_analysis_composite <- function(
   frequency, type, species_group, location_group, models,
   base, project, overwrite = FALSE
@@ -32,20 +33,16 @@ prepare_analysis_composite <- function(
   flush.console()
 
   extractor <- function(model){
-    if (!require(dplyr)) {
-      stop("'dplyr' is required")
-    }
-    if (!require(INLA)) {
-      stop("'INLA' is required")
-    }
+    stopifnot(require(dplyr))
+    stopifnot(require(INLA))
     parameter <- model$summary.lincomb.derived %>%
-      add_rownames("Value") %>%
+      tibble::rownames_to_column("Value") %>%
       select("Value", Estimate = "mean", Variance = "sd") %>%
       mutate(
         Variance = .data$Variance ^ 2,
         Number = suppressWarnings(as.integer(.data$Value))
       ) %>%
-      arrange("Number", "Value") %>%
+      arrange(.data$Number, .data$Value) %>%
       select(-"Number")
     reference <- parameter %>%
       filter(.data$Value != "Trend") %>%
