@@ -2,7 +2,14 @@ Package: abvanalysis
 Title: Analysis of the Common Breeding Bird Survey
 Version: 0.2
 Date: 2018-09-19
-Authors@R: c(person("Thierry", "Onkelinx", email = "thierry.onkelinx@inbo.be", role = c("aut", "cre")))
+Authors@R: c(
+  person(
+    "Thierry", "Onkelinx", role = c("aut", "cre"), 
+    email = "thierry.onkelinx@inbo.be", 
+    comment = c(ORCID = "0000-0001-8804-4216")),
+  person(
+    family = "Research Institute for Nature and Forest",
+    role = c("cph", "fnd"), email = "info@inbo.be"))
 Description: Read in the raw data and prepare analysis datasets.
 Depends:
     R (>= 3.1.2)
