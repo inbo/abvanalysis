@@ -272,8 +272,7 @@ prepare_analysis <- function(
     nest("Parent", "Fingerprint") %>%
     mutate(
       manifest = map(.data$data, n2k_manifest),
-      stored = map_chr(.data$manifest, store_manifest, base = base, project = project)
+      stored = map(.data$manifest, store_manifest, base = base, project = project)
     )
-
   return(invisible(NULL))
 }

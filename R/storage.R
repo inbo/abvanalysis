@@ -4,11 +4,9 @@
 #' @inheritParams n2kanalysis::store_model
 #' @export
 #' @importFrom n2kanalysis store_model read_model get_file_fingerprint status get_status_fingerprint
-#' @importFrom dplyr %>%
 storage <- function(model, base, project, overwrite = FALSE) {
-  store_model(model, base = base, project = project, overwrite = overwrite) %>%
-    basename() %>%
-    read_model(base = base, project = project) -> x
+  x <- store_model(model, base = base, project = project, overwrite = overwrite)
+  x <- read_model(basename(x), base = base, project = project)
   data.frame(
     fingerprint = get_file_fingerprint(x),
     status = status(x),
