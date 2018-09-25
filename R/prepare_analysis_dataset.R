@@ -114,6 +114,7 @@ prepare_analysis_dataset <- function(
       cyear = c(min(dataset$cyear):max(dataset$cyear), 1)
     ) -> lc.trend
     rownames(lc.trend) <- c(min(dataset$year):max(dataset$year), "Trend")
+    lc.trend <- list(cyear = lc.trend)
     n2k_inla_nbinomial(
       result.datasource.id = metadata$result_datasource,
       scheme.id = metadata$scheme,
@@ -143,7 +144,7 @@ prepare_analysis_dataset <- function(
       cycle = c(min(dataset$cycle):max(dataset$cycle), 1)
     ) -> lc.trend
     rownames(lc.trend) <- c(min(dataset$cycle):max(dataset$cycle), "Trend")
-    lc.trend <- list(cyear = lc.trend)
+    lc.trend <- list(cycle = lc.trend)
     n2k_inla_nbinomial(
       result.datasource.id = metadata$result_datasource,
       scheme.id = metadata$scheme,
