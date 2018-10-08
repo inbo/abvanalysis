@@ -29,7 +29,7 @@ prepare_analysis_composite <- function(
     has_name(models, "last_imported_year"),
     has_name(models, "analysis_date")
   )
-  message(location_group, " ", species_group, " ", frequency, " ", "type")
+  message(location_group, " ", species_group, " ", frequency, " ", type)
   flush.console()
 
   extractor <- function(model){

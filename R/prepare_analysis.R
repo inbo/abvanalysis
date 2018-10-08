@@ -240,39 +240,45 @@ prepare_analysis <- function(
 
   message("Prepare manifests")
   flush.console()
-  bind_rows(
-    base_analysis %>%
-      select(parent_sg = "species_group", "location_group", Fingerprint = "fingerprint"),
-    comparison %>%
-      transmute(
-        parent_sg = .data$species_group,
-        .data$location_group,
-        Fingerprint = map_chr(.data$stored, "fingerprint"),
-        Parent = map(.data$data, function(x){select(x, Parent = "fingerprint")})
-      ) %>%
-      unnest(),
-    composite %>%
-      transmute(
-        .data$location_group,
-        Fingerprint = map_chr(.data$stored, "fingerprint"),
-        map(.data$data, select, Parent = "fingerprint", parent_sg = "parent")
-      ) %>%
-      unnest()
-  ) %>%
-    left_join(composite_sg, by = c("parent_sg" = "parent")) %>%
-    mutate(
-      species_group = ifelse(
-        is.na(.data$species_group),
-        .data$parent_sg,
-        .data$species_group
-      )
+  comparison %>%
+    transmute(
+      .data$species_group,
+      .data$location_group,
+      .data$frequency,
+      Fingerprint = map_chr(.data$stored, "fingerprint"),
+      Parent = map(.data$data, select, Parent = "fingerprint")
     ) %>%
-    select(-"parent_sg") %>%
-    arrange(.data$Parent, .data$Fingerprint) %>%
-    nest("Parent", "Fingerprint") %>%
+    unnest() -> meta_comparison
+  meta_comparison %>%
+    select(-"Fingerprint", Fingerprint = "Parent") %>%
+    bind_rows(meta_comparison) %>%
+    nest(.data$Fingerprint, .data$Parent) %>%
     mutate(
       manifest = map(.data$data, n2k_manifest),
-      stored = map(.data$manifest, store_manifest, base = base, project = project)
+      stored = map(
+        .data$manifest, store_manifest, base = base, project = project
+      )
     )
+  composite %>%
+    transmute(
+      .data$location_group,
+      .data$species_group,
+      .data$frequency,
+      .data$type,
+      Fingerprint = map_chr(.data$stored, "fingerprint"),
+      map(.data$data, select, Parent = "fingerprint")
+    ) %>%
+    unnest() -> meta_composite
+  meta_composite %>%
+    select(-"Fingerprint", Fingerprint = "Parent") %>%
+    bind_rows(meta_composite) %>%
+    nest(.data$Fingerprint, .data$Parent) %>%
+    mutate(
+      manifest = map(.data$data, n2k_manifest),
+      stored = map(
+        .data$manifest, store_manifest, base = base, project = project
+      )
+    )
+
   return(invisible(NULL))
 }
