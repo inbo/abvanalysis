@@ -18,6 +18,7 @@
 #' @importFrom git2rdata read_vc
 #' @importFrom n2kanalysis n2k_inla_poisson
 #' @importFrom rlang .data
+#' @importFrom stats setNames
 prepare_analysis_dataset <- function(
   species_group,
   location_group,
@@ -328,7 +329,6 @@ prepare_analysis_dataset <- function(
       do.call(what = cbind) %>%
       list() %>%
       setNames("cyear") -> lc.year
-    rownames(lc.year[[1]]) <-
     rep(stratum_weights$weight, each = n_year) %>%
       matrix(nrow = n_year) %>%
       as.data.frame() -> lc.stratum
@@ -343,7 +343,7 @@ prepare_analysis_dataset <- function(
       analysis.date = metadata$analysis_date,
       model.type =
         "inla Poisson: RW1(Year|Stratum) + Period + Location + SubLocation",
-      formula = paste("count ~ stratum + f(
+      formula = paste("count ~ 0 + stratum + f(
         cyear,
         model = 'rw1',
         replicate = as.integer(stratum),
@@ -371,7 +371,6 @@ prepare_analysis_dataset <- function(
       do.call(what = cbind) %>%
       list() %>%
       setNames("cycle") -> lc.cycle
-    rownames(lc.cycle[[1]]) <-
     rep(stratum_weights$weight, each = length(cycle)) %>%
       matrix(nrow = length(cycle)) %>%
       as.data.frame() -> lc.stratum
@@ -386,7 +385,7 @@ prepare_analysis_dataset <- function(
       analysis.date = metadata$analysis_date,
       model.type =
         "inla Poisson: RW1(Cycle|Stratum) + Period + Location + SubLocation",
-      formula = paste("count ~ 0 + f(
+      formula = paste("count ~ 0 + stratum + f(
         cycle,
         model = 'rw1',
         replicate = as.integer(stratum),
