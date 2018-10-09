@@ -4,8 +4,9 @@
 \alias{select_relevant}
 \title{Select the relevant observation of a species}
 \usage{
-select_relevant(observation, species, datafield, repo, min.observation = 100,
-  min.stratum = 3, min.cycle = 2, proportion = 0.15)
+select_relevant(observation, species, datafield, repo,
+  min.observation = 100, min.stratum = 3, min.cycle = 2,
+  proportion = 0.15)
 }
 \arguments{
 \item{observation}{the dataframe with the visits and location group}

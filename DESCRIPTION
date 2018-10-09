@@ -33,4 +33,5 @@ Remotes:
   inbo/n2kanalysis,
   inbo/n2khelper,
   inbo/n2kupdate
-RoxygenNote: 6.0.1
+RoxygenNote: 6.1.0
+Encoding: UTF-8

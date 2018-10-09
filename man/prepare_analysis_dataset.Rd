@@ -4,9 +4,10 @@
 \alias{prepare_analysis_dataset}
 \title{Create the analysis dataset based on the available raw data}
 \usage{
-prepare_analysis_dataset(species_group, location_group, metadata, observation,
-  repo, base, project, overwrite = FALSE, min.observation = 100,
-  min.stratum = 3, min.cycle = 2, proportion = 0.15)
+prepare_analysis_dataset(species_group, location_group, metadata,
+  observation, repo, base, project, overwrite = FALSE,
+  min.observation = 100, min.stratum = 3, min.cycle = 2,
+  proportion = 0.15)
 }
 \arguments{
 \item{species_group}{the species_group ID}
