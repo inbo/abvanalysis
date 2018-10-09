@@ -56,7 +56,7 @@ prepare_analysis_dataset <- function(
       location.group.id = location_group,
       analysis.date = metadata$analysis_date,
       model.type =
-        "inla nbinomial: Year:Stratum + Period + Location + SubLocation",
+        "inla Poisson: Year:Stratum + Period + Location + SubLocation",
       formula = "count ~ 1",
       first.imported.year = metadata$first_imported_year,
       last.imported.year = metadata$last_imported_year,
@@ -122,7 +122,7 @@ prepare_analysis_dataset <- function(
       location.group.id = location_group,
       analysis.date = metadata$analysis_date,
       model.type =
-        "inla nbinomial: Year:Stratum + Period + Location + SubLocation",
+        "inla Poisson: Year:Stratum + Period + Location + SubLocation",
       formula = paste("count ~ 1 + cyear +", design),
       lin.comb = lc.trend,
       first.imported.year = metadata$first_imported_year,
@@ -151,7 +151,7 @@ prepare_analysis_dataset <- function(
       location.group.id = location_group,
       analysis.date = metadata$analysis_date,
       model.type =
-        "inla nbinomial: Cycle:Stratum + Period + Location + SubLocation",
+        "inla Poisson: Cycle:Stratum + Period + Location + SubLocation",
       formula = paste("count ~ 1 + cycle +", design),
       lin.comb = lc.trend,
       first.imported.year = metadata$first_imported_year,
@@ -178,7 +178,7 @@ prepare_analysis_dataset <- function(
       location.group.id = location_group,
       analysis.date = metadata$analysis_date,
       model.type =
-        "inla nbinomial: RW1(Year|Stratum) + Period + Location + SubLocation",
+        "inla Poisson: RW1(Year|Stratum) + Period + Location + SubLocation",
       formula = paste("count ~ 1 + f(
         cyear,
         model = 'rw1',
@@ -212,7 +212,7 @@ prepare_analysis_dataset <- function(
       location.group.id = location_group,
       analysis.date = metadata$analysis_date,
       model.type =
-        "inla nbinomial: RW1(Cycle|Stratum) + Period + Location + SubLocation",
+        "inla Poisson: RW1(Cycle|Stratum) + Period + Location + SubLocation",
       formula = paste("count ~ 0 + f(
         cycle,
         model = 'rw1',
@@ -267,7 +267,7 @@ prepare_analysis_dataset <- function(
       location.group.id = location_group,
       analysis.date = metadata$analysis_date,
       model.type =
-        "inla nbinomial: Year:Stratum + Period + Location + SubLocation",
+        "inla Poisson: Year:Stratum + Period + Location + SubLocation",
       formula = paste("count ~ 0 + stratum + cyear:stratum +", design),
       lin.comb = lc.trend,
       first.imported.year = metadata$first_imported_year,
@@ -304,7 +304,7 @@ prepare_analysis_dataset <- function(
       location.group.id = location_group,
       analysis.date = metadata$analysis_date,
       model.type =
-        "inla nbinomial: Cycle:Stratum + Period + Location + SubLocation",
+        "inla Poisson: Cycle:Stratum + Period + Location + SubLocation",
       formula = paste("count ~ 0 + stratum + cycle:stratum +", design),
       lin.comb = lc.trend,
       first.imported.year = metadata$first_imported_year,
@@ -342,7 +342,7 @@ prepare_analysis_dataset <- function(
       location.group.id = location_group,
       analysis.date = metadata$analysis_date,
       model.type =
-        "inla nbinomial: RW1(Year|Stratum) + Period + Location + SubLocation",
+        "inla Poisson: RW1(Year|Stratum) + Period + Location + SubLocation",
       formula = paste("count ~ stratum + f(
         cyear,
         model = 'rw1',
@@ -385,7 +385,7 @@ prepare_analysis_dataset <- function(
       location.group.id = location_group,
       analysis.date = metadata$analysis_date,
       model.type =
-        "inla nbinomial: RW1(Cycle|Stratum) + Period + Location + SubLocation",
+        "inla Poisson: RW1(Cycle|Stratum) + Period + Location + SubLocation",
       formula = paste("count ~ 0 + f(
         cycle,
         model = 'rw1',
