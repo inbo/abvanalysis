@@ -36,7 +36,7 @@ get_linear_lincomb <- function(
       all.weight[, time.var, drop = FALSE]
     ) %>%
     rename(ID = time.var) %>%
-    mutate(ID = as.character(.data$ID)) %>%
+    mutate(ID = sprintf("%02i", .data$ID)) %>%
     group_by(.data$ID) %>%
     summarise_all(.funs = funs(sum)) -> mm
   stratum_weights %>%

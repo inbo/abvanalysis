@@ -111,10 +111,10 @@ prepare_analysis_dataset <- function(
     message("single linear year", appendLF = FALSE)
     # linear trend along year
     cbind(
+      `(Intercept)` = 1,
       cyear = c(min(dataset$cyear):max(dataset$cyear), 1)
     ) -> lc.trend
     rownames(lc.trend) <- c(min(dataset$year):max(dataset$year), "Trend")
-    lc.trend <- list(cyear = lc.trend)
     n2k_inla_nbinomial(
       result.datasource.id = metadata$result_datasource,
       scheme.id = metadata$scheme,
@@ -140,11 +140,10 @@ prepare_analysis_dataset <- function(
     # linear trend along cycle
     message(" cycle", appendLF = FALSE)
     cbind(
-      "(Intercept)" = 1,
+      `(Intercept)` = 1,
       cycle = c(min(dataset$cycle):max(dataset$cycle), 1)
     ) -> lc.trend
     rownames(lc.trend) <- c(min(dataset$cycle):max(dataset$cycle), "Trend")
-    lc.trend <- list(cycle = lc.trend)
     n2k_inla_nbinomial(
       result.datasource.id = metadata$result_datasource,
       scheme.id = metadata$scheme,
@@ -169,10 +168,9 @@ prepare_analysis_dataset <- function(
 
     # non linear trend along year
     message(" non-linear year", appendLF = FALSE)
-    min(dataset$cyear):max(dataset$cyear) %>%
-      length() %>%
-      diag() -> lc.index
-    rownames(lc.index) <- min(dataset$year):max(dataset$year)
+    n_year <- diff(range(dataset$cyear)) + 1
+    lc.index <- list(cyear = diag(n_year), `(Intercept)` = rep(1, n_year))
+    rownames(lc.index[[1]]) <- min(dataset$year):max(dataset$year)
     n2k_inla_nbinomial(
       result.datasource.id = metadata$result_datasource,
       scheme.id = metadata$scheme,
@@ -201,11 +199,12 @@ prepare_analysis_dataset <- function(
 
     # non linear trend along cycle
     message(" cycle")
-    min(dataset$cycle):max(dataset$cycle) %>%
-      length() %>%
-      diag() -> lc.index
     cycle <- seq_len(max(dataset$cycle)) * 3 + 2004
-    rownames(lc.index) <- paste(cycle, cycle + 2, sep = "-")
+    lc.index <- list(
+      cyear = diag(length(cycle)),
+      `(Intercept)` = rep(1, length(cycle))
+    )
+    rownames(lc.index[[1]]) <- paste(cycle, cycle + 2, sep = "-")
     n2k_inla_nbinomial(
       result.datasource.id = metadata$result_datasource,
       scheme.id = metadata$scheme,
@@ -322,23 +321,20 @@ prepare_analysis_dataset <- function(
 
     # non linear trend along year
     message(" non-linear year", appendLF = FALSE)
-    min(dataset$cyear):max(dataset$cyear) %>%
-      length() %>%
-      diag() %>%
-      outer(stratum_weights$weight) %>%
+    n_year <- diff(range(dataset$cyear)) + 1
+    outer(diag(n_year), stratum_weights$weight) %>%
       apply(3, as.data.frame) %>%
       unlist(recursive = FALSE) %>%
-      do.call(what = cbind) -> lc.index
-    rownames(lc.index) <- min(dataset$year):max(dataset$year)
-    colnames(lc.index) <- outer(
-        min(dataset$cyear):max(dataset$cyear) %>%
-        sprintf(fmt = "cyear%s:"),
-        stratum_weights$stratum %>%
-          sprintf(fmt = "stratum%s"),
-        FUN = "paste0"
-      ) %>%
-      as.vector()
-    lc.index <- list(cyear = lc.index)
+      do.call(what = cbind) %>%
+      list() %>%
+      setNames("cyear") -> lc.year
+    rownames(lc.year[[1]]) <-
+    rep(stratum_weights$weight, each = n_year) %>%
+      matrix(nrow = n_year) %>%
+      as.data.frame() -> lc.stratum
+    colnames(lc.stratum) <- paste0("stratum", stratum_weights$stratum)
+    lc.index <- c(lc.year, as.list(lc.stratum))
+    rownames(lc.index[[1]]) <- min(dataset$year):max(dataset$year)
     n2k_inla_nbinomial(
       result.datasource.id = metadata$result_datasource,
       scheme.id = metadata$scheme,
@@ -347,7 +343,7 @@ prepare_analysis_dataset <- function(
       analysis.date = metadata$analysis_date,
       model.type =
         "inla nbinomial: RW1(Year|Stratum) + Period + Location + SubLocation",
-      formula = paste("count ~ 0 + f(
+      formula = paste("count ~ stratum + f(
         cyear,
         model = 'rw1',
         replicate = as.integer(stratum),
@@ -368,24 +364,20 @@ prepare_analysis_dataset <- function(
 
     # non linear trend along cycle
     message(" cycle")
-    min(dataset$cycle):max(dataset$cycle) %>%
-      length() %>%
-      diag() %>%
-      outer(stratum_weights$weight) %>%
+    cycle <- seq_len(max(dataset$cycle)) * 3 + 2004
+    outer(diag(length(cycle)), stratum_weights$weight) %>%
       apply(3, as.data.frame) %>%
       unlist(recursive = FALSE) %>%
-      do.call(what = cbind) -> lc.index
-    cycle <- seq_len(max(dataset$cycle)) * 3 + 2004
-    rownames(lc.index) <- paste(cycle, cycle + 2, sep = "-")
-    colnames(lc.index) <- outer(
-        min(dataset$cycle):max(dataset$cycle) %>%
-        sprintf(fmt = "cycle%s:"),
-        stratum_weights$stratum %>%
-          sprintf(fmt = "stratum%s"),
-        FUN = "paste0"
-      ) %>%
-      as.vector()
-    lc.index <- list(cycle = lc.index)
+      do.call(what = cbind) %>%
+      list() %>%
+      setNames("cycle") -> lc.cycle
+    rownames(lc.cycle[[1]]) <-
+    rep(stratum_weights$weight, each = length(cycle)) %>%
+      matrix(nrow = length(cycle)) %>%
+      as.data.frame() -> lc.stratum
+    colnames(lc.stratum) <- paste0("stratum", stratum_weights$stratum)
+    lc.index <- c(lc.cycle, as.list(lc.stratum))
+    rownames(lc.index[[1]]) <- paste(cycle, cycle + 2, sep = "-")
     n2k_inla_nbinomial(
       result.datasource.id = metadata$result_datasource,
       scheme.id = metadata$scheme,
