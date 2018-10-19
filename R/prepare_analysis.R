@@ -5,6 +5,7 @@
 #' @export
 #' @importFrom git2rdata read_vc
 #' @importFrom dplyr %>% semi_join filter inner_join rename add_count ungroup anti_join
+#' @importFrom tidyr complete
 #' @importFrom n2kanalysis n2k_manifest store_manifest
 prepare_analysis <- function(
   repo, base, project, overwrite = FALSE,
@@ -119,6 +120,17 @@ prepare_analysis <- function(
     msg = "no 'species' in data 'species/species_group_species'"
   )
 
+  raw_distribution <- read_vc(file = "metadata/distribution", root = repo)
+  assert_that(
+    has_name(raw_distribution, "species_group"),
+    msg = "no 'species_group' in data 'metadata/distribution'"
+  )
+  assert_that(
+    has_name(raw_distribution, "family"),
+    msg = "no 'family' in data 'metadata/distribution'"
+  )
+
+
   message("Data wrangling")
   flush.console()
 
@@ -148,6 +160,13 @@ prepare_analysis <- function(
   flush.console()
   raw_metadata %>%
     inner_join(raw_sgs, by = "species_group") -> base_analysis
+  raw_distribution %>%
+    mutate(family = as.character(.data$family)) %>%
+    complete(
+      species_group = base_analysis$species_group,
+      fill = list(family = "poisson")
+    ) %>%
+    inner_join(x = base_analysis, by = "species_group") -> base_analysis
   base_analysis %>%
     group_by(.data$species_group, .data$location_group) %>%
     arrange(.data$location_group, .data$species_group) %>%

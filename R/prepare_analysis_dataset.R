@@ -16,7 +16,7 @@
 #' @importFrom utils flush.console
 #' @importFrom dplyr %>% mutate_at mutate distinct count inner_join transmute arrange bind_rows bind_cols
 #' @importFrom git2rdata read_vc
-#' @importFrom n2kanalysis n2k_inla_poisson
+#' @importFrom n2kanalysis n2k_inla
 #' @importFrom rlang .data
 #' @importFrom stats setNames
 prepare_analysis_dataset <- function(
@@ -50,14 +50,17 @@ prepare_analysis_dataset <- function(
 
   if (is.null(dataset)) {
     message("insufficient data")
-    n2k_inla_poisson(
+    n2k_inla(
       result.datasource.id = metadata$result_datasource,
       scheme.id = metadata$scheme,
       species.group.id = species_group,
       location.group.id = location_group,
       analysis.date = metadata$analysis_date,
-      model.type =
-        "inla Poisson: Year:Stratum + Period + Location + SubLocation",
+      family = metadata$family,
+      model.type = paste0(
+        "inla ", metadata$family,
+        ": Year:Stratum + Period + Location + SubLocation"
+      ),
       formula = "count ~ 1",
       first.imported.year = metadata$first_imported_year,
       last.imported.year = metadata$last_imported_year,
@@ -116,14 +119,17 @@ prepare_analysis_dataset <- function(
       cyear = c(min(dataset$cyear):max(dataset$cyear), 1)
     ) -> lc.trend
     rownames(lc.trend) <- c(min(dataset$year):max(dataset$year), "Trend")
-    n2k_inla_poisson(
+    n2k_inla(
       result.datasource.id = metadata$result_datasource,
       scheme.id = metadata$scheme,
       species.group.id = species_group,
       location.group.id = location_group,
       analysis.date = metadata$analysis_date,
-      model.type =
-        "inla Poisson: Year:Stratum + Period + Location + SubLocation",
+      family = metadata$family,
+      model.type = paste0(
+        "inla ", metadata$family,
+        ": Year:Stratum + Period + Location + SubLocation"
+      ),
       formula = paste("count ~ 1 + cyear +", design),
       lin.comb = lc.trend,
       first.imported.year = metadata$first_imported_year,
@@ -145,14 +151,17 @@ prepare_analysis_dataset <- function(
       cycle = c(min(dataset$cycle):max(dataset$cycle), 1)
     ) -> lc.trend
     rownames(lc.trend) <- c(min(dataset$cycle):max(dataset$cycle), "Trend")
-    n2k_inla_poisson(
+    n2k_inla(
       result.datasource.id = metadata$result_datasource,
       scheme.id = metadata$scheme,
       species.group.id = species_group,
       location.group.id = location_group,
       analysis.date = metadata$analysis_date,
-      model.type =
-        "inla Poisson: Cycle:Stratum + Period + Location + SubLocation",
+      family = metadata$family,
+      model.type = paste0(
+        "inla ", metadata$family,
+        ": Cycle:Stratum + Period + Location + SubLocation"
+      ),
       formula = paste("count ~ 1 + cycle +", design),
       lin.comb = lc.trend,
       first.imported.year = metadata$first_imported_year,
@@ -172,14 +181,17 @@ prepare_analysis_dataset <- function(
     n_year <- diff(range(dataset$cyear)) + 1
     lc.index <- list(cyear = diag(n_year), `(Intercept)` = rep(1, n_year))
     rownames(lc.index[[1]]) <- min(dataset$year):max(dataset$year)
-    n2k_inla_poisson(
+    n2k_inla(
       result.datasource.id = metadata$result_datasource,
       scheme.id = metadata$scheme,
       species.group.id = species_group,
       location.group.id = location_group,
       analysis.date = metadata$analysis_date,
-      model.type =
-        "inla Poisson: RW1(Year|Stratum) + Period + Location + SubLocation",
+      family = metadata$family,
+      model.type = paste0(
+        "inla ", metadata$family,
+        ": RW1(Year|Stratum) + Period + Location + SubLocation"
+      ),
       formula = paste("count ~ 1 + f(
         cyear,
         model = 'rw1',
@@ -206,14 +218,17 @@ prepare_analysis_dataset <- function(
       `(Intercept)` = rep(1, length(cycle))
     )
     rownames(lc.index[[1]]) <- paste(cycle, cycle + 2, sep = "-")
-    n2k_inla_poisson(
+    n2k_inla(
       result.datasource.id = metadata$result_datasource,
       scheme.id = metadata$scheme,
       species.group.id = species_group,
       location.group.id = location_group,
       analysis.date = metadata$analysis_date,
-      model.type =
-        "inla Poisson: RW1(Cycle|Stratum) + Period + Location + SubLocation",
+      family = metadata$family,
+      model.type = paste0(
+        "inla ", metadata$family,
+        ": RW1(Cycle|Stratum) + Period + Location + SubLocation"
+      ),
       formula = paste("count ~ 0 + f(
         cycle,
         model = 'rw1',
@@ -261,14 +276,17 @@ prepare_analysis_dataset <- function(
       formula = ~ 0 + stratum + cyear:stratum
     ) -> lc.trend
     names(lc.trend[[1]]) <- c("Trend", min(dataset$year):max(dataset$year))
-    n2k_inla_poisson(
+    n2k_inla(
       result.datasource.id = metadata$result_datasource,
       scheme.id = metadata$scheme,
       species.group.id = species_group,
       location.group.id = location_group,
       analysis.date = metadata$analysis_date,
-      model.type =
-        "inla Poisson: Year:Stratum + Period + Location + SubLocation",
+      family = metadata$family,
+      model.type = paste0(
+        "inla ", metadata$family,
+        ": Year:Stratum + Period + Location + SubLocation"
+      ),
       formula = paste("count ~ 0 + stratum + cyear:stratum +", design),
       lin.comb = lc.trend,
       first.imported.year = metadata$first_imported_year,
@@ -298,14 +316,17 @@ prepare_analysis_dataset <- function(
       ) -> lc.trend
     cycle <- seq_len(max(dataset$cycle)) * 3 + 2004
     names(lc.trend[[1]]) <- c("Trend", paste(cycle, cycle + 2, sep = "-"))
-    n2k_inla_poisson(
+    n2k_inla(
       result.datasource.id = metadata$result_datasource,
       scheme.id = metadata$scheme,
       species.group.id = species_group,
       location.group.id = location_group,
       analysis.date = metadata$analysis_date,
-      model.type =
-        "inla Poisson: Cycle:Stratum + Period + Location + SubLocation",
+      family = metadata$family,
+      model.type = paste0(
+        "inla ", metadata$family,
+        ": Cycle:Stratum + Period + Location + SubLocation"
+      ),
       formula = paste("count ~ 0 + stratum + cycle:stratum +", design),
       lin.comb = lc.trend,
       first.imported.year = metadata$first_imported_year,
@@ -335,14 +356,17 @@ prepare_analysis_dataset <- function(
     colnames(lc.stratum) <- paste0("stratum", stratum_weights$stratum)
     lc.index <- c(lc.year, as.list(lc.stratum))
     rownames(lc.index[[1]]) <- min(dataset$year):max(dataset$year)
-    n2k_inla_poisson(
+    n2k_inla(
       result.datasource.id = metadata$result_datasource,
       scheme.id = metadata$scheme,
       species.group.id = species_group,
       location.group.id = location_group,
       analysis.date = metadata$analysis_date,
-      model.type =
-        "inla Poisson: RW1(Year|Stratum) + Period + Location + SubLocation",
+      family = metadata$family,
+      model.type = paste0(
+        "inla ", metadata$family,
+        ": RW1(Year|Stratum) + Period + Location + SubLocation"
+      ),
       formula = paste("count ~ 0 + stratum + f(
         cyear,
         model = 'rw1',
@@ -377,14 +401,17 @@ prepare_analysis_dataset <- function(
     colnames(lc.stratum) <- paste0("stratum", stratum_weights$stratum)
     lc.index <- c(lc.cycle, as.list(lc.stratum))
     rownames(lc.index[[1]]) <- paste(cycle, cycle + 2, sep = "-")
-    n2k_inla_poisson(
+    n2k_inla(
       result.datasource.id = metadata$result_datasource,
       scheme.id = metadata$scheme,
       species.group.id = species_group,
       location.group.id = location_group,
       analysis.date = metadata$analysis_date,
-      model.type =
-        "inla Poisson: RW1(Cycle|Stratum) + Period + Location + SubLocation",
+      family = metadata$family,
+      model.type = paste0(
+        "inla ", metadata$family,
+        ": RW1(Cycle|Stratum) + Period + Location + SubLocation"
+      ),
       formula = paste("count ~ 0 + stratum + f(
         cycle,
         model = 'rw1',

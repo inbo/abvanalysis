@@ -31,13 +31,13 @@ prepare_analysis_comparison <- function(
 
   n2k_inla_comparison(
     result.datasource.id = models$result_datasource[1],
-    parent = models$fingerprint,
     parent.status = models %>%
       select(
         ParentAnalysis = "fingerprint",
         ParentStatusFingerprint = "status_fingerprint",
         ParentStatus = "status"
       ),
+    status = "waiting",
     seed = models$seed[1],
     scheme.id = models$scheme[1],
     species.group.id = species_group,

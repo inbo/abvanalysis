@@ -21,7 +21,7 @@ Imports:
     dplyr,
     git2rdata,
     methods,
-    n2kanalysis,
+    n2kanalysis (>= 0.2.5),
     n2khelper,
     n2kupdate,
     purrr,

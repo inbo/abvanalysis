@@ -60,7 +60,6 @@ prepare_analysis_composite <- function(
 
   n2k_composite(
     result.datasource.id = models$result_datasource[1],
-    parent = models$fingerprint,
     parent.status = models %>%
       select(
         ParentAnalysis = "fingerprint",
@@ -76,7 +75,8 @@ prepare_analysis_composite <- function(
     model.type = paste("composite index:", frequency, type),
     formula = paste("~", frequency),
     extractor = extractor,
-    analysis.date = max(models$analysis_date)
+    analysis.date = max(models$analysis_date),
+    status = "waiting"
   ) %>%
     storage(base = base, project = project, overwrite = overwrite)
 }
