@@ -36,7 +36,7 @@ prepare_analysis_composite <- function(
     stopifnot(require(dplyr))
     stopifnot(require(INLA))
     parameter <- model$summary.lincomb.derived %>%
-      tibble::rownames_to_column("Value") %>%
+      rownames_to_column("Value") %>%
       select("Value", Estimate = "mean", Variance = "sd") %>%
       mutate(
         Variance = .data$Variance ^ 2,

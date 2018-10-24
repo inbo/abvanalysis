@@ -44,4 +44,4 @@ writeLines(
   ),
   "~/n2k/abv.sh"
 )
-system("chmod 771 abv.sh")
+system("chmod 771 ~/n2k/abv.sh")
