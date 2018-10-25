@@ -33,9 +33,9 @@ prepare_analysis_composite <- function(
   flush.console()
 
   extractor <- function(model){
-    stopifnot(require(dplyr))
-    stopifnot(require(INLA))
-    stopifnot(require(tibble))
+    stopifnot(require(tibble, quietly = TRUE))
+    stopifnot(require(dplyr, quietly = TRUE))
+    stopifnot(require(INLA, quietly = TRUE))
     parameter <- model$summary.lincomb.derived %>%
       rownames_to_column("Value") %>%
       select("Value", Estimate = "mean", Variance = "sd") %>%
