@@ -46,7 +46,7 @@ prepare_analysis_comparison <- function(
     formula = paste("~", frequency),
     first.imported.year = models$first_imported_year[1],
     last.imported.year = models$last_imported_year[1],
-    analysis.date = models$analysis_date[1]
+    analysis.date = max(models$analysis_date)
   ) %>%
     storage(base = base, project = project, overwrite = overwrite)
 }
