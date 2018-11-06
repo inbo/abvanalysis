@@ -214,7 +214,7 @@ prepare_analysis_dataset <- function(
     message(" cycle")
     cycle <- seq_len(max(dataset$cycle)) * 3 + 2004
     lc.index <- list(
-      cyear = diag(length(cycle)),
+      cycle = diag(length(cycle)),
       `(Intercept)` = rep(1, length(cycle))
     )
     rownames(lc.index[[1]]) <- paste(cycle, cycle + 2, sep = "-")
