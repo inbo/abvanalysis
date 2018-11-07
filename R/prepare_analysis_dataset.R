@@ -64,7 +64,11 @@ prepare_analysis_dataset <- function(
       formula = "count ~ 1",
       first.imported.year = metadata$first_imported_year,
       last.imported.year = metadata$last_imported_year,
-      data = data.frame(count = integer(0), ObservationID = integer(0)),
+      data = data.frame(
+        count = integer(0),
+        ObservationID = integer(0),
+        DataFieldID = character(0)
+      ),
       status = "insufficient_data",
       parent = metadata$file_fingerprint,
       seed = metadata$seed
