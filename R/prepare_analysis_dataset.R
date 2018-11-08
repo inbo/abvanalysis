@@ -233,7 +233,7 @@ prepare_analysis_dataset <- function(
         "inla ", metadata$family,
         ": RW1(Cycle|Stratum) + Period + Location + SubLocation"
       ),
-      formula = paste("count ~ 0 + f(
+      formula = paste("count ~ 1 + f(
         cycle,
         model = 'rw1',
         hyper = list(theta = list(prior = 'pc.prec', param = c(0.5, 0.01)))
