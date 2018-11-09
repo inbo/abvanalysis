@@ -15,6 +15,7 @@
 #' @export
 #' @importFrom utils flush.console
 #' @importFrom dplyr %>% mutate_at mutate distinct count inner_join transmute arrange bind_rows bind_cols
+#' @importFrom tidyr complete full_seq
 #' @importFrom git2rdata read_vc
 #' @importFrom n2kanalysis n2k_inla
 #' @importFrom rlang .data
@@ -79,11 +80,24 @@ prepare_analysis_dataset <- function(
   }
 
   dataset %>%
+    complete(
+      stratum = .data$stratum,
+      year = full_seq(.data$year, 1),
+      fill = list(DataFieldID = metadata$autocomplete_df)
+    ) %>%
+    mutate(
+      cycle = 1 + (.data$year - 2007) %/% 3,
+      cyear = .data$year - min(.data$year) + 1,
+      ObservationID = ifelse(
+        is.na(.data$count),
+        cumsum(is.na(.data$count)),
+        .data$ObservationID
+      )
+    ) %>%
     mutate_at(
       .vars = c("stratum", "location", "sublocation", "period", "DataFieldID"),
       .funs = factor
-    ) %>%
-    mutate(cyear = .data$year - min(.data$year) + 1) -> dataset
+    ) -> dataset
 
   design.var <- c("ObservationID", "DataFieldID", "count")
   if (length(levels(dataset$period)) > 1) {
