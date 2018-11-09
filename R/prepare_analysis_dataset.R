@@ -273,7 +273,7 @@ prepare_analysis_dataset <- function(
       count(.data$stratum) %>%
       inner_join(
         dataset %>%
-          filter(!is.na(n_sample)) %>%
+          filter(!is.na(.data$n_sample)) %>%
           distinct(.data$stratum, .data$n_sample, .data$n_stratum),
         by = "stratum"
       ) %>%
