@@ -268,10 +268,12 @@ prepare_analysis_dataset <- function(
   } else {
     design.var <- c(design.var, "stratum")
     dataset %>%
+      filter(!is.na(.data$location)) %>%
       distinct(.data$stratum, .data$location) %>%
       count(.data$stratum) %>%
       inner_join(
         dataset %>%
+          filter(!is.na(n_sample)) %>%
           distinct(.data$stratum, .data$n_sample, .data$n_stratum),
         by = "stratum"
       ) %>%
