@@ -149,9 +149,11 @@ prepare_dataset <- function(
   ) -> datasource
   df <- store_datafield(
     datafield = data.frame(
-      local_id = c("sample", "observation"),
-      datasource = datasource$fingerprint,
-      table_name = c("fieldwork_sample", "fieldwork_observation"),
+      local_id = c("sample", "observation", "autocomplete"),
+      datasource = c(
+        rep(datasource$fingerprint, 2), result_datasource$fingerprint
+      ),
+      table_name = c("fieldwork_sample", "fieldwork_observation", "none"),
       primary_key = "id",
       datafield_type = "integer",
       stringsAsFactors = FALSE
@@ -174,13 +176,13 @@ prepare_dataset <- function(
   ) %>%
     mutate(
       sample_df = df$fingerprint[df$local_id == "sample"],
-      observation_df = df$fingerprint[df$local_id == "observation"]
+      observation_df = df$fingerprint[df$local_id == "observation"],
+      autocomplete_df = df$fingerprint[df$local_id == "autocomplete"]
     ) %>%
     write_vc(
       file = "metadata/metadata",
       root = repo,
       sorting = "file_fingerprint",
-      override = TRUE,
       stage = TRUE
     )
   rm_data(root = repo, path = "metadata", type = "yml", stage = TRUE)
