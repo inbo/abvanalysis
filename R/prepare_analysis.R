@@ -170,15 +170,14 @@ prepare_analysis <- function(
   base_analysis %>%
     group_by(.data$species_group, .data$location_group) %>%
     arrange(.data$location_group, .data$species_group) %>%
-    nest(.key = "metadata") %>%
-    mutate(
-      stored = pmap(
-        list(
-          species_group = .data$species_group,
-          location_group = .data$location_group,
-          metadata = .data$metadata
-        ),
-        prepare_analysis_dataset,
+    nest(.key = "metadata") -> base_nested
+  base_nested$stored <- lapply(
+    seq_along(base_nested$species_group),
+    function(i) {
+      prepare_analysis_dataset(
+        species_group = base_nested$species_group[i],
+        location_group = base_nested$location_group[i],
+        metadata = base_nested$metadata[[i]],
         observation = observation,
         repo = repo,
         base = base,
@@ -189,7 +188,9 @@ prepare_analysis <- function(
         min.cycle = min.cycle,
         proportion = proportion
       )
-    ) %>%
+    }
+  )
+  base_nested %>%
     select(-"metadata") %>%
     unnest() %>%
     inner_join(
