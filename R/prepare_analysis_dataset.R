@@ -168,7 +168,8 @@ prepare_analysis_dataset <- function(
       `(Intercept)` = 1,
       cycle = c(min(dataset$cycle):max(dataset$cycle), 1)
     ) -> lc.trend
-    rownames(lc.trend) <- c(min(dataset$cycle):max(dataset$cycle), "Trend")
+    cycle <- seq_len(max(dataset$cycle)) * 3 + 2004
+    rownames(lc.trend) <- c(paste(cycle, cycle + 2, sep = "-"), "Trend")
     n2k_inla(
       result.datasource.id = metadata$result_datasource,
       scheme.id = metadata$scheme,
