@@ -1,0 +1,455 @@
+```{r {{id}}-basis}
+id <- "{{id}}"
+resultaten %>%
+  filter(fingerprint == id) %>%
+  inner_join(recent, by = "analysis") -> deze_index
+deze_index %>%
+  arrange(desc(timestamp)) %>%
+  group_by(cycle, nonlinear) %>%
+  slice(1) %>%
+  semi_join(x = deze_index, by = "analysis") -> deze_index
+soort_naam <- deze_index$species_group[1]
+```
+
+\pagebreak
+
+## `r soort_naam`
+
+### Indices
+
+```{r {{id}}-vlaanderen-cyclus-data}
+deze_index %>%
+  filter(cycle, parameter != "Trend", stratum == "Vlaanderen") %>%
+  transmute(
+    cyclus = factor(parameter),
+    index = median, lcl, ucl,
+    nonlinear, waic, analysis, status, stratum
+  ) -> index_vlaanderen_cyclus
+index_vlaanderen_cyclus %>%
+  group_by(nonlinear) %>%
+  summarise(referentie = mean(index)) %>%
+  inner_join(index_vlaanderen_cyclus, by = "nonlinear") %>%
+  mutate(
+    index = index - referentie,
+    lcl = lcl - referentie,
+    ucl = ucl - referentie
+  ) %>%
+  select(-referentie) -> index_vlaanderen_cyclus
+index_vlaanderen_cyclus %>%
+  filter(nonlinear) %>%
+  arrange(cyclus) %>%
+  slice(1) %>%
+  pull(index) -> referentie
+index_vlaanderen_cyclus %>%
+  mutate(
+    index = exp(index - referentie),
+    lcl = exp(lcl - referentie),
+    ucl = exp(ucl - referentie)
+  ) -> index_vlaanderen_cyclus
+index_vlaanderen_cyclus %>%
+  distinct(nonlinear, waic) -> waic_cyclus
+if (nrow(waic_cyclus) > 1) {
+  waic_cyclus %>%
+    arrange(waic) %>%
+    summarise(
+      type = nonlinear[1],
+      delta = diff(waic)
+    ) -> waic_cyclus
+  if (waic_cyclus$type) {
+    if (waic_cyclus$delta > 5) {
+      cap_vlaanderen_cyclus <- "niet lineair"
+    } else {
+      cap_vlaanderen_cyclus <- "mogelijk niet lineair"
+    }
+  } else {
+    cap_vlaanderen_cyclus <- "lineair"
+  }
+} else {
+  cap_vlaanderen_cyclus <- "onbekend"
+}
+```
+
+```{r {{id}}-vlaanderen-cyclus, fig.cap = paste0("Vlaamse indices voor ", soort_naam, " op basis van data geaggregeerd per driejaarlijkse cyclus. De trend is ", cap_vlaanderen_cyclus, "."), fig.height = 50 / 25.4}
+if (nrow(index_vlaanderen_cyclus)) {
+ggplot(
+  index_vlaanderen_cyclus, 
+  aes(x = cyclus, y = index, ymin = lcl, ymax = ucl, group = analysis)
+) +
+  geom_hline(yintercept = 1, linetype = 3) +
+  geom_ribbon(aes(fill = nonlinear), alpha = 0.1) +
+  geom_line(aes(colour = nonlinear)) +
+  geom_blank(
+    data = data.frame(
+      cyclus = index_vlaanderen_cyclus$cyclus[1],
+      index = grenzen,
+      lcl = grenzen,
+      ucl = grenzen,
+      analysis = 1
+    )
+  ) +
+  scale_y_continuous(labels = percent) +
+  scale_fill_discrete(
+    "Model", 
+    breaks = c(FALSE, TRUE), 
+    labels = c("log lineair", "niet lineair")
+  ) +
+  scale_colour_discrete(
+    "Model", 
+    breaks = c(FALSE, TRUE), 
+    labels = c("log lineair", "niet lineair")
+  ) +
+  theme(
+    axis.title.x = element_blank()
+  )
+}
+```
+
+```{r {{id}}-vlaanderen-jaar-data}
+deze_index %>%
+  filter(stratum == "Vlaanderen", !cycle, parameter != "Trend") %>%
+  transmute(
+    jaar = as.integer(parameter),
+    index = median, lcl, ucl,
+    nonlinear, waic, analysis, status
+  ) -> index_vlaanderen_jaar
+index_vlaanderen_jaar %>%
+  group_by(nonlinear) %>%
+  summarise(referentie = mean(index)) %>%
+  inner_join(index_vlaanderen_jaar, by = "nonlinear") %>%
+  mutate(
+    index = index - referentie,
+    lcl = lcl - referentie,
+    ucl = ucl - referentie
+  ) %>%
+  select(-referentie) -> index_vlaanderen_jaar
+index_vlaanderen_jaar %>%
+  filter(nonlinear) %>%
+  arrange(jaar) %>%
+  slice(1) %>%
+  pull(index) -> referentie
+index_vlaanderen_jaar %>%
+  mutate(
+    index = exp(index - referentie),
+    lcl = exp(lcl - referentie),
+    ucl = exp(ucl - referentie)
+  ) -> index_vlaanderen_jaar
+index_vlaanderen_jaar %>%
+  distinct(nonlinear, waic) -> waic_jaar
+if (nrow(waic_jaar) == 2) {
+  waic_jaar %>%
+    arrange(waic) %>%
+    summarise(
+      type = nonlinear[1],
+      delta = diff(waic)
+    ) -> waic_jaar
+  if (!waic_jaar$type) {
+    cap_vlaanderen_jaar <- "lineair"
+  } else if (waic_jaar$delta > 5) {
+    cap_vlaanderen_jaar <- "niet lineair"
+  } else {
+    cap_vlaanderen_jaar <- "mogelijk niet lineair"
+  }
+} else {
+  cap_vlaanderen_jaar <- "onbekend"
+}
+```
+
+```{r {{id}}-vlaanderen-jaar, fig.cap = paste0("Vlaamse indices voor ", soort_naam, " op basis van jaarlijkse data. De trend is ", cap_vlaanderen_jaar, "."), fig.height = 50 / 25.4}
+if (nrow(index_vlaanderen_jaar)) {
+ggplot(
+  index_vlaanderen_jaar, 
+  aes(x = jaar, y = index, ymin = lcl, ymax = ucl, group = analysis)
+) +
+  geom_hline(yintercept = 1, linetype = 3) +
+  geom_ribbon(aes(fill = nonlinear), alpha = 0.1) +
+  geom_line(aes(colour = nonlinear)) +
+  geom_blank(
+    data = data.frame(
+      jaar = index_vlaanderen_jaar$jaar[1],
+      index = grenzen,
+      lcl = grenzen,
+      ucl = grenzen,
+      analysis = 1
+    )
+  ) +
+  scale_y_continuous(labels = percent) +
+  scale_fill_discrete(
+    "Model", 
+    breaks = c(FALSE, TRUE), 
+    labels = c("log lineair", "niet lineair")
+  ) +
+  scale_colour_discrete(
+    "Model", 
+    breaks = c(FALSE, TRUE), 
+    labels = c("log lineair", "niet lineair")
+  ) +
+  theme(
+    axis.title.x = element_blank()
+  )
+}
+```
+
+### Overzicht gebruikte waarnemingen
+
+```{r {{id}}-get-design}
+deze_index %>%
+  filter(!cycle, !nonlinear) %>%
+  distinct(analysis) %>%
+  pull(analysis) -> fp
+design <- raw_results[[fp]]$design
+```
+
+```{r {{id}}-totaal, results = "asis"}
+if (has_name(design$total, "stratum")) {
+  strata_description %>%
+    rename(stratum = description) %>%
+    inner_join(
+      design$total %>%
+        mutate(stratum = as.character(stratum)), 
+      by = c("fingerprint" = "stratum")
+    ) %>%
+    select(stratum, hokken = n_location, bezoeken = n_visit) -> effort
+} else {
+  design$total %>%
+    select(hokken = n_location, bezoeken = n_visit) -> effort
+}
+effort %>%
+  arrange(desc(hokken), desc(bezoeken)) %>%
+  kable(caption = paste("Totale monitoringinspanning voor", soort_naam))
+```
+
+```{r {{id}}-herbezoek}
+design$revisit %>%
+  arrange(visits) %>%
+  select("aantal jaren bezocht" = visits, "aantal hokken" = n) %>%
+  kable(caption = paste("Graad van herbezoek voor", soort_naam))
+```
+
+```{r {{id}}-zoekinspanning-stratum, fig.cap = paste("Evolutie van het aantal onderzochte hokken voor", soort_naam)}
+if (has_name(design$total, "stratum")) {
+  strata_description %>%
+    rename(stratum = description) %>%
+    inner_join(
+      design$time_obs %>%
+        ungroup() %>%
+        mutate(stratum = as.character(stratum)), 
+      by = c("fingerprint" = "stratum")
+    ) %>%
+    transmute(
+      stratum, jaar = cyear + 2006, 
+      hokken = n_location, mean_obs, min_obs, max_obs
+    ) -> inspanning_stratum
+  ggplot(inspanning_stratum, aes(x = jaar, y = hokken, colour = stratum)) +
+    geom_line() +
+    ylim(0, NA) +
+    scale_color_discrete(drop = FALSE)
+} else {
+  design$time_obs %>%
+    transmute(
+      jaar = cyear + 2006, 
+      hokken = n_location, mean_obs, min_obs, max_obs
+    ) -> inspanning_stratum
+  ggplot(inspanning_stratum, aes(x = jaar, y = hokken)) +
+    geom_line() +
+    ylim(0, NA)
+}
+```
+
+```{r {{id}}-zoekinspanning-hok, fig.cap = paste0("Aantal waarnemingen per hok en per jaar voor ", soort_naam, ". De lijn geeft het gemiddelde, de band het minimum en het maximum.")}
+p <- ggplot(
+  inspanning_stratum, 
+  aes(x = jaar, y = mean_obs, ymin = min_obs, ymax = max_obs)
+) +
+  geom_ribbon(alpha = 0.2) +
+  geom_line() +
+  scale_y_continuous(
+    "Aantal waarnemingen per hok en per jaar", limits = c(0, 18)
+  )
+if (has_name(inspanning_stratum, "stratum")) {
+  p + facet_wrap(~stratum)
+} else {
+  p
+}
+```
+
+```{r {{id}}-totale-inspanning, fig.cap = paste("Evolutie van de totale zoekinspanning voor ", soort_naam)}
+design[[4]] %>%
+  transmute(
+    jaar = time + 2006, onderzocht = n, nieuw = new, cummulatief = cumsum(new)
+  ) %>%
+  gather("kenmerk", "hokken", -jaar) %>%
+  mutate(
+    kenmerk = factor(kenmerk, levels = c("cummulatief", "onderzocht", "nieuw"))
+  ) %>%
+  ggplot(aes(x = jaar, y = hokken, colour = kenmerk, linetype = kenmerk)) +
+  geom_line() +
+  ylab("aantal hokken")
+```
+
+```{r {{id}}-tussentijd, fig.cap = paste0("Aantal jaren sinds het vorige bezoek aan een hok voor ", soort_naam, ". De lijn geeft het gemiddelde weer. De band geeft het minimum en het maximum weer.")}
+design[[4]] %>%
+  filter(time > 1) %>%
+  transmute(
+    jaar = time + 2006, min_delta, max_delta, mean_delta
+  ) %>%
+  ggplot(aes(x = jaar, y = mean_delta, ymin = min_delta, ymax = max_delta)) +
+  geom_ribbon(alpha = 0.2) +
+  geom_line() +
+  scale_y_continuous("Jaren sinds vorig bezoek", limits = c(1, NA))
+```
+
+\clearpage
+
+### Trends per stratum
+
+```{r {{id}}-stratum-lineair, results = "asis"}
+deze_index %>%
+  filter(parameter == "Trend", !nonlinear) %>%
+  mutate(
+    median = 100 * exp(median * ifelse(cycle, 5, 15)) - 100,
+    lcl = 100 * exp(lcl * ifelse(cycle, 5, 15)) - 100,
+    ucl = 100 * exp(ucl * ifelse(cycle, 5, 15)) - 100,
+    cycle = ifelse(cycle, "driejaarlijks", "jaarlijks")
+  ) %>%
+  transmute(
+    stratum,
+    cycle,
+    trend = sprintf(
+      "%s%0.1f%% (%0.1f%%; %0.1f%%)%1$s", 
+      ifelse(ucl < 0 | lcl > 0, "**", ""), median, lcl, ucl
+    )
+  ) %>%
+  spread(cycle, trend) %>%
+  kable(
+    caption = paste(
+      "Gemiddelde wijziging over 15 jaar voor ", 
+      soort_naam, 
+      "in de veronderstelling van een lineaire trend."
+    ),
+    format = "markdown"
+  )
+```
+
+```{r {{id}}-stratum-nl-cyclus, fig.cap = paste("Niet lineaire trends per stratum voor", soort_naam, "op basis van de data geaggregeerd per driejaarlijkse cyclus.")}
+deze_index %>%
+  filter(
+    !stratum %in% c("Vlaanderen", "distribution", "dispersion"), 
+    cycle, 
+    parameter != "Trend"
+) -> stratum_trend_cyclus
+if (nrow(stratum_trend_cyclus)) {
+stratum_trend_cyclus %>%
+  transmute(
+    cyclus = as.integer(parameter) * 3 + 2006,
+    cyclus = paste(cyclus, cyclus + 2, sep = "-") %>%
+      factor(),
+    index = median,
+    lcl,
+    ucl,
+    nonlinear, analysis, status, stratum
+  ) %>%
+  ggplot(
+    aes(x = cyclus, y = index, ymin = lcl, ymax = ucl, group = stratum)
+  ) +
+  geom_ribbon(alpha = 0.1) +
+  geom_line() +
+  geom_hline(yintercept = 0, linetype = 3) +
+  facet_wrap(~stratum, scales = "free_y") +
+  scale_y_continuous("log effect") +
+  theme(
+    axis.title.x = element_blank(),
+    axis.text.x = element_text(angle = 90)
+  )
+}
+```
+
+```{r {{id}}-stratum-nl-jaar, fig.cap = paste("Niet lineaire trends per stratum voor", soort_naam, "op basis van jaarlijkse data.")}
+deze_index %>%
+  filter(
+    !stratum %in% c("Vlaanderen", "distribution", "dispersion"), 
+    !cycle, 
+    parameter != "Trend"
+) %>%
+  transmute(
+    jaar = as.integer(parameter) + 2006,
+    index = median, lcl, ucl,
+    nonlinear, waic, analysis, status, stratum
+  ) -> stratum_trend_jaar
+if (nrow(stratum_trend_jaar)) {
+  ggplot(stratum_trend_jaar, aes(x = jaar, y = index, ymin = lcl, ymax = ucl)) +
+  geom_ribbon(alpha = 0.1) +
+  geom_line() +
+  geom_hline(yintercept = 0, linetype = 3) +
+  facet_wrap(~stratum, scales = "free_y") +
+  scale_y_continuous("log index") +
+  theme(
+    axis.title.x = element_blank()
+  )
+}
+```
+
+### Modelvalidatie
+
+```{r {{id}}-mv}
+deze_index %>%
+  distinct(analysis, cycle, nonlinear) %>%
+  mutate(
+    cycle = ifelse(cycle, "driejaarlijks", "jaarlijks"),
+    nonlinear = ifelse(nonlinear, "niet lineair", "log lineair"),
+    model = interaction(cycle, nonlinear, sep = "\n"),
+    result = raw_results[analysis],
+    dispersion = map(result, "dispersion"),
+    distribution = map(result, "distribution")
+  ) %>%
+  select(-result) -> model_validation
+```
+
+```{r {{id}}-dispersion, fig.cap = paste("Controleer de dispersie voor", soort_naam)}
+model_validation %>%
+  transmute(
+    model, 
+    observed = map_dbl(dispersion, "data"), 
+    dispersion = map(dispersion, "model")
+  ) %>%
+  unnest() %>%
+  ggplot(aes(x = dispersion, colour = model)) +
+  geom_density() +
+  geom_vline(aes(xintercept = observed, colour = model), linetype = 2)
+```
+
+```{r {{id}}-distribution, fig.cap = paste("Controleer de distributie voor", soort_naam)}
+model_validation %>%
+  select(model, distribution) %>%
+  unnest() %>%
+  mutate(
+    median = ecdf / median,
+    lcl = ecdf / lcl,
+    ucl = ecdf / ucl
+  ) %>%
+  ggplot(aes(x = x, y = median)) +
+  geom_hline(yintercept = 1, linetype = 2) +
+  geom_ribbon(aes(fill = model, ymin = lcl, ymax = ucl), alpha = 0.1) +
+  geom_line(aes(colour = model)) +
+  geom_blank(
+    data = data.frame(x = 0, median = c(0.95, 1.05))
+  ) + 
+  scale_y_continuous("observed / expected ecdf", labels = percent)
+```
+
+### Fingerprints
+
+soortgroep: `{{id}}`
+
+```{r {{id}}-fingerprint, results = "asis"}
+deze_index %>%
+  distinct(model_type, analysis, status, cycle, nonlinear) %>%
+  arrange(cycle, nonlinear) %>%
+  transmute(
+    output = sprintf(
+      "- %s\n    - analysis: `%s`\n    - status: `%s`", 
+      model_type, analysis, status
+    )
+  ) %>%
+  pull(output) %>%
+  cat(sep = "\n")
+```

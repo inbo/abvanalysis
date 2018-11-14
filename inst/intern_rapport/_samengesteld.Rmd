@@ -1,0 +1,93 @@
+```{r {{id}}-basis}
+id <- "{{id}}"
+resultaten %>%
+  filter(fingerprint == id, nonlinear) %>%
+  transmute(
+    parameter, 
+    index = exp(mean), 
+    lcl = exp(lcl),
+    ucl = exp(ucl),
+    analysis,
+    status,
+    model_type,
+    cycle,
+    species_group
+  ) %>%
+  inner_join(recent, by = "analysis") -> deze_index
+deze_index %>%
+  arrange(desc(timestamp)) %>%
+  group_by(cycle) %>%
+  slice(1) %>%
+  semi_join(x = deze_index, by = "analysis") -> deze_index
+soort_naam <- deze_index$species_group[1]
+```
+
+\pagebreak
+
+## `r soort_naam`
+
+```{r {{id}}-vlaanderen-cyclus-data}
+deze_index %>%
+  filter(cycle) %>%
+  mutate(
+    cyclus = factor(parameter)
+  ) -> index_vlaanderen_cyclus
+```
+
+```{r {{id}}-vlaanderen-cyclus, fig.cap = paste0("Vlaamse samengestelde indices voor ", soort_naam, " op basis van data geaggregeerd per driejaarlijkse cyclus."), fig.height = 50 / 25.4}
+if (nrow(index_vlaanderen_cyclus)) {
+ggplot(
+  index_vlaanderen_cyclus, 
+  aes(x = cyclus, y = index, ymin = lcl, ymax = ucl, group = analysis)
+) +
+  geom_hline(yintercept = 1, linetype = 3) +
+  geom_ribbon(alpha = 0.1) +
+  geom_line() +
+  geom_blank(
+    data = data.frame(
+      cyclus = index_vlaanderen_cyclus$cyclus[1], 
+      index = grenzen,
+      lcl = grenzen,
+      ucl = grenzen,
+      analysis = 1
+    )
+  ) +
+  scale_y_continuous(labels = percent) +
+  theme(
+    axis.title.x = element_blank()
+  )
+}
+```
+
+```{r {{id}}-vlaanderenjaar-data}
+deze_index %>%
+  filter(!cycle) %>%
+  mutate(
+    jaar = as.integer(parameter)
+  ) -> index_vlaanderen_jaar
+```
+
+```{r {{id}}-vlaanderen-jaar, fig.cap = paste0("Vlaamse samengestelde indices voor ", soort_naam, " op basis van jaarlijkse data."), fig.height = 50 / 25.4}
+if (nrow(index_vlaanderen_jaar)) {
+ggplot(
+  index_vlaanderen_jaar, 
+  aes(x = jaar, y = index, ymin = lcl, ymax = ucl, group = analysis)
+) +
+  geom_hline(yintercept = 1, linetype = 3) +
+  geom_ribbon(alpha = 0.1) +
+  geom_line() +
+  geom_blank(
+    data = data.frame(
+      jaar = index_vlaanderen_jaar$jaar[1], 
+      index = grenzen,
+      lcl = grenzen,
+      ucl = grenzen,
+      analysis = 1
+    )
+  ) +
+  scale_y_continuous(labels = percent) +
+  theme(
+    axis.title.x = element_blank()
+  )
+}
+```

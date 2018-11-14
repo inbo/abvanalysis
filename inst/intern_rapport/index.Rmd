@@ -1,0 +1,171 @@
+---
+title: "Indices van de Algemene Broedvogelsmonitoring Vlaanderen (ABV)"
+author: 
+  - 
+    name: "Thierry Onkelinx"
+    email: "thierry.onkelinx@inbo.be"
+  - 
+    name: "Glenn Vermeersch"
+    email: "glenn.vermeersch@inbo.be"
+reportnr: "Hier komt de DOI van het rapport"
+link-citations: TRUE
+site: bookdown::bookdown_site
+output:
+  bookdown::pdf_book:
+    base_format: INBOmd::inbo_rapport
+    floatbarrier: subsubsection
+    lang: dutch
+    lof: FALSE
+    lot: FALSE
+  bookdown::gitbook:
+    split_by: "chapter+number"
+    template: !expr INBOmd::inbo_rapport_css("html")
+  bookdown::epub_book:
+    stylesheet: "css/inbo_rapport.css"
+    template: !expr INBOmd::inbo_rapport_css("epub")
+params:
+  username: !r Sys.getenv("N2KRESULT_USERNAME")
+  password: !r Sys.getenv("N2KRESULT_PASSWORD")
+---
+
+```{r setup, results ='hide', echo = FALSE, message = FALSE, cache = FALSE, purl = FALSE, warning=FALSE}
+library(knitr)
+opts_chunk$set(
+  echo = FALSE, 
+  eval = TRUE,
+  cache = FALSE,
+  dpi = 300,
+  fig.width = 150 / 25.4,
+  fig.height = 75 / 25.4,
+  warning = FALSE,
+  error = TRUE,
+  message = FALSE
+)
+library(n2khelper)
+library(tidyverse)
+library(scales)
+library(INBOtheme)
+grenzen <- c(0.65, 1.5)
+if (opts_knit$get("rmarkdown.pandoc.to") == "html") {
+  theme_set(
+    theme_inbo(
+      base_family = "Flanders Art Sans",
+      base_size = 12
+    )
+  )
+} else {
+  opts_chunk$set(dev = "cairo_pdf")
+  theme_set(
+    theme_inbo(
+      base_family = "Flanders Art Sans",
+      base_size = 8
+    )
+  )
+}
+```
+
+```{r import-data}
+conn <- connect_result(username = params$username, password = params$password)
+tbl(conn, "scheme") %>%
+  filter(description == "Algemene broedvogels") %>%
+  semi_join(
+    x = tbl(conn, "species_group"),
+    by = c("scheme" = "id")
+  ) %>%
+  select(fingerprint, species_group = description) %>%
+  collect() -> species_group
+if (file.exists("results.rds")) {
+  raw_results <- readRDS("results.rds")
+  recent <- readRDS("recent.rds")
+} else {
+  raw_results <- aws.s3::s3readRDS(
+    "abv/results/results.rds", 
+    bucket = "n2kmonitoring"
+  )
+  saveRDS(raw_results, "results.rds")
+  aws <- aws.s3::get_bucket("n2kmonitoring", "abv/manifest", max = Inf)
+  library(n2kanalysis)
+  map_chr(aws, "Key") %>%
+    basename() %>%
+    map(read_manifest, base = aws, project = "abv") -> manifests
+  tibble(
+    timestamp = map_chr(aws, "LastModified") %>%
+      gsub(pattern = "T", replacement = " ") %>%
+      as.POSIXct(),
+    manifest = map_chr(manifests, slot, "Fingerprint"),
+    tmp = map(manifests, slot, "Manifest")
+  ) %>%
+    unnest() -> when
+  when %>%
+    arrange(desc(timestamp)) %>%
+    group_by(Fingerprint) %>%
+    slice(1) %>%
+    select(analysis = Fingerprint, timestamp) -> recent
+  saveRDS(recent, "recent.rds")
+}
+```
+
+```{r}
+raw_results %>%
+  map_df("result") %>%
+  right_join(x = species_group, by = c("fingerprint" = "species_group")) %>%
+  mutate(
+    composite = grepl("composite", model_type),
+    cycle = grepl("(Cycle|cycle)", model_type),
+    nonlinear = grepl("(RW1|non linear)", model_type)
+  ) -> resultaten
+```
+
+```{r}
+resultaten %>%
+  distinct(stratum) %>%
+  pull(stratum) -> strata
+tbl(conn, "location") %>%
+  filter(fingerprint %in% strata) %>%
+  select(fingerprint, description) %>%
+  collect() %>%
+  mutate(description = factor(description)) -> strata_description
+strata_description %>%
+  left_join(x = resultaten, by = c("stratum" = "fingerprint")) %>%
+  mutate(
+    stratum = ifelse(is.na(description), stratum, description)
+  ) %>%
+  select(-description) -> resultaten
+```
+
+# Samengestelde indices
+
+```{r samengesteld, results='asis', cache = FALSE}
+resultaten %>%
+  filter(composite) %>%
+  distinct(fingerprint, species_group) %>%
+  arrange(species_group) %>%
+  pull(fingerprint) %>%
+  sapply(
+    function(id) {
+      knit_expand("_samengesteld.Rmd", id = id)
+    }
+  ) %>%
+  paste(collapse = "\n\n") -> rmd
+knit(text = rmd, quiet = TRUE) %>%
+  cat()
+```
+
+
+# Indices per soort
+
+```{r indices, results='asis', cache = FALSE}
+resultaten %>%
+  filter(!composite) %>%
+  distinct(fingerprint, species_group) %>%
+  arrange(species_group) %>%
+  pull(fingerprint) %>%
+  sapply(
+    function(id) {
+      knit_expand("_soort_index.Rmd", id = id)
+    }
+  ) %>%
+  paste(collapse = "\n\n") -> rmd
+knit(text = rmd, quiet = TRUE) %>%
+  cat()
+```
