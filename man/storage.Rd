@@ -4,7 +4,7 @@
 \alias{storage}
 \title{store the n2kModel and retrieve its fingerprints}
 \usage{
-storage(model, base, project, overwrite = FALSE)
+storage(model, base, project, overwrite = FALSE, validate = FALSE)
 }
 \arguments{
 \item{model}{a n2kModel object}
@@ -14,6 +14,8 @@ storage(model, base, project, overwrite = FALSE)
 \item{project}{will be a relative path within the base location}
 
 \item{overwrite}{should an existing object be overwritten? Defaults to TRUE}
+
+\item{validate}{check that the object is valid before storing it. Defaults to TRUE}
 }
 \value{
 a data.frame with the fingerprint, status and status_fingerprint as stored
