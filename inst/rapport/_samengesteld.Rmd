@@ -1,0 +1,62 @@
+```{r {{id}}-basis}
+id <- "{{id}}"
+composite %>%
+  filter(fingerprint == id) -> deze_index
+soort_naam <- deze_index$species_group[1]
+```
+
+## `r soort_naam`
+
+```{r {{id}}-vlaanderen-cyclus, fig.cap = paste0("Vlaamse samengestelde indices voor ", soort_naam, " op basis van data geaggregeerd per driejaarlijkse cyclus."), fig.height = 50 / 25.4}
+deze_index %>%
+  filter(cycle) %>%
+  mutate(
+    cyclus = factor(parameter)
+  ) %>%
+  ggplot(
+    aes(x = cyclus, y = mean, ymin = lcl, ymax = ucl, group = analysis)
+  ) +
+  geom_hline(yintercept = 1, linetype = 3) +
+  geom_ribbon(alpha = 0.1) +
+  geom_line() +
+  geom_blank(
+    data = data.frame(
+      cyclus = "2007-2009", 
+      mean = grenzen,
+      lcl = grenzen,
+      ucl = grenzen,
+      analysis = 1
+    )
+  ) +
+  scale_y_continuous("driejaarlijkse index", labels = percent) +
+  theme(
+    axis.title.x = element_blank()
+  )
+```
+
+```{r {{id}}-vlaanderen-jaar, fig.cap = paste0("Vlaamse samengestelde indices voor ", soort_naam, " op basis van jaarlijkse data."), fig.height = 50 / 25.4}
+deze_index %>%
+  filter(!cycle) %>%
+  mutate(
+    jaar = as.integer(parameter)
+  ) %>%
+  ggplot(
+    aes(x = jaar, y = mean, ymin = lcl, ymax = ucl, group = analysis)
+  ) +
+  geom_hline(yintercept = 1, linetype = 3) +
+  geom_ribbon(alpha = 0.1) +
+  geom_line() +
+  geom_blank(
+    data = data.frame(
+      jaar = 2007, 
+      mean = grenzen,
+      lcl = grenzen,
+      ucl = grenzen,
+      analysis = 1
+    )
+  ) +
+  scale_y_continuous("jaarlijkse index", labels = percent) +
+  theme(
+    axis.title.x = element_blank()
+  )
+```
