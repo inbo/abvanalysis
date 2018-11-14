@@ -137,6 +137,7 @@ prepare_analysis_dataset <- function(
       cyear = c(min(dataset$cyear):max(dataset$cyear), 1)
     ) -> lc.trend
     rownames(lc.trend) <- c(min(dataset$year):max(dataset$year), "Trend")
+    lc.trend["Trend", "(Intercept)"] <- 0
     n2k_inla(
       result.datasource.id = metadata$result_datasource,
       scheme.id = metadata$scheme,
@@ -170,6 +171,7 @@ prepare_analysis_dataset <- function(
     ) -> lc.trend
     cycle <- seq_len(max(dataset$cycle)) * 3 + 2004
     rownames(lc.trend) <- c(paste(cycle, cycle + 2, sep = "-"), "Trend")
+    lc.trend["Trend", "(Intercept)"] <- 0
     n2k_inla(
       result.datasource.id = metadata$result_datasource,
       scheme.id = metadata$scheme,
