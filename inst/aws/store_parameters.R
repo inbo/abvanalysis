@@ -42,30 +42,32 @@ extract_composite <- function(z) {
 }
 
 extract_lc <- function(z) {
-    z@Model$summary.lincomb.derived %>%
-    select(mean, median = "0.5quant", lcl = "0.025quant", ucl = "0.975quant" ) %>%
+  z@Model$summary.lincomb.derived %>%
+    select(
+      mean, median = "0.5quant", lcl = "0.025quant", ucl = "0.975quant"
+    ) %>%
     rownames_to_column("parameter") %>%
     mutate(stratum = "Vlaanderen") -> index
-  if (
-    !grepl("stratum", z@AnalysisMetadata$Formula) &&
-      !grepl("RW1", z@AnalysisMetadata$ModelType)
-  ) {
-    z@Model$summary.fixed %>%
-      select(
-        mean, median = "0.5quant", lcl = "0.025quant", ucl = "0.975quant"
-      ) %>%
-      rownames_to_column("parameter") %>%
-      filter(parameter == "cyear") %>%
-      mutate(
-        parameter = "Trend",
-        stratum = "Vlaanderen"
-      ) %>%
-      bind_rows(
-        index %>%
-          filter(parameter != "Trend")
-      ) -> index
+  if (grepl("stratum", z@AnalysisMetadata$Formula)) {
+    return(index)
   }
-  return(index)
+  if (grepl("RW1", z@AnalysisMetadata$ModelType)) {
+    return(index)
+  }
+  z@Model$summary.fixed %>%
+    select(
+      mean, median = "0.5quant", lcl = "0.025quant", ucl = "0.975quant"
+    ) %>%
+    rownames_to_column("parameter") %>%
+    filter(parameter == "cyear") %>%
+    mutate(
+      parameter = "Trend",
+      stratum = "Vlaanderen"
+    ) %>%
+    bind_rows(
+      index %>%
+        filter(parameter != "Trend")
+    )
 }
 
 extract_stratum <- function(z) {
