@@ -74,7 +74,7 @@ extract_stratum <- function(z) {
   if (grepl("stratum", z@AnalysisMetadata$Formula)) {
     if (grepl("cycle", z@AnalysisMetadata$Formula)) {
       if (grepl("cycle:stratum", z@AnalysisMetadata$Formula)) {
-        z@Model$summary.fixede %>%
+        z@Model$summary.fixed %>%
           select(
             mean,
             median = "0.5quant",
