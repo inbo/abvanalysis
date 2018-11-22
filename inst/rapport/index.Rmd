@@ -13,12 +13,14 @@ site: bookdown::bookdown_site
 output:
   bookdown::pdf_book:
     base_format: INBOmd::inbo_rapport
+    floatbarrier: "subsubsection"
+    lof: FALSE
+    lot: FALSE
+    keep_tex: TRUE
   bookdown::gitbook:
     split_by: "section+number"
     template: !expr INBOmd::inbo_rapport_css("html")
-  bookdown::epub_book:
-    stylesheet: "css/inbo_rapport.css"
-    template: !expr INBOmd::inbo_rapport_css("epub")
+    keep_md: TRUE
 params:
   username: !r Sys.getenv("N2KRESULT_USERNAME")
   password: !r Sys.getenv("N2KRESULT_PASSWORD")
@@ -32,15 +34,18 @@ opts_chunk$set(
   cache = FALSE,
   dpi = 300,
   fig.width = 150 / 25.4,
-  fig.height = 100 / 25.4,
+  fig.height = 50 / 25.4,
   warning = FALSE,
   error = FALSE,
   message = FALSE
 )
+options(knitr.kable.NA = "")
+library(pander)
 library(n2khelper)
 library(tidyverse)
 library(scales)
 library(INBOtheme)
+grenzen <- c(0.65, 1.5)
 if (opts_knit$get("rmarkdown.pandoc.to") == "html") {
   theme_set(
     theme_inbo(
@@ -57,7 +62,6 @@ if (opts_knit$get("rmarkdown.pandoc.to") == "html") {
     )
   )
 }
-grenzen <- c(0.65, 1.5)
 ```
 
 ```{r import-results, eval = !file.exists("results.Rdata"), results = "hide"}
@@ -133,7 +137,7 @@ tbl(conn, "location") %>%
   filter(fingerprint %in% strata) %>%
   select(fingerprint, stratum = description) %>%
   collect() %>%
-  mutate(stratum = factor(stratum)) -> straita_description
+  mutate(stratum = factor(stratum)) -> strata_description
 strata_description %>%
   inner_join(design, by = c("fingerprint" = "stratum")) %>%
   transmute(analysis, stratum, jaar = cyear + 2006, hokken = n_location) ->
@@ -168,20 +172,8 @@ junk <- gc()
 load("results.Rdata")
 ```
 
-# Samengestelde indices
+# Inleiding {-}
 
-```{r samengesteld, results='asis', cache = FALSE}
-composite %>%
-  distinct(fingerprint, species_group) %>%
-  arrange(species_group) %>%
-  pull(fingerprint) %>%
-  sapply(
-    function(id) {
-      knit_expand("_samengesteld.Rmd", id = id)
-    }
-  ) %>%
-  paste(collapse = "\n\n") -> rmd
-knit(text = rmd, quiet = TRUE) %>%
-  cat()
-```
+Nog te schrijven
 
+\mainmatter
