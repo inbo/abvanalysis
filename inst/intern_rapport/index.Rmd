@@ -123,8 +123,7 @@ resultaten %>%
 tbl(conn, "location") %>%
   filter(fingerprint %in% strata) %>%
   select(fingerprint, description) %>%
-  collect() %>%
-  mutate(description = factor(description)) -> strata_description
+  collect() -> strata_description
 strata_description %>%
   left_join(x = resultaten, by = c("stratum" = "fingerprint")) %>%
   mutate(
