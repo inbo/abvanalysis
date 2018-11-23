@@ -13,35 +13,30 @@ deze_index %>%
   transmute(
     jaar = as.integer(parameter),
     index = median, lcl, ucl,
-    non_linear, waic, analysis, status
+    non_linear, waic, analysis, status, trend
   ) -> index_vlaanderen_jaar
 index_vlaanderen_jaar %>%
   group_by(non_linear) %>%
   summarise(referentie = mean(index)) %>%
   inner_join(index_vlaanderen_jaar, by = "non_linear") %>%
   mutate(
-    index = exp(index - referentie),
-    lcl = exp(lcl - referentie),
-    ucl = exp(ucl - referentie)
+    index = index - referentie,
+    lcl = lcl - referentie,
+    ucl = ucl - referentie
   ) %>%
   select(-referentie) -> index_vlaanderen_jaar
 index_vlaanderen_jaar %>%
-  distinct(non_linear, waic) %>%
-  arrange(waic) %>%
-  summarise(
-    type = non_linear[1],
-    delta = diff(waic)
-  ) -> waic_jaar
-if (!waic_jaar$type) {
-  cap_vlaanderen_jaar <- "log lineair"
-} else if (waic_jaar$delta > 5) {
-  cap_vlaanderen_jaar <- "niet lineair"
-} else {
-  cap_vlaanderen_jaar <- "mogelijk niet lineair"
-}
+  filter(non_linear, jaar == min(jaar)) %>%
+  pull(index) -> start
+index_vlaanderen_jaar %>%
+  mutate(
+    index = exp(index - start),
+    lcl = exp(lcl - start),
+    ucl = exp(ucl - start)
+  ) -> index_vlaanderen_jaar
 ```
 
-```{r {{id}}-vlaanderen-jaar, fig.cap = paste0("Vlaamse indices voor ", soort_naam, " op basis van jaarlijkse data. De trend is ", cap_vlaanderen_jaar, "."), fig.height = 50 / 25.4}
+```{r {{id}}-vlaanderen-jaar, fig.cap = paste0("Vlaamse indices voor ", soort_naam, " op basis van jaarlijkse data. De trend is ", index_vlaanderen_jaar$trend[1], "."), fig.height = 50 / 25.4}
 ggplot(
   index_vlaanderen_jaar, 
   aes(x = jaar, y = index, ymin = lcl, ymax = ucl, group = analysis)
@@ -80,38 +75,32 @@ deze_index %>%
   transmute(
     cyclus = factor(parameter),
     index = median, lcl, ucl,
-    non_linear, waic, analysis, status
+    non_linear, waic, analysis, status, trend
   ) -> index_vlaanderen_cyclus
 index_vlaanderen_cyclus %>%
   group_by(non_linear) %>%
   summarise(referentie = mean(index)) %>%
   inner_join(index_vlaanderen_cyclus, by = "non_linear") %>%
   mutate(
-    index = exp(index - referentie),
-    lcl = exp(lcl - referentie),
-    ucl = exp(ucl - referentie)
+    index = index - referentie,
+    lcl = lcl - referentie,
+    ucl = ucl - referentie
   ) %>%
   select(-referentie) -> index_vlaanderen_cyclus
 index_vlaanderen_cyclus %>%
-  distinct(non_linear, waic) -> waic_cyclus
-waic_cyclus %>%
-  arrange(waic) %>%
-  summarise(
-    type = non_linear[1],
-    delta = diff(waic)
-  ) -> waic_cyclus
-if (waic_cyclus$type) {
-  if (waic_cyclus$delta > 5) {
-    cap_vlaanderen_cyclus <- "niet lineair"
-  } else {
-    cap_vlaanderen_cyclus <- "mogelijk niet lineair"
-  }
-} else {
-  cap_vlaanderen_cyclus <- "log lineair"
-}
+  filter(non_linear) %>%
+  arrange(cyclus) %>%
+  slice(1) %>%
+  pull(index) -> start
+index_vlaanderen_cyclus %>%
+  mutate(
+    index = exp(index - start),
+    lcl = exp(lcl - start),
+    ucl = exp(ucl - start)
+  ) -> index_vlaanderen_cyclus
 ```
 
-```{r {{id}}-vlaanderen-cyclus, fig.cap = paste0("Vlaamse indices voor ", soort_naam, " op basis van data geaggregeerd per driejaarlijkse cyclus. De trend is ", cap_vlaanderen_cyclus, "."), fig.height = 50 / 25.4}
+```{r {{id}}-vlaanderen-cyclus, fig.cap = paste0("Vlaamse indices voor ", soort_naam, " op basis van data geaggregeerd per driejaarlijkse cyclus. De trend is ", index_vlaanderen_cyclus$trend[1], "."), fig.height = 50 / 25.4}
 ggplot(
   index_vlaanderen_cyclus, 
   aes(x = cyclus, y = index, ymin = lcl, ymax = ucl, group = analysis)

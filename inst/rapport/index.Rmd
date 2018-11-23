@@ -4,10 +4,15 @@ author:
   - 
     name: "Thierry Onkelinx"
     email: "thierry.onkelinx@inbo.be"
+    orcid: "0000-0001-8804-4216"
   - 
     name: "Glenn Vermeersch"
     email: "glenn.vermeersch@inbo.be"
-reportnr: "Hier komt de DOI van het rapport"
+    orcid: "0000-0002-9176-8917"
+  - 
+    name: "Koen Devos"
+    email: "koen.devos@inbo.be"
+reportnr: "10.5281/zenodo.1494832"
 link-citations: TRUE
 site: bookdown::bookdown_site
 output:

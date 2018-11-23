@@ -65,7 +65,7 @@ species %>%
   ) %>%
   transmute(
     soort = sprintf(
-      "[%s](#fig:%s-vlaanderen-%s)",
+      "[%s](#soort-%s)",
       species_group,
       fingerprint,
       ifelse(cycle, "cyclus", "jaar")
@@ -78,6 +78,11 @@ species %>%
       100 * exp(ucl) - 100
     )
   ) -> trends
+levels(trend_type$trend) <- c(
+  "log-lineair", "mogelijk niet-lineair", "niet lineair"
+)
+species %>%
+  inner_join(trend_type, by = c("species_group", "cycle")) -> species
 ```
 
 ## Overzicht van de trends
