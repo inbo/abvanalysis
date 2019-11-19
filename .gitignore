@@ -1,7 +1,6 @@
 .Rproj.user
 .Rhistory
 .RData
-*.Rproj
 _builds
 _projects
 _steps
