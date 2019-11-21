@@ -1,7 +1,7 @@
 Package: abvanalysis
 Title: Analysis of the Common Breeding Bird Survey
-Version: 0.2
-Date: 2018-09-19
+Version: 0.2.1
+Date: 2019-11-21
 Authors@R: c(
   person(
     "Thierry", "Onkelinx", role = c("aut", "cre"), 
