@@ -64,12 +64,14 @@ prepare_dataset <- function(
     end.date = end.date, species = stored$species
   )
 
-  commit(
-    message = "Automated commit from abvanalysis",
-    repo = repo,
-    session = TRUE,
-    ...
-  )
+  if (length(git2rdata::status(repo)$staged)) {
+    commit(
+      message = "Automated commit from abvanalysis",
+      repo = repo,
+      session = TRUE,
+      ...
+    )
+  }
 
   if (verbose) {
     message("Storing metadata")
@@ -80,14 +82,14 @@ prepare_dataset <- function(
     "SELECT fingerprint FROM datasource WHERE description = 'Raw data ABV'"
   ) -> datasource
   data.frame(
-    fingerprint = c(observation$hashes, stored$hash, location_hash),
+    filename = c(observation$hashes, stored$hash, location_hash),
+    fingerprint = names(c(observation$hashes, stored$hash, location_hash)),
     stringsAsFactors = FALSE
   ) %>%
-    rownames_to_column("filename") %>%
     mutate(
       commit = map(.data$filename, recent_commit, root = repo, data = FALSE)
     ) %>%
-    unnest() %>%
+    unnest(cols = "commit") %>%
     transmute(
       .data$fingerprint,
       .data$filename,
@@ -190,12 +192,14 @@ prepare_dataset <- function(
       stage = TRUE
     )
   prune_meta(root = repo, path = "metadata", stage = TRUE)
-  commit(
-    message = "Automated commit from abvanalysis",
-    repo = repo,
-    session = TRUE,
-    ...
-  )
+  if (length(git2rdata::status(repo)$staged)) {
+    commit(
+      message = "Automated commit from abvanalysis",
+      repo = repo,
+      session = TRUE,
+      ...
+    )
+  }
   if (push) {
     push(object = repo, ...)
   }
