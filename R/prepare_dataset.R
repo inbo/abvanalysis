@@ -6,10 +6,13 @@
 #' @param scheme.id the fingerprint of the scheme
 #' @param end.date the latest date to import. Default to now.
 #' @param verbose display the progress
-#' @inheritParams git2rdata::auto_commit
+#' @param repo a \code{\link[git2rdata]{repository}} object
+#' @param push push the changes to the repository. Defaults to `FALSE`.
+#' @param ... arguments passed to \code{\link[git2rdata]{commit}} and
+#' \code{\link[git2rdata]{push}}.
 #' @export
 #' @importFrom assertthat is.string is.flag noNA
-#' @importFrom git2rdata rm_data write_vc auto_commit recent_commit
+#' @importFrom git2rdata rm_data write_vc commit recent_commit push
 #' @importFrom utils flush.console
 #' @importFrom tibble rownames_to_column
 #' @importFrom purrr map pmap map_chr map_dfr
@@ -34,6 +37,7 @@ prepare_dataset <- function(
   assert_that(length(end.date) == 1)
   assert_that(is.flag(verbose))
   assert_that(noNA(verbose))
+  assert_that(is.flag(push), noNA(push))
 
   if (verbose) {
     message("Importing locations")
@@ -60,10 +64,10 @@ prepare_dataset <- function(
     end.date = end.date, species = stored$species
   )
 
-  auto_commit(
-    package = environmentName(parent.env(environment())),
+  commit(
+    message = "Automated commit from abvanalysis",
     repo = repo,
-    push = FALSE,
+    session = TRUE,
     ...
   )
 
@@ -186,10 +190,13 @@ prepare_dataset <- function(
       stage = TRUE
     )
   rm_data(root = repo, path = "metadata", type = "yml", stage = TRUE)
-  auto_commit(
-    package = environmentName(parent.env(environment())),
+  commit(
+    message = "Automated commit from abvanalysis",
     repo = repo,
-    push = push,
+    session = TRUE,
     ...
   )
+  if (push) {
+    push(object = repo, ...)
+  }
 }

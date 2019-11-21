@@ -11,8 +11,7 @@ prepare_dataset_species(origin, result, repo, scheme.id, end.date)
 
 \item{result}{An open ODBC connection to the results database}
 
-\item{repo}{a path to a repository or a \code{git_repository}
-object. Default is '.'}
+\item{repo}{a \code{\link[git2rdata]{repository}} object}
 
 \item{scheme.id}{the fingerprint of the scheme}
 

@@ -19,7 +19,7 @@ Imports:
     assertthat,
     DBI,
     dplyr,
-    git2rdata,
+    git2rdata (>= 0.2.0),
     methods,
     n2kanalysis (>= 0.2.5),
     n2khelper,
@@ -29,9 +29,8 @@ Imports:
     tibble,
     tidyr
 Remotes:
-  inbo/git2rdata,
   inbo/n2kanalysis,
   inbo/n2khelper,
   inbo/n2kupdate
-RoxygenNote: 6.1.0
+RoxygenNote: 6.1.1
 Encoding: UTF-8

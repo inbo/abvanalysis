@@ -12,8 +12,7 @@ prepare_dataset(result, origin, repo, scheme.id, end.date = Sys.time(),
 
 \item{origin}{`dbplyr::src_dbi` connection to the source database}
 
-\item{repo}{a path to a repository or a \code{git_repository}
-object. Default is '.'}
+\item{repo}{a \code{\link[git2rdata]{repository}} object}
 
 \item{scheme.id}{the fingerprint of the scheme}
 
@@ -21,9 +20,10 @@ object. Default is '.'}
 
 \item{verbose}{display the progress}
 
-\item{push}{Logical indicating whether to push the commit. Defaults to FALSE.}
+\item{push}{push the changes to the repository. Defaults to `FALSE`.}
 
-\item{...}{arguments passed to \code{\link[git2r]{commit}} and \code{\link[git2r]{push}}}
+\item{...}{arguments passed to \code{\link[git2rdata]{commit}} and
+\code{\link[git2rdata]{push}}.}
 }
 \description{
 Prepare all datasets and store the version into a git repository

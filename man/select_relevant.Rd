@@ -15,8 +15,7 @@ select_relevant(observation, species, datafield, repo,
 
 \item{datafield}{a named vector with the datafield id for "sample" and "observation"}
 
-\item{repo}{a path to a repository or a \code{git_repository}
-object. Default is '.'}
+\item{repo}{a \code{\link[git2rdata]{repository}} object}
 
 \item{min.observation}{the required minimum number of occassion where the present was observed, defaults to 100}
 

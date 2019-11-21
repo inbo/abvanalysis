@@ -11,8 +11,7 @@ prepare_dataset_observation(origin, result, repo, end.date, species)
 
 \item{result}{An open ODBC connection to the results database}
 
-\item{repo}{a path to a repository or a \code{git_repository}
-object. Default is '.'}
+\item{repo}{a \code{\link[git2rdata]{repository}} object}
 
 \item{end.date}{the latest date to import. Default to now.}
 

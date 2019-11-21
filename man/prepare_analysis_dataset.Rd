@@ -18,8 +18,7 @@ prepare_analysis_dataset(species_group, location_group, metadata,
 
 \item{observation}{the dataframe with the visits and location group}
 
-\item{repo}{a path to a repository or a \code{git_repository}
-object. Default is '.'}
+\item{repo}{a \code{\link[git2rdata]{repository}} object}
 
 \item{base}{the base location to store the model}
 
