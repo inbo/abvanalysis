@@ -2,7 +2,7 @@
 #' @inheritParams prepare_dataset
 #' @param species a data.frame with the NBN key and fingerprint for each species
 #' @export
-#' @importFrom git2rdata rm_data write_vc
+#' @importFrom git2rdata rm_data write_vc prune_meta
 #' @importFrom DBI dbQuoteString dbGetQuery
 #' @importFrom dplyr %>% inner_join rename semi_join select group_by filter mutate pull
 #' @importFrom tidyr nest
@@ -113,7 +113,7 @@ prepare_dataset_observation <- function(
     unlist() %>%
     c(hash) -> hashes
 
-  rm_data(root = repo, path = "observation", type = "yml", stage = TRUE)
+  prune_meta(root = repo, path = "observation", stage = TRUE)
 
   return(list(hashes = hashes, period = range(observations$year)))
 }

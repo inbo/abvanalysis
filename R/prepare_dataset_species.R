@@ -4,7 +4,7 @@
 #' @importFrom dplyr %>% transmute select mutate bind_rows
 #' @importFrom rlang .data
 #' @importFrom n2kupdate store_species_group_species
-#' @importFrom git2rdata rm_data write_vc
+#' @importFrom git2rdata rm_data write_vc prune_meta
 #' @export
 prepare_dataset_species <- function(origin, result, repo, scheme.id, end.date){
   sprintf("
@@ -135,7 +135,7 @@ prepare_dataset_species <- function(origin, result, repo, scheme.id, end.date){
       sorting = c("species_group", "species"),
       stage = TRUE
     ) -> sgs_hash
-  rm_data(repo, "species", type = "yml", stage = TRUE)
+ prune_meta(repo, "species", stage = TRUE)
 
   list(
     species = stored$species %>%

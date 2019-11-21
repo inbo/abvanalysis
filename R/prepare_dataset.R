@@ -12,7 +12,7 @@
 #' \code{\link[git2rdata]{push}}.
 #' @export
 #' @importFrom assertthat is.string is.flag noNA
-#' @importFrom git2rdata rm_data write_vc commit recent_commit push
+#' @importFrom git2rdata rm_data write_vc commit recent_commit push prune_meta
 #' @importFrom utils flush.console
 #' @importFrom tibble rownames_to_column
 #' @importFrom purrr map pmap map_chr map_dfr
@@ -189,7 +189,7 @@ prepare_dataset <- function(
       sorting = "file_fingerprint",
       stage = TRUE
     )
-  rm_data(root = repo, path = "metadata", type = "yml", stage = TRUE)
+  prune_meta(root = repo, path = "metadata", stage = TRUE)
   commit(
     message = "Automated commit from abvanalysis",
     repo = repo,

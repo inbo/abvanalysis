@@ -4,7 +4,7 @@
 #' @importFrom dplyr %>% mutate transmute distinct filter row_number inner_join bind_rows select count
 #' @importFrom rlang .data
 #' @importFrom n2kupdate store_location_group_location
-#' @importFrom git2rdata write_vc rm_data
+#' @importFrom git2rdata write_vc rm_data prune_meta
 #' @export
 prepare_dataset_location <- function(origin, result, repo, scheme.id, end.date) {
   # import UTM squares
@@ -223,7 +223,7 @@ prepare_dataset_location <- function(origin, result, repo, scheme.id, end.date) 
       sorting = "fingerprint",
       stage = TRUE
     ) -> strata_hash
-  rm_data(repo, "location", type = "yml", stage = TRUE)
+  prune_meta(repo, "location", stage = TRUE)
 
   c(location_hash, location_group_location_hash, location_group_hash,
     strata_hash)
