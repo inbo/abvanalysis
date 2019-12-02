@@ -6,7 +6,7 @@
 #' @importFrom git2rdata read_vc
 #' @importFrom dplyr %>% semi_join filter inner_join rename add_count ungroup anti_join
 #' @importFrom tidyr complete
-#' @importFrom n2kanalysis n2k_manifest store_manifest
+#' @importFrom n2kanalysis n2k_manifest store_manifest store_manifest_yaml
 prepare_analysis <- function(
   repo, base, project, overwrite = FALSE,
   min.observation = 100, min.stratum = 3, min.cycle = 2, proportion = 0.15
@@ -120,14 +120,14 @@ prepare_analysis <- function(
     msg = "no 'species' in data 'species/species_group_species'"
   )
 
-  raw_distribution <- read_vc(file = "metadata/distribution", root = repo)
+  raw_distribution <- read_vc(file = "distribution/distribution", root = repo)
   assert_that(
     has_name(raw_distribution, "species_group"),
-    msg = "no 'species_group' in data 'metadata/distribution'"
+    msg = "no 'species_group' in data 'distribution/distribution'"
   )
   assert_that(
     has_name(raw_distribution, "family"),
-    msg = "no 'family' in data 'metadata/distribution'"
+    msg = "no 'family' in data 'distribution/distribution'"
   )
 
 
@@ -170,7 +170,13 @@ prepare_analysis <- function(
   base_analysis %>%
     group_by(.data$species_group, .data$location_group) %>%
     arrange(.data$location_group, .data$species_group) %>%
-    nest(.key = "metadata") -> base_nested
+    nest(
+      metadata = c(
+        "scheme", "result_datasource", "file_fingerprint",
+        "first_imported_year", "last_imported_year", "analysis_date", "seed",
+        "sample_df", "observation_df", "autocomplete_df", "species", "family"
+      )
+    ) -> base_nested
   base_nested$stored <- lapply(
     seq_along(base_nested$species_group),
     function(i) {
@@ -192,7 +198,7 @@ prepare_analysis <- function(
   )
   base_nested %>%
     select(-"metadata") %>%
-    unnest() %>%
+    unnest(cols = "stored") %>%
     inner_join(
       base_analysis %>%
         select(
@@ -206,9 +212,11 @@ prepare_analysis <- function(
   flush.console()
   base_analysis %>%
     nest(
-      "type", "fingerprint", "status", "status_fingerprint", "scheme", "seed",
-      "result_datasource", "first_imported_year", "last_imported_year",
-      "analysis_date"
+      data = c(
+        "type", "fingerprint", "status", "status_fingerprint", "scheme", "seed",
+        "result_datasource", "first_imported_year", "last_imported_year",
+        "analysis_date"
+      )
     ) %>%
     mutate(
       stored = pmap(
@@ -238,9 +246,9 @@ prepare_analysis <- function(
   composite_sg %>%
     inner_join(base_analysis, by = c("parent" = "species_group")) %>%
     nest(
-      "fingerprint", "status", "status_fingerprint", "scheme", "seed",
+      data = c("fingerprint", "status", "status_fingerprint", "scheme", "seed",
       "result_datasource", "first_imported_year", "last_imported_year",
-      "analysis_date", "parent"
+      "analysis_date", "parent")
     ) %>%
     mutate(
       stored = pmap(
@@ -262,23 +270,18 @@ prepare_analysis <- function(
   flush.console()
   comparison %>%
     transmute(
-      .data$species_group,
-      .data$location_group,
       .data$frequency,
       Fingerprint = map_chr(.data$stored, "fingerprint"),
       Parent = map(.data$data, select, Parent = "fingerprint")
     ) %>%
-    unnest() -> meta_comparison
+    unnest(cols = "Parent") -> meta_comparison
   meta_comparison %>%
     select(-"Fingerprint", Fingerprint = "Parent") %>%
     bind_rows(meta_comparison) %>%
-    nest(.data$Fingerprint, .data$Parent) %>%
+    nest(data = c("Fingerprint", "Parent")) %>%
     mutate(
-      manifest = map(.data$data, n2k_manifest),
-      stored = map(
-        .data$manifest, store_manifest, base = base, project = project
-      )
-    )
+      manifest = map(.data$data, n2k_manifest)
+    ) -> manifest_comparison
   composite %>%
     transmute(
       .data$location_group,
@@ -286,19 +289,54 @@ prepare_analysis <- function(
       .data$frequency,
       .data$type,
       Fingerprint = map_chr(.data$stored, "fingerprint"),
-      map(.data$data, select, Parent = "fingerprint")
+      data = map(.data$data, select, Parent = "fingerprint")
     ) %>%
-    unnest() -> meta_composite
+    unnest(cols = "data") -> meta_composite
   meta_composite %>%
     select(-"Fingerprint", Fingerprint = "Parent") %>%
     bind_rows(meta_composite) %>%
-    nest(.data$Fingerprint, .data$Parent) %>%
+    nest(data = c("Fingerprint", "Parent")) %>%
     mutate(
-      manifest = map(.data$data, n2k_manifest),
-      stored = map(
-        .data$manifest, store_manifest, base = base, project = project
+      manifest = map(.data$data, n2k_manifest)
+    ) -> manifest_composite
+  c(manifest_comparison$manifest, manifest_composite$manifest) %>%
+    map(
+      store_manifest_yaml,
+      base = base, project = project, docker = "inbobmk/rn2k:0.4",
+      dependencies = c(
+        "inbo/n2khelper@v0.4.3", "inbo/n2kanalysis@v0.2.7",
+        "inbo/n2kupdate@v0.1.1"
       )
-    )
+    ) -> stored
+  c(manifest_comparison$manifest, manifest_composite$manifest) %>%
+    map(get_file_fingerprint) -> manifests
+  docker = "inbobmk/rn2k:0.4"
+  dependencies = c(
+    "inbo/n2khelper@v0.4.3", "inbo/n2kanalysis@v0.2.7",
+    "inbo/n2kupdate@v0.1.1"
+  )
 
-  return(invisible(NULL))
+  args <- ", dependencies = FALSE, upgrade = \\\"never\\\", keep_source = FALSE"
+  docker_hash <- digest::sha1(manifests)
+  sprintf(
+    "Rscript -e 'remotes::install_github(\\\"%s\\\"%s)'",
+    dependencies, args
+  ) -> deps
+
+  sprintf(
+    "#!/bin/bash
+echo \"FROM %s
+RUN %s\" > Dockerfile
+docker build --pull --tag rn2k:%s .
+rm Dockerfile",
+    docker, paste(deps, collapse = " \\\n&&  "), docker_hash
+  ) -> init
+  sprintf(
+    "echo \"manifest %i of %i\"
+docker run --rm --env-file ./env.list rn2k:%s ./fit_model.sh -b %s -p %s -m %s",
+    seq_along(manifests), length(manifests), docker_hash, attr(base, "Name"),
+    project, paste0(manifests, ".manifest")
+  ) -> scripts
+
+  return(c(init, scripts))
 }
