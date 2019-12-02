@@ -64,15 +64,6 @@ prepare_dataset <- function(
     end.date = end.date, species = stored$species
   )
 
-  if (length(git2rdata::status(repo)$staged)) {
-    commit(
-      message = "Automated commit from abvanalysis",
-      repo = repo,
-      session = TRUE,
-      ...
-    )
-  }
-
   if (verbose) {
     message("Storing metadata")
     flush.console()
@@ -199,8 +190,9 @@ prepare_dataset <- function(
       session = TRUE,
       ...
     )
+    if (push) {
+      push(object = repo, ...)
+    }
   }
-  if (push) {
-    push(object = repo, ...)
-  }
+  return(invisible(NULL))
 }
