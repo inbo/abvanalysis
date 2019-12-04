@@ -45,18 +45,6 @@ prepare_analysis_composite <- function(
       ) %>%
       arrange(.data$Number, .data$Value) %>%
       select(-"Number")
-    reference <- parameter %>%
-      filter(.data$Value != "Trend") %>%
-      slice(1)
-    parameter %>%
-      mutate(
-        Estimate =
-          ifelse(
-            .data$Value == "Trend",
-            .data$Estimate,
-            .data$Estimate - reference$Estimate
-          )
-      )
   }
 
   n2k_composite(

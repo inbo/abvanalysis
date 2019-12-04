@@ -200,8 +200,23 @@ prepare_analysis_dataset <- function(
     # non linear trend along year
     message(" non-linear year", appendLF = FALSE)
     n_year <- diff(range(dataset$cyear)) + 1
-    lc.index <- list(cyear = diag(n_year), `(Intercept)` = rep(1, n_year))
-    rownames(lc.index[[1]]) <- min(dataset$year):max(dataset$year)
+    expand.grid(
+      from = seq_len(n_year),
+      to = seq_len(n_year)
+    ) %>%
+      filter(.data$from < .data$to) -> changes
+    change <- matrix(0, ncol = n_year, nrow = nrow(changes))
+    change[cbind(seq_len(nrow(changes)), changes$from)] <- -1
+    change[cbind(seq_len(nrow(changes)), changes$to)] <- 1
+    lc.index <- list(
+      cyear = rbind(diag(n_year), change),
+      `(Intercept)` = c(rep(1, n_year), rep(0, nrow(changes)))
+    )
+    years <- min(dataset$year):max(dataset$year)
+    rownames(lc.index[[1]]) <- c(
+      years,
+      sprintf("%i - %i", years[changes$to], years[changes$from])
+    )
     n2k_inla(
       result.datasource.id = metadata$result_datasource,
       scheme.id = metadata$scheme,
@@ -234,11 +249,22 @@ prepare_analysis_dataset <- function(
     # non linear trend along cycle
     message(" cycle")
     cycle <- seq_len(max(dataset$cycle)) * 3 + 2004
+    expand.grid(
+      from = seq_along(cycle),
+      to = seq_along(cycle)
+    ) %>%
+      filter(.data$from < .data$to) -> changes
+    change <- matrix(0, ncol = length(cycle), nrow = nrow(changes))
+    change[cbind(seq_len(nrow(changes)), changes$from)] <- -1
+    change[cbind(seq_len(nrow(changes)), changes$to)] <- 1
     lc.index <- list(
-      cycle = diag(length(cycle)),
-      `(Intercept)` = rep(1, length(cycle))
+      cycle = rbind(diag(length(cycle)), change),
+      `(Intercept)` = c(rep(1, length(cycle)), rep(0, nrow(changes)))
     )
-    rownames(lc.index[[1]]) <- paste(cycle, cycle + 2, sep = "-")
+    rownames(lc.index[[1]]) <- c(
+      paste(cycle, cycle + 2, sep = "-"),
+      sprintf("%i - %i", cycle[changes$to], cycle[changes$from])
+    )
     n2k_inla(
       result.datasource.id = metadata$result_datasource,
       scheme.id = metadata$scheme,
@@ -367,18 +393,32 @@ prepare_analysis_dataset <- function(
     # non linear trend along year
     message(" non-linear year", appendLF = FALSE)
     n_year <- diff(range(dataset$cyear)) + 1
-    outer(diag(n_year), stratum_weights$weight) %>%
+    expand.grid(
+      from = seq_len(n_year),
+      to = seq_len(n_year)
+    ) %>%
+      filter(.data$from < .data$to) -> changes
+    change <- matrix(0, ncol = n_year, nrow = nrow(changes))
+    change[cbind(seq_len(nrow(changes)), changes$from)] <- -1
+    change[cbind(seq_len(nrow(changes)), changes$to)] <- 1
+    diag(n_year) %>%
+      rbind(change) %>%
+      outer(stratum_weights$weight) %>%
       apply(3, as.data.frame) %>%
       unlist(recursive = FALSE) %>%
       do.call(what = cbind) %>%
       list() %>%
       setNames("cyear") -> lc.year
-    rep(stratum_weights$weight, each = n_year) %>%
-      matrix(nrow = n_year) %>%
+    rep(stratum_weights$weight, each = n_year + nrow(change)) %>%
+      matrix(nrow = n_year + nrow(change)) %>%
       as.data.frame() -> lc.stratum
     colnames(lc.stratum) <- paste0("stratum", stratum_weights$stratum)
     lc.index <- c(lc.year, as.list(lc.stratum))
-    rownames(lc.index[[1]]) <- min(dataset$year):max(dataset$year)
+    years <- min(dataset$year):max(dataset$year)
+    rownames(lc.index[[1]]) <- c(
+      years,
+      sprintf("%i - %i", years[changes$to], years[changes$from])
+    )
     n2k_inla(
       result.datasource.id = metadata$result_datasource,
       scheme.id = metadata$scheme,
@@ -412,18 +452,31 @@ prepare_analysis_dataset <- function(
     # non linear trend along cycle
     message(" cycle")
     cycle <- seq_len(max(dataset$cycle)) * 3 + 2004
-    outer(diag(length(cycle)), stratum_weights$weight) %>%
+    expand.grid(
+      from = seq_along(cycle),
+      to = seq_along(cycle)
+    ) %>%
+      filter(.data$from < .data$to) -> changes
+    change <- matrix(0, ncol = length(cycle), nrow = nrow(changes))
+    change[cbind(seq_len(nrow(changes)), changes$from)] <- -1
+    change[cbind(seq_len(nrow(changes)), changes$to)] <- 1
+    diag(length(cycle)) %>%
+      rbind(change) %>%
+      outer(stratum_weights$weight) %>%
       apply(3, as.data.frame) %>%
       unlist(recursive = FALSE) %>%
       do.call(what = cbind) %>%
       list() %>%
       setNames("cycle") -> lc.cycle
-    rep(stratum_weights$weight, each = length(cycle)) %>%
-      matrix(nrow = length(cycle)) %>%
+    rep(stratum_weights$weight, each = length(cycle) + nrow(change)) %>%
+      matrix(nrow = length(cycle) + nrow(change)) %>%
       as.data.frame() -> lc.stratum
     colnames(lc.stratum) <- paste0("stratum", stratum_weights$stratum)
     lc.index <- c(lc.cycle, as.list(lc.stratum))
-    rownames(lc.index[[1]]) <- paste(cycle, cycle + 2, sep = "-")
+    rownames(lc.index[[1]]) <- c(
+      paste(cycle, cycle + 2, sep = "-"),
+      sprintf("%i - %i", cycle[changes$to], cycle[changes$from])
+    )
     n2k_inla(
       result.datasource.id = metadata$result_datasource,
       scheme.id = metadata$scheme,
