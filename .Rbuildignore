@@ -6,3 +6,8 @@
 ^_builds$
 ^_projects$
 ^_steps$
+^inst/intern_rapport/.*\.rds$
+^inst/intern_rapport/css$
+^inst/intern_rapport/figure$
+^inst/output$
+^inst/.*\.log$
