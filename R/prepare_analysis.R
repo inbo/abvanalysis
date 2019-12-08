@@ -333,9 +333,13 @@ rm Dockerfile",
   ) -> init
   sprintf(
     "echo \"manifest %i of %i\"
-docker run --rm --env-file ./env.list rn2k:%s ./fit_model.sh -b %s -p %s -m %s",
-    seq_along(manifests), length(manifests), docker_hash, attr(base, "Name"),
-    project, paste0(manifests, ".manifest")
+docker run %s --name=%s rn2k:%s ./fit_model.sh -b %s -p %s -m %s
+date
+docker stop --time 14400 %s
+date",
+    seq_along(manifests), length(manifests), "--rm -d --env-file ./env.list",
+    manifests, docker_hash, attr(base, "Name"), project,
+    paste0(manifests, ".manifest"), manifests
   ) -> scripts
 
   return(c(init, scripts))
