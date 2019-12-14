@@ -9,13 +9,15 @@ storage(model, base, project, overwrite = FALSE, validate = FALSE)
 \arguments{
 \item{model}{a n2kModel object}
 
-\item{base}{the base location to store the model}
+\item{base}{The base location to store the model.}
 
-\item{project}{will be a relative path within the base location}
+\item{project}{Will be a relative path within the base location.}
 
-\item{overwrite}{should an existing object be overwritten? Defaults to TRUE}
+\item{overwrite}{Should an existing object be overwritten?
+Defaults to TRUE.}
 
-\item{validate}{check that the object is valid before storing it. Defaults to TRUE}
+\item{validate}{Check that the object is valid before storing it.
+Defaults to TRUE.}
 }
 \value{
 a data.frame with the fingerprint, status and status_fingerprint as stored

@@ -11,11 +11,12 @@ prepare_analysis(repo, base, project, overwrite = FALSE,
 \arguments{
 \item{repo}{a \code{\link[git2rdata]{repository}} object}
 
-\item{base}{the base location to store the model}
+\item{base}{The base location to store the model.}
 
-\item{project}{will be a relative path within the base location}
+\item{project}{Will be a relative path within the base location.}
 
-\item{overwrite}{should an existing object be overwritten? Defaults to TRUE}
+\item{overwrite}{Should an existing object be overwritten?
+Defaults to TRUE.}
 
 \item{min.observation}{the required minimum number of occassion where the present was observed, defaults to 100}
 
