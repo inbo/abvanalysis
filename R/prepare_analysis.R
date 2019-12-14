@@ -2,6 +2,9 @@
 #' @inheritParams prepare_dataset
 #' @inheritParams select_relevant
 #' @inheritParams n2kanalysis::store_model
+#' @param docker The docker image to use during model fit.
+#' @param dependencies A vector of R packages as understood by the `repo`
+#' argument of \code{\link[remotes]{install_github}}.
 #' @export
 #' @importFrom git2rdata read_vc
 #' @importFrom dplyr %>% semi_join filter inner_join rename add_count ungroup anti_join
@@ -9,7 +12,11 @@
 #' @importFrom n2kanalysis n2k_manifest store_manifest store_manifest_yaml
 prepare_analysis <- function(
   repo, base, project, overwrite = FALSE,
-  min.observation = 100, min.stratum = 3, min.cycle = 2, proportion = 0.15
+  min.observation = 100, min.stratum = 3, min.cycle = 2, proportion = 0.15,
+  docker = "inbobmk/rn2k:0.5", dependencies = c(
+    "inbo/n2khelper@v0.4.3", "inbo/n2kanalysis@v0.2.8",
+    "inbo/n2kupdate@v0.1.1"
+  )
 ){
   message("Read data from repository")
   flush.console()
@@ -302,19 +309,28 @@ prepare_analysis <- function(
   c(manifest_comparison$manifest, manifest_composite$manifest) %>%
     map(
       store_manifest_yaml,
-      base = base, project = project, docker = "inbobmk/rn2k:0.4",
-      dependencies = c(
-        "inbo/n2khelper@v0.4.3", "inbo/n2kanalysis@v0.2.7",
-        "inbo/n2kupdate@v0.1.1"
-      )
+      base = base, project = project, docker = docker,
+      dependencies = dependencies
     ) -> stored
+  manifest_comparison %>%
+    ungroup() %>%
+    transmute(
+      manifest = map(.data$manifest, slot, "Manifest")
+    ) %>%
+    bind_rows(
+      manifest_composite %>%
+        transmute(
+          manifest = map(.data$manifest, slot, "Manifest")
+        )
+    ) %>%
+    unnest(cols = .data$manifest) %>%
+    filter(is.na(.data$Parent)) %>%
+    distinct(.data$Fingerprint) %>%
+    arrange(.data$Fingerprint) %>%
+    pull(.data$Fingerprint) -> models
+
   c(manifest_comparison$manifest, manifest_composite$manifest) %>%
     map(get_file_fingerprint) -> manifests
-  docker = "inbobmk/rn2k:0.4"
-  dependencies = c(
-    "inbo/n2khelper@v0.4.3", "inbo/n2kanalysis@v0.2.7",
-    "inbo/n2kupdate@v0.1.1"
-  )
 
   args <- ", dependencies = FALSE, upgrade = \\\"never\\\", keep_source = FALSE"
   docker_hash <- digest::sha1(manifests)
@@ -331,6 +347,18 @@ docker build --pull --tag rn2k:%s .
 rm Dockerfile",
     docker, paste(deps, collapse = " \\\n&&  "), docker_hash
   ) -> init
+
+  sprintf(
+    "echo \"model %i of %i\"
+docker run %s --name=%s rn2k:%s ./fit_model.sh -b %s -p %s -m %s
+date
+docker stop --time 14400 %s
+date",
+    seq_along(models), length(models), "--rm -d --env-file ./env.list",
+    models, docker_hash, attr(base, "Name"), project,
+    models, models
+  ) -> model_scripts
+
   sprintf(
     "echo \"manifest %i of %i\"
 docker run %s --name=%s rn2k:%s ./fit_model.sh -b %s -p %s -m %s
@@ -340,7 +368,7 @@ date",
     seq_along(manifests), length(manifests), "--rm -d --env-file ./env.list",
     manifests, docker_hash, attr(base, "Name"), project,
     paste0(manifests, ".manifest"), manifests
-  ) -> scripts
+  ) -> manifest_scripts
 
-  return(c(init, scripts))
+  return(list(init = init, models = model_scripts, manifest = manifest_scripts))
 }
