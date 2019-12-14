@@ -9,3 +9,4 @@ inst/intern_rapport/css
 inst/intern_rapport/figure
 inst/intern_rapport/*.log
 inst/intern_rapport/*.rds
+env.list

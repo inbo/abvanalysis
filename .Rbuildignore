@@ -11,3 +11,4 @@
 ^inst/intern_rapport/figure$
 ^inst/output$
 ^inst/.*\.log$
+^env.list$
