@@ -16,7 +16,8 @@ prepare_analysis <- function(
   docker = "inbobmk/rn2k:0.6", dependencies = c(
     "inbo/n2khelper@v0.4.3", "inbo/n2kanalysis@v0.2.8",
     "inbo/n2kupdate@v0.1.1"
-  )
+  ),
+  volume
 ){
   message("Read data from repository")
   flush.console()
@@ -373,23 +374,23 @@ rm Dockerfile",
   } else {
     sprintf(
       "echo \"model %i of %i\"
-  docker run %s --name=%s rn2k:%s ./fit_model_file.sh -b %s -p %s -m %s
+  docker run %s --name=%s rn2k:%s -v %s ./fit_model_file.sh -b %s -p %s -m %s
   date
   docker stop --time 14400 %s
   date",
       seq_along(models), length(models), "--rm -d --env-file ./env.list",
-      models, docker_hash, base, project,
+      models, volume, docker_hash, base, project,
       models, models
     ) -> model_scripts
 
     sprintf(
       "echo \"manifest %i of %i\"
-  docker run %s --name=%s rn2k:%s ./fit_model_file.sh -b %s -p %s -m %s
+  docker run %s --name=%s -v %s rn2k:%s ./fit_model_file.sh -b %s -p %s -m %s
   date
   docker stop --time 14400 %s
   date",
       seq_along(manifests), length(manifests), "--rm -d --env-file ./env.list",
-      manifests, docker_hash, base, project,
+      manifests, volume, docker_hash, base, project,
       paste0(manifests, ".manifest"), manifests
     ) -> manifest_scripts
   }
