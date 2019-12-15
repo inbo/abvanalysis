@@ -13,7 +13,7 @@
 prepare_analysis <- function(
   repo, base, project, overwrite = FALSE,
   min.observation = 100, min.stratum = 3, min.cycle = 2, proportion = 0.15,
-  docker = "inbobmk/rn2k:0.5", dependencies = c(
+  docker = "inbobmk/rn2k:0.6", dependencies = c(
     "inbo/n2khelper@v0.4.3", "inbo/n2kanalysis@v0.2.8",
     "inbo/n2kupdate@v0.1.1"
   )
@@ -348,27 +348,51 @@ rm Dockerfile",
     docker, paste(deps, collapse = " \\\n&&  "), docker_hash
   ) -> init
 
-  sprintf(
-    "echo \"model %i of %i\"
-docker run %s --name=%s rn2k:%s ./fit_model.sh -b %s -p %s -m %s
-date
-docker stop --time 14400 %s
-date",
-    seq_along(models), length(models), "--rm -d --env-file ./env.list",
-    models, docker_hash, attr(base, "Name"), project,
-    models, models
-  ) -> model_scripts
+  if (inherits(base, "s3_bucket")) {
+    sprintf(
+      "echo \"model %i of %i\"
+  docker run %s --name=%s rn2k:%s ./fit_model_aws.sh -b %s -p %s -m %s
+  date
+  docker stop --time 14400 %s
+  date",
+      seq_along(models), length(models), "--rm -d --env-file ./env.list",
+      models, docker_hash, attr(base, "Name"), project,
+      models, models
+    ) -> model_scripts
 
-  sprintf(
-    "echo \"manifest %i of %i\"
-docker run %s --name=%s rn2k:%s ./fit_model.sh -b %s -p %s -m %s
-date
-docker stop --time 14400 %s
-date",
-    seq_along(manifests), length(manifests), "--rm -d --env-file ./env.list",
-    manifests, docker_hash, attr(base, "Name"), project,
-    paste0(manifests, ".manifest"), manifests
-  ) -> manifest_scripts
+    sprintf(
+      "echo \"manifest %i of %i\"
+  docker run %s --name=%s rn2k:%s ./fit_model_aws.sh -b %s -p %s -m %s
+  date
+  docker stop --time 14400 %s
+  date",
+      seq_along(manifests), length(manifests), "--rm -d --env-file ./env.list",
+      manifests, docker_hash, attr(base, "Name"), project,
+      paste0(manifests, ".manifest"), manifests
+    ) -> manifest_scripts
+  } else {
+    sprintf(
+      "echo \"model %i of %i\"
+  docker run %s --name=%s rn2k:%s ./fit_model_file.sh -b %s -p %s -m %s
+  date
+  docker stop --time 14400 %s
+  date",
+      seq_along(models), length(models), "--rm -d --env-file ./env.list",
+      models, docker_hash, base, project,
+      models, models
+    ) -> model_scripts
+
+    sprintf(
+      "echo \"manifest %i of %i\"
+  docker run %s --name=%s rn2k:%s ./fit_model_file.sh -b %s -p %s -m %s
+  date
+  docker stop --time 14400 %s
+  date",
+      seq_along(manifests), length(manifests), "--rm -d --env-file ./env.list",
+      manifests, docker_hash, base, project,
+      paste0(manifests, ".manifest"), manifests
+    ) -> manifest_scripts
+  }
 
   return(list(init = init, models = model_scripts, manifest = manifest_scripts))
 }
