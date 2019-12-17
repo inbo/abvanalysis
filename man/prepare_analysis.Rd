@@ -6,9 +6,9 @@
 \usage{
 prepare_analysis(repo, base, project, overwrite = FALSE,
   min.observation = 100, min.stratum = 3, min.cycle = 2,
-  proportion = 0.15, docker = "inbobmk/rn2k:0.5",
+  proportion = 0.15, docker = "inbobmk/rn2k:0.6",
   dependencies = c("inbo/n2khelper@v0.4.3", "inbo/n2kanalysis@v0.2.8",
-  "inbo/n2kupdate@v0.1.1"))
+  "inbo/n2kupdate@v0.1.1"), volume)
 }
 \arguments{
 \item{repo}{a \code{\link[git2rdata]{repository}} object}
@@ -32,6 +32,9 @@ Defaults to TRUE.}
 
 \item{dependencies}{A vector of R packages as understood by the `repo`
 argument of \code{\link[remotes]{install_github}}.}
+
+\item{volume}{The argument passed to the '-v' of docker.
+Only used when `base` is a local file system.}
 }
 \description{
 Prepare all datasets and a to do list of models

@@ -5,6 +5,8 @@
 #' @param docker The docker image to use during model fit.
 #' @param dependencies A vector of R packages as understood by the `repo`
 #' argument of \code{\link[remotes]{install_github}}.
+#' @param volume The argument passed to the '-v' of docker.
+#' Only used when `base` is a local file system.
 #' @export
 #' @importFrom git2rdata read_vc
 #' @importFrom dplyr %>% semi_join filter inner_join rename add_count ungroup anti_join
@@ -374,11 +376,11 @@ rm Dockerfile",
   } else {
     sprintf(
       "echo \"model %i of %i\"
-  docker run %s --name=%s rn2k:%s -v %s ./fit_model_file.sh -b %s -p %s -m %s
+  docker run %s --name=%s -v %s rn2k:%s ./fit_model_file.sh -b %s -p %s -m %s
   date
   docker stop --time 14400 %s
   date",
-      seq_along(models), length(models), "--rm -d --env-file ./env.list",
+      seq_along(models), length(models), "--rm -d",
       models, volume, docker_hash, base, project,
       models, models
     ) -> model_scripts
@@ -389,7 +391,7 @@ rm Dockerfile",
   date
   docker stop --time 14400 %s
   date",
-      seq_along(manifests), length(manifests), "--rm -d --env-file ./env.list",
+      seq_along(manifests), length(manifests), "--rm -d",
       manifests, volume, docker_hash, base, project,
       paste0(manifests, ".manifest"), manifests
     ) -> manifest_scripts

@@ -26,8 +26,8 @@ prepare_dataset(
 )
 
 library(abvanalysis)
-options(sha1PackageVersion = "0.6.22")
 repo <- git2rdata::repository("~/n2k/abv")
 base <- aws.s3::get_bucket("n2kmonitoring", max = 1)
 script <- prepare_analysis(repo = repo, base = base, project = "abv")
-writeLines(script, "~/n2kanalysis/abv.sh")
+writeLines(c(script$init, script$model), "~/n2kanalysis/abv_model.sh")
+writeLines(c(script$init, script$manifest), "~/n2kanalysis/abv.sh")

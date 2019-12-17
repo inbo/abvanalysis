@@ -38,3 +38,6 @@ script <- prepare_analysis(repo = repo, base = base, project = "abv", volume = "
 writeLines(c(script$init, script$model), "/root/n2k/analysis/abv_model.sh")
 writeLines(c(script$init, script$manifest), "/root/n2k/analysis/abv.sh")
 system("chmod 755 /root/n2k/analysis/*.sh")
+q(save = "no")
+exit
+docker image rm prepareabv
