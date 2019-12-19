@@ -20,6 +20,7 @@
 #' @importFrom n2kanalysis n2k_inla
 #' @importFrom rlang .data
 #' @importFrom stats setNames
+#' @importFrom utils head
 prepare_analysis_dataset <- function(
   species_group,
   location_group,
@@ -83,6 +84,9 @@ prepare_analysis_dataset <- function(
     complete(
       stratum = .data$stratum,
       year = full_seq(.data$year, 1),
+      location = head(.data$location, 1),
+      sublocation = head(.data$sublocation, 1),
+      period = head(.data$period, 1),
       fill = list(DataFieldID = metadata$autocomplete_df)
     ) %>%
     mutate(
@@ -215,7 +219,7 @@ prepare_analysis_dataset <- function(
     years <- min(dataset$year):max(dataset$year)
     rownames(lc.index[[1]]) <- c(
       years,
-      sprintf("%i - %i", years[changes$to], years[changes$from])
+      sprintf("change: %i - %i", years[changes$to], years[changes$from])
     )
     n2k_inla(
       result.datasource.id = metadata$result_datasource,
@@ -263,7 +267,7 @@ prepare_analysis_dataset <- function(
     )
     rownames(lc.index[[1]]) <- c(
       paste(cycle, cycle + 2, sep = "-"),
-      sprintf("%i - %i", cycle[changes$to], cycle[changes$from])
+      sprintf("change: %i - %i", cycle[changes$to], cycle[changes$from])
     )
     n2k_inla(
       result.datasource.id = metadata$result_datasource,
@@ -294,6 +298,7 @@ prepare_analysis_dataset <- function(
       storage(base = base, project = project, overwrite = overwrite) ->
       cycle_nl_fingerprint
   } else {
+    # multi stratum
     design.var <- c(design.var, "stratum")
     dataset %>%
       filter(!is.na(.data$location)) %>%
@@ -409,15 +414,18 @@ prepare_analysis_dataset <- function(
       do.call(what = cbind) %>%
       list() %>%
       setNames("cyear") -> lc.year
-    rep(stratum_weights$weight, each = n_year + nrow(change)) %>%
-      matrix(nrow = n_year + nrow(change)) %>%
+    rep(stratum_weights$weight, each = n_year)  %>%
+      matrix(nrow = n_year) %>%
+      rbind(
+        matrix(0, nrow = nrow(change), ncol = length(stratum_weights$weight))
+      ) %>%
       as.data.frame() -> lc.stratum
     colnames(lc.stratum) <- paste0("stratum", stratum_weights$stratum)
     lc.index <- c(lc.year, as.list(lc.stratum))
     years <- min(dataset$year):max(dataset$year)
     rownames(lc.index[[1]]) <- c(
       years,
-      sprintf("%i - %i", years[changes$to], years[changes$from])
+      sprintf("change: %i - %i", years[changes$to], years[changes$from])
     )
     n2k_inla(
       result.datasource.id = metadata$result_datasource,
@@ -468,8 +476,11 @@ prepare_analysis_dataset <- function(
       do.call(what = cbind) %>%
       list() %>%
       setNames("cycle") -> lc.cycle
-    rep(stratum_weights$weight, each = length(cycle) + nrow(change)) %>%
-      matrix(nrow = length(cycle) + nrow(change)) %>%
+    rep(stratum_weights$weight, each = length(cycle))  %>%
+      matrix(nrow = length(cycle)) %>%
+      rbind(
+        matrix(0, nrow = nrow(change), ncol = length(stratum_weights$weight))
+      ) %>%
       as.data.frame() -> lc.stratum
     colnames(lc.stratum) <- paste0("stratum", stratum_weights$stratum)
     lc.index <- c(lc.cycle, as.list(lc.stratum))
