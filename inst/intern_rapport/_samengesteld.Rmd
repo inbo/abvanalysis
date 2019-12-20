@@ -1,12 +1,21 @@
+```{r {{id}}-set}
+if (interactive()) {
+  composite_indices %>%
+    sample_n(1) %>%
+    pull(fingerprint) -> id
+} else {
+  id <- "{{id}}"
+}
+```
+
+
 ```{r {{id}}-basis}
-id <- "{{id}}"
-resultaten %>%
+composite_indices %>%
   filter(fingerprint == id, nonlinear) %>%
   transmute(
     parameter, 
     index = exp(mean), 
-    lcl = exp(lcl),
-    ucl = exp(ucl),
+    se = (ucl - mean) / qnorm(0.975),
     analysis,
     status,
     model_type,
@@ -38,21 +47,14 @@ deze_index %>%
 if (nrow(index_vlaanderen_cyclus)) {
 ggplot(
   index_vlaanderen_cyclus, 
-  aes(x = cyclus, y = index, ymin = lcl, ymax = ucl, group = analysis)
+  aes(x = cyclus, y = index, link_sd = se, group = analysis)
 ) +
   geom_hline(yintercept = 1, linetype = 3) +
-  geom_ribbon(alpha = 0.1) +
+  stat_fan(link = "log") +
   geom_line() +
-  geom_blank(
-    data = data.frame(
-      cyclus = index_vlaanderen_cyclus$cyclus[1], 
-      index = grenzen,
-      lcl = grenzen,
-      ucl = grenzen,
-      analysis = 1
-    )
+  scale_y_continuous(
+    labels = percent, limits = grenzen, breaks = index_breaks(grenzen)
   ) +
-  scale_y_continuous(labels = percent) +
   theme(
     axis.title.x = element_blank()
   )
@@ -71,21 +73,14 @@ deze_index %>%
 if (nrow(index_vlaanderen_jaar)) {
 ggplot(
   index_vlaanderen_jaar, 
-  aes(x = jaar, y = index, ymin = lcl, ymax = ucl, group = analysis)
+  aes(x = jaar, y = index, link_sd = se, group = analysis)
 ) +
   geom_hline(yintercept = 1, linetype = 3) +
-  geom_ribbon(alpha = 0.1) +
+  stat_fan() +
   geom_line() +
-  geom_blank(
-    data = data.frame(
-      jaar = index_vlaanderen_jaar$jaar[1], 
-      index = grenzen,
-      lcl = grenzen,
-      ucl = grenzen,
-      analysis = 1
-    )
+  scale_y_log10(
+    labels = percent, limits = grenzen, breaks = index_breaks(grenzen)
   ) +
-  scale_y_continuous(labels = percent) +
   theme(
     axis.title.x = element_blank()
   )

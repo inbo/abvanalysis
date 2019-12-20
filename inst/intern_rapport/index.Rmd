@@ -17,6 +17,7 @@ output:
     lang: dutch
     lof: FALSE
     lot: FALSE
+    tocdepth: 2
   bookdown::gitbook:
     split_by: "chapter+number"
     template: !expr INBOmd::inbo_rapport_css("html")
@@ -44,16 +45,16 @@ opts_chunk$set(
 library(n2khelper)
 library(tidyverse)
 library(scales)
+library(effectclass)
 library(INBOtheme)
 grenzen <- c(0.65, 1.5)
-if (opts_knit$get("rmarkdown.pandoc.to") == "html") {
-  theme_set(
-    theme_inbo(
-      base_family = "Flanders Art Sans",
-      base_size = 12
-    )
+theme_set(
+  theme_inbo(
+    base_family = "Flanders Art Sans",
+    base_size = 12
   )
-} else {
+)
+if (!interactive() && opts_knit$get("rmarkdown.pandoc.to") == "latex") {
   opts_chunk$set(dev = "cairo_pdf")
   theme_set(
     theme_inbo(
@@ -61,6 +62,15 @@ if (opts_knit$get("rmarkdown.pandoc.to") == "html") {
       base_size = 8
     )
   )
+}
+index_breaks <- function(x) {
+  z <- 1 - c(9/10, 4/5, 3/4, 2/3, 1/2, 1/3, 1/4, 1/5, 1/10, 1/20, 1/50, 1/100, 1/200, 0)
+  z <- log(sort(z))
+  z <- z[which(z >= min(-abs(x)))[1] + -1:2]
+  c(z, 0, -z)
+}
+index_labels <- function(x) {
+  sprintf("%+.0f%%", 100 * (exp(x) - 1))
 }
 ```
 
@@ -76,32 +86,12 @@ tbl(conn, "scheme") %>%
   collect() -> species_group
 if (file.exists("results.rds")) {
   raw_results <- readRDS("results.rds")
-  recent <- readRDS("recent.rds")
 } else {
   raw_results <- aws.s3::s3readRDS(
     "abv/results/results.rds", 
     bucket = "n2kmonitoring"
   )
   saveRDS(raw_results, "results.rds")
-  aws <- aws.s3::get_bucket("n2kmonitoring", "abv/manifest", max = Inf)
-  library(n2kanalysis)
-  map_chr(aws, "Key") %>%
-    basename() %>%
-    map(read_manifest, base = aws, project = "abv") -> manifests
-  tibble(
-    timestamp = map_chr(aws, "LastModified") %>%
-      gsub(pattern = "T", replacement = " ") %>%
-      as.POSIXct(),
-    manifest = map_chr(manifests, slot, "Fingerprint"),
-    tmp = map(manifests, slot, "Manifest")
-  ) %>%
-    unnest() -> when
-  when %>%
-    arrange(desc(timestamp)) %>%
-    group_by(Fingerprint) %>%
-    slice(1) %>%
-    select(analysis = Fingerprint, timestamp) -> recent
-  saveRDS(recent, "recent.rds")
 }
 ```
 
@@ -134,9 +124,14 @@ strata_description %>%
 
 # Samengestelde indices
 
-```{r samengesteld, results='asis', cache = FALSE}
+```{r samengesteld, results='asis', cache = FALSE, eval = FALSE}
 resultaten %>%
-  filter(composite) %>%
+  filter(
+    composite,
+    grepl("non linear", model_type),
+    grepl(" - ", parameter)
+  ) -> composite_indices
+composite_indices %>%
   distinct(fingerprint, species_group) %>%
   arrange(species_group) %>%
   pull(fingerprint) %>%
