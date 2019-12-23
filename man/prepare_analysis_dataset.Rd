@@ -16,7 +16,7 @@ prepare_analysis_dataset(species_group, location_group, metadata,
 
 \item{metadata}{a dataframe with the metadata of a single import}
 
-\item{observation}{the dataframe with the visits and location group}
+\item{observation}{The dataframe with the visits and location group.}
 
 \item{repo}{a \code{\link[git2rdata]{repository}} object}
 
@@ -27,13 +27,20 @@ prepare_analysis_dataset(species_group, location_group, metadata,
 \item{overwrite}{Should an existing object be overwritten?
 Defaults to TRUE.}
 
-\item{min.observation}{the required minimum number of occassion where the present was observed, defaults to 100}
+\item{min.observation}{The required minimum number of occassion where the
+present was observed.
+Defaults to `100`.}
 
-\item{min.stratum}{the required minimum number of relevant locations per stratum, defaults to 3}
+\item{min.stratum}{The required minimum number of relevant locations per
+stratum.
+Defaults to `3`.}
 
-\item{min.cycle}{the required minimum number of cycles in which the species was present at a location. defaults to 2}
+\item{min.cycle}{The required minimum number of cycles in which the species
+was present at a location.
+Defaults to `2`.}
 
-\item{proportion}{minimum proportion of the least important period, defaults to 0.15}
+\item{proportion}{Minimum proportion of the least important period.
+Defaults to `0.15`.}
 }
 \value{
 A data.frame with the species id number of rows in the analysis

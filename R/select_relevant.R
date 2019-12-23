@@ -1,13 +1,24 @@
 #' Select the relevant observation of a species
 #'
-#' Relevant locations have at least two observations in different years. Relevant periods have average numbers of at least 15% of the most important period.
-#' @param observation the dataframe with the visits and location group
-#' @param species the fingerprint of the species
-#' @param datafield a named vector with the datafield id for "sample" and "observation"
-#' @param min.observation the required minimum number of occassion where the present was observed, defaults to 100
-#' @param min.stratum the required minimum number of relevant locations per stratum, defaults to 3
-#' @param min.cycle the required minimum number of cycles in which the species was present at a location. defaults to 2
-#' @param proportion minimum proportion of the least important period, defaults to 0.15
+#' Relevant locations have at least two observations in different cycle.
+#' Relevant periods have average numbers of at least 15% of the most important
+#' period.
+#'
+#' @param observation The dataframe with the visits and location group.
+#' @param species The fingerprint of the species.
+#' @param datafield A named vector with the datafield id for `"sample"` and
+#' `"observation"`.
+#' @param min.observation The required minimum number of occassion where the
+#' present was observed.
+#' Defaults to `100`.
+#' @param min.stratum The required minimum number of relevant locations per
+#' stratum.
+#' Defaults to `3`.
+#' @param min.cycle The required minimum number of cycles in which the species
+#' was present at a location.
+#' Defaults to `2`.
+#' @param proportion Minimum proportion of the least important period.
+#' Defaults to `0.15`.
 #' @inheritParams prepare_dataset
 #' @export
 #' @importFrom assertthat assert_that is.count is.number
@@ -66,9 +77,12 @@ select_relevant <- function(
       period = factor(.data$period)
     ) %>%
     select(-"sample_id", -"observation_id") -> rawdata
+  # require at least min.observation non-zero observations
   if (sum(rawdata$count > 0) < min.observation) {
     return(NULL)
   }
+  # require observation during at least min.cycle different cycles for each
+  # location
   rawdata %>%
     filter(.data$count > 0) %>%
     distinct(.data$location, .data$cycle) %>%
@@ -78,6 +92,7 @@ select_relevant <- function(
   if (sum(rawdata$count > 0) < min.observation) {
     return(NULL)
   }
+  # require at least min.stratum locations per stratum
   rawdata %>%
     filter(.data$count > 0) %>%
     distinct(.data$stratum, .data$location) %>%
@@ -87,14 +102,20 @@ select_relevant <- function(
   if (sum(rawdata$count > 0) < min.observation) {
     return(NULL)
   }
+  # filter periods with at least log_threshold average counts
   model <- glm(count ~ 0 + period, data = rawdata, family = poisson)
   log_threshold <- max(coef(model)) + log(proportion)
   selection <- levels(rawdata$period)[coef(model) >= log_threshold]
   rawdata %>%
-    filter(.data$period %in% selection) -> rawdata
+    filter(.data$period %in% selection) %>%
+    mutate(
+      period = relevel(period, which.max(coef(model)))
+    ) -> rawdata
   if (sum(rawdata$count > 0) < min.observation) {
     return(NULL)
   }
+  # require observation during at least min.cycle different cycles for each
+  # location
   rawdata %>%
     filter(.data$count > 0) %>%
     distinct(.data$location, .data$cycle) %>%
@@ -104,6 +125,7 @@ select_relevant <- function(
   if (sum(rawdata$count > 0) < min.observation) {
     return(NULL)
   }
+  # require at least min.stratum locations per stratum
   rawdata %>%
     filter(.data$count > 0) %>%
     distinct(.data$stratum, .data$location) %>%
