@@ -108,12 +108,15 @@ select_relevant <- function(
   selection <- levels(rawdata$period)[coef(model) >= log_threshold]
   rawdata %>%
     filter(.data$period %in% selection) %>%
-    mutate(
-      period = relevel(period, which.max(coef(model)))
-    ) -> rawdata
+    mutate(period = factor(.data$period)) -> rawdata
   if (sum(rawdata$count > 0) < min.observation) {
     return(NULL)
   }
+  model <- glm(count ~ 0 + period, data = rawdata, family = poisson)
+  rawdata %>%
+    mutate(
+      period = relevel(.data$period, which.max(coef(model)))
+    ) -> rawdata
   # require observation during at least min.cycle different cycles for each
   # location
   rawdata %>%
