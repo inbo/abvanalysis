@@ -7,7 +7,7 @@
 prepare_analysis(repo, base, project, overwrite = FALSE,
   min.observation = 100, min.stratum = 3, min.cycle = 2,
   proportion = 0.15, docker = "inbobmk/rn2k:0.6",
-  dependencies = c("inbo/n2khelper@v0.4.3", "inbo/n2kanalysis@v0.2.8",
+  dependencies = c("inbo/n2khelper@v0.4.3", "inbo/n2kanalysis@v0.2.9",
   "inbo/n2kupdate@v0.1.1"), volume)
 }
 \arguments{

@@ -38,6 +38,11 @@ prepare_analysis_dataset <- function(
   message(location_group, " ", species_group)
   flush.console()
 
+  control <- list(
+    control.predictor = list(dic = FALSE),
+    control.fixed = list(prec = list(default = 0.2))
+  )
+
   dataset <- select_relevant(
     observation = observation,
     species = metadata$species,
@@ -155,6 +160,7 @@ prepare_analysis_dataset <- function(
       ),
       formula = paste("count ~ 1 + cyear +", design),
       lin.comb = lc.trend,
+      control = control,
       first.imported.year = metadata$first_imported_year,
       last.imported.year = metadata$last_imported_year,
       data = dataset %>%
@@ -189,6 +195,7 @@ prepare_analysis_dataset <- function(
       ),
       formula = paste("count ~ 1 + cycle +", design),
       lin.comb = lc.trend,
+      control = control,
       first.imported.year = metadata$first_imported_year,
       last.imported.year = metadata$last_imported_year,
       data = dataset %>%
@@ -238,6 +245,7 @@ prepare_analysis_dataset <- function(
         hyper = list(theta = list(prior = 'pc.prec', param = c(0.5, 0.01)))
       ) +", design),
       lin.comb = lc.index,
+      control = control,
       first.imported.year = metadata$first_imported_year,
       last.imported.year = metadata$last_imported_year,
       data = dataset %>%
@@ -286,6 +294,7 @@ prepare_analysis_dataset <- function(
         hyper = list(theta = list(prior = 'pc.prec', param = c(0.5, 0.01)))
       ) +", design),
       lin.comb = lc.index,
+      control = control,
       first.imported.year = metadata$first_imported_year,
       last.imported.year = metadata$last_imported_year,
       data = dataset %>%
@@ -343,6 +352,7 @@ prepare_analysis_dataset <- function(
       ),
       formula = paste("count ~ 0 + stratum + cyear:stratum +", design),
       lin.comb = lc.trend,
+      control = control,
       first.imported.year = metadata$first_imported_year,
       last.imported.year = metadata$last_imported_year,
       data = dataset %>%
@@ -383,6 +393,7 @@ prepare_analysis_dataset <- function(
       ),
       formula = paste("count ~ 0 + stratum + cycle:stratum +", design),
       lin.comb = lc.trend,
+      control = control,
       first.imported.year = metadata$first_imported_year,
       last.imported.year = metadata$last_imported_year,
       data = dataset %>%
@@ -445,6 +456,7 @@ prepare_analysis_dataset <- function(
         hyper = list(theta = list(prior = 'pc.prec', param = c(0.5, 0.01)))
       ) +", design),
       lin.comb = lc.index,
+      control = control,
       first.imported.year = metadata$first_imported_year,
       last.imported.year = metadata$last_imported_year,
       data = dataset %>%
@@ -486,7 +498,7 @@ prepare_analysis_dataset <- function(
     lc.index <- c(lc.cycle, as.list(lc.stratum))
     rownames(lc.index[[1]]) <- c(
       paste(cycle, cycle + 2, sep = "-"),
-      sprintf("%i - %i", cycle[changes$to], cycle[changes$from])
+      sprintf("change: %i - %i", cycle[changes$to], cycle[changes$from])
     )
     n2k_inla(
       result.datasource.id = metadata$result_datasource,
@@ -506,6 +518,7 @@ prepare_analysis_dataset <- function(
         hyper = list(theta = list(prior = 'pc.prec', param = c(0.5, 0.01)))
       ) +", design),
       lin.comb = lc.index,
+      control = control,
       first.imported.year = metadata$first_imported_year,
       last.imported.year = metadata$last_imported_year,
       data = dataset %>%

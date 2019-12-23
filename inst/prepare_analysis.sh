@@ -19,7 +19,7 @@ RUN echo \"\$ssh_prv_key\" > /root/.ssh/id_rsa \
 &&  chmod 600 /root/.ssh/id_rsa.pub
 
 RUN Rscript -e 'remotes::install_github(\"inbo/n2khelper@v0.4.3\", dependencies = FALSE, upgrade = \"never\", keep_source = FALSE)' \
-&&  Rscript -e 'remotes::install_github(\"inbo/n2kanalysis@v0.2.8\", dependencies = FALSE, upgrade = \"never\", keep_source = FALSE)' \
+&&  Rscript -e 'remotes::install_github(\"inbo/n2kanalysis@v0.2.9\", dependencies = FALSE, upgrade = \"never\", keep_source = FALSE)' \
 &&  Rscript -e 'remotes::install_github(\"inbo/n2kupdate@v0.1.1\", dependencies = FALSE, upgrade = \"never\", keep_source = FALSE)' \
 &&  Rscript -e 'remotes::install_github(\"inbo/abvanalysis@meetnetten\", dependencies = FALSE, upgrade = \"never\", keep_source = FALSE)'" > Dockerfile
 cat Dockerfile
@@ -27,14 +27,20 @@ docker build --pull --tag prepareabv --build-arg ssh_prv_key="$(cat ~/.ssh/id_rs
 rm Dockerfile
 
 docker run --rm -v ~/n2kdocker:/root/n2k -it prepareabv
-cd /root/n2k
-git clone git@gitlab.com:inbo-n2k/abv.git
+FILE=/root/n2k/
+cd $FILE
+if [ -d "abv" ]; then
+    echo "bestaat"
+else
+    git clone git@gitlab.com:inbo-n2k/abv.git
+fi
+
 mkdir analysis
 R
 library(abvanalysis)
 repo <- git2rdata::repository("/root/n2k/abv")
 base <- "/root/n2k/analysis"
-script <- prepare_analysis(repo = repo, base = base, project = "abv", volume = "~/n2kdocker:/root/n2k")
+script <- prepare_analysis(repo = repo, base = base, project = "abv", volume = "~/n2kanalysis:/root/n2k")
 writeLines(c(script$init, script$model), "/root/n2k/analysis/abv_model.sh")
 writeLines(c(script$init, script$manifest), "/root/n2k/analysis/abv.sh")
 system("chmod 755 /root/n2k/analysis/*.sh")
