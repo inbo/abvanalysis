@@ -327,9 +327,9 @@ prepare_analysis <- function(
         )
     ) %>%
     unnest(cols = .data$manifest) %>%
-    filter(is.na(.data$Parent)) %>%
-    distinct(.data$Fingerprint) %>%
-    arrange(.data$Fingerprint) %>%
+    mutate(parent = !is.na(.data$Parent)) %>%
+    distinct(.data$Fingerprint, .data$parent) %>%
+    arrange(.data$parent, .data$Fingerprint) %>%
     pull(.data$Fingerprint) -> models
 
   c(manifest_comparison$manifest, manifest_composite$manifest) %>%
