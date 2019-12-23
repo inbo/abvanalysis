@@ -39,7 +39,7 @@ prepare_analysis_dataset <- function(
   flush.console()
 
   control <- list(
-    control.predictor = list(dic = FALSE),
+    control.compute = list(dic = FALSE),
     control.fixed = list(prec = list(default = 0.2))
   )
 
