@@ -1,0 +1,97 @@
+---
+title: "Trends op basis van de Algemene Broedvogelmonitoring Vlaanderen (ABV)"
+author: 
+  - 
+    name: "Thierry Onkelinx"
+    email: "thierry.onkelinx@inbo.be"
+    orcid: "0000-0001-8804-4216"
+  - 
+    name: "Glenn Vermeersch"
+    email: "glenn.vermeersch@inbo.be"
+    orcid: "0000-0002-9176-8917"
+  - 
+    name: "Koen Devos"
+    email: "koen.devos@inbo.be"
+bibliography: references.bib
+link-citations: TRUE
+site: bookdown::bookdown_site
+output:
+  bookdown::gitbook:
+    split_by: "chapter+number"
+    template: !expr INBOmd::inbo_rapport_css("html")
+  bookdown::epub_book:
+    stylesheet: "css/inbo_rapport.css"
+    template: !expr INBOmd::inbo_rapport_css("epub")
+---
+
+```{r setup, include = FALSE}
+library(knitr)
+opts_chunk$set(
+  echo = FALSE, 
+  eval = TRUE,
+  cache = FALSE,
+  dev = "png", dpi = 72, fig.height = 8, fig.width = 10.5,
+  warning = FALSE,
+  error = FALSE,
+  message = TRUE
+)
+library(tidyverse)
+library(effectclass)
+library(plotly)
+library(INBOtheme)
+update_geom_defaults("point", list(size = 4))
+theme_set(
+  theme_inbo(
+    base_family = "FlandersArtSans-Regular", 
+    base_size = 14
+  )
+)
+index_breaks <- function(x) {
+  z <- 1 - c(9/10, 4/5, 3/4, 2/3, 1/2, 1/3, 1/4, 1/5, 1/10, 1/20, 1/50, 1/100, 1/200, 0)
+  z <- log(sort(z))
+  z <- z[which(z >= min(-abs(x)))[1] + -1:2]
+  c(z, 0, -z)
+}
+index_breaks2 <- function(x) {
+  z <- 1 - c(9/10, 4/5, 3/4, 2/3, 1/2, 1/3, 1/4, 1/5, 1/10, 1/20, 1/50, 1/100, 1/200, 0)
+  z <- log(sort(z))
+  z <- z[which(z >= min(-abs(x)))[1] + -1:1]
+  c(z, 0, -z)
+}
+index_labels <- function(x) {
+  sprintf("%+.0f%%", 100 * (exp(x) - 1))
+}
+display_trend <- function(mean, lcl, ucl, duration = 1) {
+  mean <- 100 * exp(duration * mean) - 100
+  lcl <- 100 * exp(duration * lcl) - 100
+  ucl <- 100 * exp(duration * ucl) - 100
+  upper <- pmax(abs(lcl), abs(ucl))
+  magnitude <- floor(log10(upper))
+  magnitude <- magnitude - ifelse(upper * 10 ^ -magnitude < 2, 2, 1)
+  sprintf(
+    "%+g%% (%+g%%; %+g%%)",
+    round(mean * 10 ^ -magnitude) * 10 ^ magnitude,
+    round(lcl * 10 ^ -magnitude) * 10 ^ magnitude,
+    round(ucl * 10 ^ -magnitude) * 10 ^ magnitude
+  )
+}
+```
+
+```{r import-data}
+resultaten <- readRDS("../results.rds")
+resultaten$meta %>%
+  right_join(
+    x = readRDS("../species.rds"), 
+    by = c("fingerprint" = "species")
+  ) %>%
+  select(-fingerprint) %>%
+  mutate(
+    composite = grepl("composite", modeltype),
+    cycle = grepl("(Cycle|cycle)", modeltype),
+    nonlinear = grepl("(RW1|non linear)", modeltype)
+  ) -> resultaten$meta
+```
+
+# Inleiding
+
+Te schrijven

@@ -1,0 +1,56 @@
+# (PART) Indicatoren {-}
+
+```{r composite-set}
+resultaten$index %>%
+  filter(str_detect(parameter, "change")) %>%
+  extract(
+    col = parameter, 
+    into = c("naar", "referentie"), 
+    regex = "([0-9]{4}).* - ([0-9]{4})", 
+    convert = TRUE
+  ) -> wijziging
+wijziging %>%
+  rename(
+    naar = referentie, referentie = naar
+  ) %>%
+  mutate(
+    log_mean = -log_mean
+  ) %>%
+  bind_rows(wijziging) %>%
+  inner_join(
+    resultaten$meta %>%
+      filter(!cycle) %>%
+      select(analysis, hash),
+    by = "analysis"
+  ) -> wijziging
+resultaten$relation %>%
+  inner_join(
+    resultaten$meta %>%
+      filter(!cycle, nonlinear) %>%
+      select(analysis, hash),
+    by = "analysis"
+  ) %>%
+  inner_join(
+    resultaten$meta %>%
+      filter(!cycle, nonlinear) %>%
+      select(analysis, "species_group"),
+    by = c("parent" = "analysis")
+  ) %>%
+  select(hash, soort = species_group) -> composite_soort
+```
+
+```{r composite-indices, results='asis', cache = FALSE, eval = TRUE}
+resultaten$meta %>%
+  filter(composite) %>%
+  arrange(species_group) %>%
+  distinct(hash) %>%
+  pull(hash) %>%
+  sapply(
+    function(id) {
+      knit_expand("_samengesteld.Rmd", id = id)
+    }
+  ) %>%
+  paste(collapse = "\n") -> rmd
+knit(text = rmd, quiet = TRUE) %>%
+  cat()
+```

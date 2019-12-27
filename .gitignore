@@ -10,3 +10,6 @@ inst/intern_rapport/figure
 inst/intern_rapport/*.log
 inst/intern_rapport/*.rds
 env.list
+*.rds
+_bookdown_files
+css

@@ -1,0 +1,138 @@
+```{r {{id}}-set}
+if (interactive()) {
+  resultaten$meta %>%
+    sample_n(1) %>%
+    pull(hash) -> id
+} else {
+  id <- "{{id}}"
+}
+```
+
+```{r {{id}}-basis}
+if (sum(aantal$hash == id) == 0) {
+  dit_aantal <- data.frame()
+  deze_wijziging <- data.frame(cycle = logical(0))
+} else {
+  aantal %>%
+    filter(hash == id) %>%
+    mutate(
+      text_median = sprintf(
+        sprintf(
+          "%%i %1$s (%1$s; %1$s)", 
+          sprintf("%%.%if", 1 - floor(log10(min(lcl90))))),
+          parameter, median, lcl90, ucl90
+      )
+    ) -> dit_aantal
+  wijziging %>%
+    filter(hash == id) -> deze_wijziging
+  resultaten$meta %>%
+    filter(hash == id) %>%
+    slice(1) %>%
+    pull(species_group) -> soort_naam
+  lineair %>%
+    filter(hash == id) -> deze_lineair
+}
+```
+
+# `r sprintf("%s {#soort-%s}", soort_naam, id)`
+
+De trend is `r deze_lineair$interpretatie`.
+Gemiddeld zien we `r deze_lineair$tekst` `r deze_lineair$jaarlijks` per jaar of `r deze_lineair$looptijd` over de volledige looptijd van het meetnet.
+
+```{r {{id}}-aantal, fig.cap = paste0("Evolutie van het gemodeleerde gemiddeld aantal waargenomen dieren op een meetpunt voor ", soort_naam, " tijdens de referentieperiode."), eval = nrow(dit_aantal) > 0, warning = FALSE}
+plot_ly(
+  data = dit_aantal,
+  x = ~parameter, y = ~median,
+  hoverinfo = "text"
+) %>%
+  add_ribbons(
+    ymin = ~lcl90, ymax = ~ucl90, text = ~text_median, 
+    fillcolor = inbo.steun.blauw, opacity = 0.3,
+    line = list(width = 0), 
+    legendgroup = "jaarlijks", showlegend = FALSE
+  ) %>%
+  add_ribbons(
+    ymin = ~lcl60, ymax = ~ucl60,
+    fillcolor = inbo.steun.blauw, opacity = 0.3,
+    line = list(width = 0), 
+    legendgroup = "jaarlijks", showlegend = FALSE
+  ) %>%
+  add_ribbons(
+    ymin = ~lcl30, ymax = ~ucl30,
+    fillcolor = inbo.steun.blauw, opacity = 0.3,
+    line = list(width = 0), 
+    legendgroup = "jaarlijks", showlegend = FALSE
+  ) %>%
+  add_lines(
+    text = ~text_median,
+    line = list(color = inbo.steun.blauw), name = "jaarlijks",
+    legendgroup = "jaarlijks"
+  ) %>%
+  layout(
+    xaxis = list(title = list(text = NULL), fixedrange = TRUE),
+    yaxis = list(
+      title = list(text = "gemiddeld aantal dieren per meetpunt"),
+      rangemode = "tozero"
+    )
+ )
+```
+
+```{r {{id}}-wijziging-jaar, fig.cap = paste0("Wijzigingen t.o.v. het eerste jaar voor ", soort_naam, "."), eval = nrow(deze_wijziging) > 0}
+deze_wijziging %>%
+  filter(referentie == min(referentie)) %>%
+  ggplot(aes(x = naar, y = log_mean, link_sd = log_sd)) +
+  geom_hline(yintercept = 0, linetype = 2) +
+  geom_hline(yintercept = log(c(3/4, 4/3)), linetype = 3) +
+  stat_fan(geom = "rect") +
+  stat_effect(
+    aes(ymin = log(lcl90), ymax = log(ucl90)), 
+    threshold = log(0.75)
+  ) +
+  scale_effect("klasse") +
+  scale_x_continuous(breaks = pretty) +
+  scale_y_continuous(
+    "procentuele wijziging t.o.v. 2007", 
+    breaks = index_breaks, labels = index_labels,
+    sec.axis = sec_axis(
+      trans = exp, name = "relatieve wijziging t.o.v. 2007",
+      breaks = function(x){exp(index_breaks(log(x)))}, 
+      labels = function(x){signif(x, 3)}
+    )
+  ) +
+  theme(axis.title.x = element_blank())
+```
+
+```{r {{id}}-wijziging-jaar-alles, fig.cap = paste0("Paarsgewijze vergelijking tussen jaren voor ", soort_naam, "."), eval = nrow(deze_wijziging) > 0}
+deze_wijziging %>%
+  mutate(
+    klasse = classification(log(lcl90), log(ucl90), log(0.75)),
+    wijziging = sprintf(
+      "%i: %+.0f%% t.o.v. %i (%s)", 
+      naar,
+      100 * median - 100,
+      referentie,
+      klasse
+    ),
+    klasse = remove_sign(klasse)
+  ) -> change
+tickvals <- index_breaks2(log(change$median))
+plot_ly(
+  change,
+  x = ~naar, y = ~referentie, color = ~log(median), symbol = ~klasse, 
+  text = ~wijziging, hoverinfo = "text"
+) %>%
+  add_markers(
+    colors = c(inbo.steun.blauw, inbo.lichtgrijs, inbo.rood),
+    marker = list(
+      size = 12
+    ),
+    symbols = c(
+      "triangle-up", "square", "diamond", "circle", "diamond-open", 
+      "circle-open"
+    )
+  ) %>%
+  colorbar(
+    title = "wijziging", tickvals = tickvals, ticktext = index_labels(tickvals)
+  ) %>%
+  layout(xaxis = list(title = list(text = NULL)))
+```

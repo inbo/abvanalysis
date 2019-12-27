@@ -1,0 +1,129 @@
+# (PART) Resultaten per soort {-}
+
+```{r soort-set}
+resultaten$voorspelling %>%
+  filter(str_detect(parameter, "ratio")) %>%
+  extract(
+    parameter, c("naar", "referentie"), "([0-9]{4}).*/([0-9]{4})", 
+    convert = TRUE
+  ) -> wijziging
+wijziging %>%
+  mutate_at(vars(starts_with("lcl")), function(x) {1 / x}) %>%
+  mutate_at(vars(starts_with("ucl")), function(x) {1 / x}) %>%
+  rename(
+    naar = referentie, referentie = naar,
+    lcl90 = ucl90, lcl60 = ucl60, lcl30 = ucl30,
+    ucl90 = lcl90, ucl60 = lcl60, ucl30 = lcl30
+  ) %>%
+  mutate(
+    median = 1 / median,
+    log_mean = -log_mean
+  ) %>%
+  bind_rows(wijziging) %>%
+  inner_join(
+    resultaten$meta %>%
+      filter(!cycle) %>%
+      select(analysis, hash),
+    by = "analysis"
+  ) -> wijziging
+resultaten$voorspelling %>%
+  filter(str_detect(parameter, "ratio", TRUE)) %>%
+  inner_join(
+    resultaten$meta %>%
+      filter(!cycle) %>%
+      select(analysis, hash),
+    by = "analysis"
+  ) %>%
+  mutate(
+    parameter = str_remove(parameter, "-[0-9]*") %>%
+      as.integer()
+  ) -> aantal
+resultaten$meta %>%
+  filter(!composite, !cycle) %>%
+  select(hash, waic, nonlinear) %>%
+  mutate(
+    nonlinear = factor(
+      nonlinear, 
+      levels = c(FALSE, TRUE),
+      labels = c("lineair", "niet_lineair")
+    )
+  ) %>%
+  pivot_wider(values_from = waic, names_from = nonlinear) %>%
+  mutate(
+    interpretatie = ifelse(
+      lineair < niet_lineair,
+      "lineair",
+      ifelse(
+        lineair + 2 < niet_lineair,
+        "mogelijk niet-lineair",
+        "niet-lineair"
+      )
+    )
+  ) %>%
+  inner_join(
+    resultaten$lc %>%
+      filter(parameter == "Trend") %>%
+      inner_join(
+        resultaten$meta %>%
+          filter(!cycle),
+          select(hash, analysis, duration, species_group),
+        by = "analysis"
+      ),
+    by = "hash"
+  ) %>%
+  arrange(hash) %>%
+  mutate(
+    lcl = qnorm(0.05, mean, sd),
+    ucl = qnorm(0.95, mean, sd),
+    klasse = classification(
+      lcl = duration * lcl, 
+      ucl = duration * ucl, 
+      threshold = log(0.75)
+    )
+  ) %>%
+  arrange(klasse, desc(mean)) %>%  transmute(
+    hash, 
+    soort = sprintf("[%s](#soort-%s)", species_group, hash), 
+    klasse, interpretatie,
+    jaarlijks = display_trend(mean, lcl, ucl),
+    looptijd = display_trend(mean, lcl, ucl, duration),
+    tekst = factor(
+      klasse,
+      levels = levels(klasse),
+      c(
+        "een sterke toename met", "een toename met", "een matige toename met", 
+        "een stabiele trend van", "een matige afname met", "een afname met", 
+        "een sterke afname met", "een mogelijke toename met", 
+        "een mogelijk afname met", "een onduidelijke trend van"
+      )
+    ) %>%
+      as.character()
+  ) -> lineair
+```
+
+# Overzicht van de trends
+
+```{r jaarlijkse-trends}
+lineair %>%
+  transmute(
+    soort, klasse = format(klasse, type = "markdown"), interpretatie, 
+    `jaarlijkse wijziging` = jaarlijks, `wijziging over de looptijd` = looptijd
+  ) %>%
+  kable(caption = "Gemiddelde wijziging in veronderstelling van een lineaire trend.")
+```
+
+```{r indices, results='asis', cache = FALSE, eval = TRUE}
+resultaten$meta %>%
+  filter(!composite) %>%
+  arrange(species_group) %>%
+  distinct(hash) %>%
+  pull(hash) %>%
+  sapply(
+    function(id) {
+      knit_expand("_soort.Rmd", id = id)
+    }
+  ) %>%
+  paste(collapse = "\n") -> rmd
+knit(text = rmd, quiet = TRUE) %>%
+  cat()
+```
