@@ -19,6 +19,11 @@ output:
   bookdown::gitbook:
     split_by: "chapter+number"
     template: !expr INBOmd::inbo_rapport_css("html")
+  bookdown::pdf_book:
+    base_format: INBOmd::inbo_rapport
+    floatbarrier: "section"
+    lof: FALSE
+    lot: FALSE
   bookdown::epub_book:
     stylesheet: "css/inbo_rapport.css"
     template: !expr INBOmd::inbo_rapport_css("epub")
@@ -30,7 +35,6 @@ opts_chunk$set(
   echo = FALSE, 
   eval = TRUE,
   cache = FALSE,
-  dev = "png", dpi = 72, fig.height = 8, fig.width = 10.5,
   warning = FALSE,
   error = FALSE,
   message = TRUE
@@ -39,12 +43,39 @@ library(tidyverse)
 library(effectclass)
 library(plotly)
 library(INBOtheme)
-update_geom_defaults("point", list(size = 4))
-theme_set(
-  theme_inbo(
-    base_family = "FlandersArtSans-Regular", 
-    base_size = 14
-  )
+output_format <- ifelse(interactive(), "html", opts_knit$get("rmarkdown.pandoc.to"))
+switch(
+  output_format,
+  html = {
+    opts_chunk$set(dev = "png", dpi = 72, fig.height = 8, fig.width = 10.5)
+    update_geom_defaults("point", list(size = 4))
+    theme_set(
+      theme_inbo(
+        base_family = "FlandersArtSans-Regular", 
+        base_size = 14
+      )
+    )
+  },
+  latex = {
+    opts_chunk$set(dev = "cairo_pdf")
+    update_geom_defaults("point", list(size = 1.5))
+    theme_set(
+      theme_inbo(
+        base_family = "Flanders Art Sans",
+        base_size = 8
+      )
+    )
+  },
+  {
+    opts_chunk$set(dev = "png", dpi = 72, fig.height = 8, fig.width = 10.5)
+    update_geom_defaults("point", list(size = 4))
+    theme_set(
+      theme_inbo(
+        base_family = "FlandersArtSans-Regular", 
+        base_size = 14
+      )
+    )
+  }
 )
 index_breaks <- function(x) {
   z <- 1 - c(9/10, 4/5, 3/4, 2/3, 1/2, 1/3, 1/4, 1/5, 1/10, 1/20, 1/50, 1/100, 1/200, 0)
