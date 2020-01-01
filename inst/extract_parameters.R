@@ -10,6 +10,7 @@ remotes::install_github(
   upgrade = FALSE
 )
 
+library(git2rdata)
 library(purrr)
 library(tibble)
 library(dplyr)
@@ -364,3 +365,42 @@ tbl(conn, "scheme") %>%
     hash = map2_chr(fingerprint, species_group, ~digest::sha1(c(.x, .y)))
   ) %>%
   saveRDS("inst/species.rds")
+
+repo <- repository("~/n2k/abv")
+tbl(conn, "scheme") %>%
+  filter(description == "Algemene broedvogels") %>%
+  semi_join(
+    x = tbl(conn, "location_group"),
+    by = c("scheme" = "id")
+  ) %>%
+  semi_join(
+    x = tbl(conn, "location_group_location"),
+    by = c("location_group" = "id")
+  ) %>%
+  semi_join(
+    x = tbl(conn, "location"),
+    by = c("id" = "location")
+  ) %>%
+  select(fingerprint, description) %>%
+  collect() %>%
+  inner_join(
+    read_vc("sampling_frame", repo) %>%
+      filter(!is.na(Stratum)) %>%
+      count(Stratum, name = "totaal") %>%
+      mutate_at("Stratum", as.character),
+    by = c("description" = "Stratum")
+  ) %>%
+  inner_join(
+    read_vc(file = "location/location", root = repo) %>%
+      rename(stratum = parent) %>%
+      semi_join(
+        read_vc(file = "location/location", root = repo) %>%
+          filter(.data$parent == ""),
+        by = c("stratum" = "location")
+      ) %>%
+      count(stratum, name = "onderzocht"),
+    by = c("fingerprint" = "stratum")
+  ) %>%
+  arrange(desc(totaal)) %>%
+  saveRDS("inst/strata.rds")
+

@@ -5,11 +5,9 @@ _builds
 _projects
 _steps
 inst/output
-inst/intern_rapport/css
-inst/intern_rapport/figure
-inst/intern_rapport/*.log
-inst/intern_rapport/*.rds
 env.list
 *.rds
 _bookdown_files
 css
+*.log
+figure

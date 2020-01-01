@@ -31,6 +31,8 @@ if (sum(aantal$hash == id) == 0) {
     pull(species_group) -> soort_naam
   lineair %>%
     filter(hash == id) -> deze_lineair
+  stratum_gewicht %>%
+    filter(hash == id) -> dit_stratum
 }
 ```
 
@@ -107,9 +109,9 @@ deze_wijziging %>%
   mutate(
     klasse = classification(log(lcl90), log(ucl90), log(0.75)),
     wijziging = sprintf(
-      "%i: %+.0f%% t.o.v. %i (%s)", 
+      "%i: %s t.o.v. %i (%s)", 
       naar,
-      100 * median - 100,
+      display_trend(log(median), log(lcl90), log(ucl90)),
       referentie,
       klasse
     ),
@@ -136,3 +138,22 @@ plot_ly(
   ) %>%
   layout(xaxis = list(title = list(text = NULL)))
 ```
+
+```{r {{id}}-stratum-gewicht}
+dit_stratum %>%
+  select(-hash) %>%
+  mutate(
+    gewicht = sprintf("%.1f%%", 100 * gewicht),
+    aanwezig = round(aanwezig, 1)
+  ) %>%
+  kable(
+    caption = paste(
+"Stratumgewicht, raming aan het aantal hokken waarin de soort aanwezig is, 
+aantal relevant hokken voor de analyse, aantal onderzochte hokken in het 
+stratum, totaal aantal hokken van het stratum in Vlaanderen en aantal bezoeken 
+aan een meetpunt voor ", soort_naam, "."
+    ),
+    align = c("lrrrrrr")
+  )
+```
+

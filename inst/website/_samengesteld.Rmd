@@ -61,15 +61,13 @@ deze_wijziging %>%
 ```{r {{id}}-wijziging-jaar-alles, fig.cap = paste0("Paarsgewijze vergelijking tussen jaren voor ", soort_naam, "."), eval = nrow(deze_wijziging) > 0}
 deze_wijziging %>%
   mutate(
-    klasse = classification(
-      lcl = qnorm(0.05, log_mean, log_sd),
-      ucl = qnorm(0.95, log_mean, log_sd),
-      deze_threshold
-    ),
+    lcl = qnorm(0.05, log_mean, log_sd),
+    ucl = qnorm(0.95, log_mean, log_sd),
+    klasse = classification(lcl, ucl, deze_threshold),
     wijziging = sprintf(
-      "%i: %+.0f%% t.o.v. %i (%s)", 
+      "%i: %s t.o.v. %i (%s)", 
       naar,
-      100 * exp(log_mean) - 100,
+      display_trend(log_mean, lcl, ucl),
       referentie,
       klasse
     ),

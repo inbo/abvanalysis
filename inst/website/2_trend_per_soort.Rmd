@@ -54,9 +54,9 @@ resultaten$meta %>%
       lineair < niet_lineair,
       "lineair",
       ifelse(
-        lineair + 2 < niet_lineair,
-        "mogelijk niet-lineair",
-        "niet-lineair"
+        niet_lineair + 10 < lineair,
+        "niet-lineair",
+        "mogelijk niet-lineair"
       )
     )
   ) %>%
@@ -65,7 +65,7 @@ resultaten$meta %>%
       filter(parameter == "Trend") %>%
       inner_join(
         resultaten$meta %>%
-          filter(!cycle),
+          filter(!cycle) %>%
           select(hash, analysis, duration, species_group),
         by = "analysis"
       ),
@@ -76,8 +76,8 @@ resultaten$meta %>%
     lcl = qnorm(0.05, mean, sd),
     ucl = qnorm(0.95, mean, sd),
     klasse = classification(
-      lcl = duration * lcl, 
-      ucl = duration * ucl, 
+      lcl = (duration - 1) * lcl, 
+      ucl = (duration - 1) * ucl, 
       threshold = log(0.75)
     )
   ) %>%
@@ -86,7 +86,7 @@ resultaten$meta %>%
     soort = sprintf("[%s](#soort-%s)", species_group, hash), 
     klasse, interpretatie,
     jaarlijks = display_trend(mean, lcl, ucl),
-    looptijd = display_trend(mean, lcl, ucl, duration),
+    looptijd = display_trend(mean, lcl, ucl, duration - 1),
     tekst = factor(
       klasse,
       levels = levels(klasse),
@@ -99,17 +99,53 @@ resultaten$meta %>%
     ) %>%
       as.character()
   ) -> lineair
+resultaten$strata %>%
+  inner_join(
+    resultaten$meta %>%
+      filter(!cycle) %>%
+      select(hash, analysis),
+    by = "analysis"
+  ) %>%
+  mutate(stratum = str_remove(stratum, "stratum")) %>%
+  inner_join(resultaten$inspanning, by = c("stratum", "analysis")) %>%
+  inner_join(x = strata, by = c("fingerprint" = "stratum")) %>%
+  transmute(
+    hash,
+    stratum = description,
+    gewicht,
+    aanwezig = totaal * hokken / onderzocht,
+    relevant = hokken,
+    onderzocht,
+    totaal,
+    bezoeken
+  ) %>%
+  arrange(hash, desc(gewicht)) -> stratum_gewicht
 ```
 
 # Overzicht van de trends
 
-```{r jaarlijkse-trends}
+Tabel \@ref(tab:jaarlijkse-trends) geeft een overzicht van de lineaire trends voor elke soort.
+We hebben de trends gesorteerd volgens opdeling van de klassen (zie \@ref(s:trendklasse) voor de verklaring) en binnen de klasse volgens puntschatting van de trend.
+Hierdoor start de tabel met de soorten met de sterkste positieve trends.
+Bij de volgende soorten zal de trend minder sterk worden tot we aan de soorten met een stabiele trend komen.
+Daarna volgen de soorten met een negatieve trend waarbij de trend steeds sterker negatief wordt.
+We sluiten de tabel af met de soorten met een mogelijke of onduidelijke trend.
+De tabel bevat de trend uitgedrukt als een jaarlijkse wijzigingen en als een wijziging over de volledige looptijd van het meetnet.
+Verder bevat de tabel de opdeling van de trend in klassen en een indicatie of de trend al dan niet lineair is.
+De naam van de soort is een snelkoppeling naar de detail van de soort zelf.
+We raden aan om hiervan gebruikt te maken bij de interpretie van niet-lineaire trends.
+
+(ref:jaarlijkse-trends) Gemiddelde wijziging in veronderstelling van een lineaire trend. `++`: sterke toename, `+`: toename, `+~`: matige toename, `~`: stabiel, `~-`: matige afname, `-`: afname, `--`: sterke afname, `?+`: mogelijke toename, `?-`: mogelijke afname, `?`: onduidelijke trend. Referentie: 0% wijziging, ondergrens: -25% over de looptijd, bovengrens: +33% over de looptijd.
+
+```{r jaarlijkse-trends, results = "asis"}
 lineair %>%
   transmute(
     soort, klasse = format(klasse, type = "markdown"), interpretatie, 
     `jaarlijkse wijziging` = jaarlijks, `wijziging over de looptijd` = looptijd
   ) %>%
-  kable(caption = "Gemiddelde wijziging in veronderstelling van een lineaire trend.")
+  kable(
+    caption = "(ref:jaarlijkse-trends)", format = "pandoc", escape = FALSE
+  )
 ```
 
 ```{r indices, results='asis', cache = FALSE, eval = TRUE}
