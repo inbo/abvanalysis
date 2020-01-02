@@ -404,3 +404,16 @@ tbl(conn, "scheme") %>%
   arrange(desc(totaal)) %>%
   saveRDS("inst/strata.rds")
 
+read_vc("observation/visit", repo) %>%
+  count(year, location, name = "bezoeken") %>%
+  inner_join(
+    read_vc("location/location", repo),
+    by = "location"
+  ) %>%
+  rename(stratum = parent) %>%
+  mutate(
+    location = factor(location) %>%
+      as.integer()
+  ) %>%
+  arrange(year, stratum, location) %>%
+  saveRDS("inst/inspanning.rds")

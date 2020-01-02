@@ -54,7 +54,7 @@ resultaten$meta %>%
       lineair < niet_lineair,
       "lineair",
       ifelse(
-        niet_lineair + 10 < lineair,
+        niet_lineair + 2 < lineair,
         "niet-lineair",
         "mogelijk niet-lineair"
       )
@@ -135,7 +135,7 @@ Verder bevat de tabel de opdeling van de trend in klassen en een indicatie of de
 De naam van de soort is een snelkoppeling naar de detail van de soort zelf.
 We raden aan om hiervan gebruikt te maken bij de interpretie van niet-lineaire trends.
 
-(ref:jaarlijkse-trends) Gemiddelde wijziging in veronderstelling van een lineaire trend. `++`: sterke toename, `+`: toename, `+~`: matige toename, `~`: stabiel, `~-`: matige afname, `-`: afname, `--`: sterke afname, `?+`: mogelijke toename, `?-`: mogelijke afname, `?`: onduidelijke trend. Referentie: 0% wijziging, ondergrens: -25% over de looptijd, bovengrens: +33% over de looptijd.
+(ref:jaarlijkse-trends) Gemiddelde wijziging in veronderstelling van een lineaire trend. `++`: sterke toename, `+`: toename, `+~`: matige toename, `~`: stabiel, `~-`: matige afname, `-`: afname, `--`: sterke afname, `?+`: mogelijke toename, `?-`: mogelijke afname, `?`: onduidelijke trend. Referentie: 0%, ondergrens: -25% over de looptijd, bovengrens: +33% over de looptijd.
 
 ```{r jaarlijkse-trends, results = "asis"}
 lineair %>%

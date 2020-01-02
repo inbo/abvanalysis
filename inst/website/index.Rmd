@@ -156,6 +156,42 @@ Deze set komt opnieuw aan bod in jaren 5, 8, 11, ...
 Tenslotte kiezen de waarnemers in het derde jaar een laatste set van 300 hokken uit de laatste 900 hokken.
 Deze set hokken bemonsteren we in de jaren 3, 6, 9, 12, ...
 
+Fig. \@ref(fig:inspanning) geeft de effectieve monitoringsinspanning weer.
+Merk op dat de driejarige cyclus voor de meest hokken wordt gerespecteerd.
+Voor sommige hokken is de inspanning variabel, soms frequenter dan om de drie jaar, soms zit er meer tijd tussen.
+Sommige hokken werden slechts in een of twee jaar onderzocht.
+
+```{r inspanning, fig.cap = "Overzicht van de effectieve monitoringsinspanning. Elk punt is een hok dat onderzocht is in een bepaald jaar. De horizontale lijnen verbinden het eerste en meest recente bezoek aan eenzelfde hok."}
+readRDS("../inspanning.rds") %>%
+  inner_join(
+    x = strata %>%
+      select(fingerprint, stratum = description), 
+    by = c("fingerprint" = "stratum")
+  ) %>%
+  select(-fingerprint) -> inspanning
+inspanning %>%
+  group_by(location) %>%
+  summarise(
+    start = min(year),
+    end = max(year),
+    jaren = n()
+  ) %>%
+  arrange(start, end, jaren) %>%
+  rowid_to_column("hok") %>%
+  mutate(hok = factor(hok)) %>%
+  inner_join(inspanning, by = "location") -> inspanning
+ggplot(inspanning, aes(x = year, y = hok, group = hok)) +
+  geom_line(alpha = 0.2) +
+  geom_point(alpha = 0.2) +
+  facet_wrap(~stratum, scales = "free_y") +
+  scale_x_continuous(breaks = pretty) +
+  theme(
+    axis.title.x = element_blank(),
+    axis.text.x = element_text(angle = 90),
+    axis.text.y = element_blank()
+  )
+```
+
 ## Steekproefeenheid
 
 De steekproefeenheid bestaat uit een hok van 1 x 1 km.
@@ -207,6 +243,8 @@ Daarom hebben nood aan een set regels die we toepassen op de beschikbare gegeven
 
 1. Een hok is relevant voor een soort wanneer we deze soort tijdens minstens twee verschillende driejarige cycli waarnemen. 
 Op deze manier sluiten we hokken uit waar de soort nooit of slechts toevallig waargenomen is.
+Hokken die slechts binnen één driejarige cyclus onderzocht zijn kunnen hierdoor voorlopig niet gebruiken.
+Fig. \@ref(fig:potentieel) geeft een overzicht van het aantal hokken die gedurende minstens twee cycli onderzocht zijn.
 1. Een stratum is relevant voor een soort wanneer het minstens drie relevante hokken bevat.
 1. Op basis van de overblijvende gegevens berekenen we het (meetkundig) gemiddelde[^geometrisch] van de aantallen in elk van de drie perioden.
 De periode met het hoogste gemiddelde gebruiken we als referentieperiode.
@@ -217,6 +255,22 @@ Bijvoorbeeld een trekvogel die pas in de loop van de tweede periode toekomt en w
 Het negeren van een of twee periodes kan er voor zorgen dat een hok niet langer relevant is.
 
 [^geometrisch]: Het meetkundig gemiddelde of geometrisch gemiddelde van $n$ getallen wordt verkregen door de getallen met elkaar te vermenigvuldigen en vervolgens van het product de $n$-de-machtswortel te nemen. $$m=\left(\prod _{i=1}^{n}a_{i}\right)^{1/n}$$
+
+```{r potentieel, fig.cap = "Aantal onderzochte hokken per stratum en per jaar waarbij we enkel rekening houden met hokken die in minstens twee verschillende driejarige cycli onderzocht zijn."}
+inspanning %>%
+  mutate(cyclus = (year - 2007) %/% 3) %>%
+  distinct(location, cyclus) %>%
+  count(location) %>%
+  filter(n >= 2) %>%
+  semi_join(x = inspanning, by = "location") %>%
+  count(year, stratum, name = "hokken") %>%
+  mutate(stratum = reorder(stratum, -hokken)) %>%
+  ggplot(aes(x = year, y = hokken, colour = stratum)) +
+  geom_line() +
+  scale_x_continuous(breaks = pretty) +
+  scale_y_continuous("Aantal potentieel relevante hokken", limits = c(0, NA)) +
+  theme(axis.title.x = element_blank())
+```
 
 Na het toepassen van deze regels gaan we na of we minstens 100 waarnemingen van de soort hebben.
 Hierbij is een waarneming de telling van minstens een dier in een combinatie van jaar, periode, hok en meetpunt.

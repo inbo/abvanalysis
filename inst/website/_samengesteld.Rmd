@@ -19,6 +19,7 @@ resultaten$meta %>%
 composite_soort %>%
   filter(hash == id) %>%
   arrange(soort) %>%
+  mutate(soort = sprintf("[%s](#soort-%s)", soort, hash)) %>%
   pull(soort) -> deze_soorten
 deze_threshold <- log(0.75) / sqrt(length(deze_soorten))
 ```
@@ -29,8 +30,9 @@ Deze indicator is gebaseerd op volgende soorten: `r paste(deze_soorten, collapse
 De indicator bestaat uit `r length(deze_soorten)` soorten.
 De aangepaste grenswaarden zijn `r sprintf("%+.1f%%", exp(deze_threshold) * 100 - 100)` en `r sprintf("%+.1f%%", exp(-deze_threshold) * 100 - 100)`.
 
+(ref:{{id}}:index) Wijzigingen t.o.v. het eerste jaar voor `r soort_naam`. Zie sectie \@ref(s:onzekerheid) voor een verklaring van de intervallen en sectie \@ref(s:trendklasse) voor uitleg over de symbolen en referentielijnen.
 
-```{r {{id}}-wijziging-jaar, fig.cap = "Wijzigingen t.o.v. het eerste jaar.", eval = nrow(deze_wijziging) > 0}
+```{r {{id}}-wijziging-jaar, fig.cap = "(ref:{{id}}:index)", eval = nrow(deze_wijziging) > 0}
 deze_wijziging %>%
   filter(referentie == min(referentie)) %>%
   ggplot(aes(x = naar, y = log_mean, link_sd = log_sd)) +
@@ -58,7 +60,9 @@ deze_wijziging %>%
   theme(axis.title.x = element_blank())
 ```
 
-```{r {{id}}-wijziging-jaar-alles, fig.cap = paste0("Paarsgewijze vergelijking tussen jaren voor ", soort_naam, "."), eval = output_format == "html" && nrow(deze_wijziging) > 0}
+(ref:{{id}}:raster) Paarsgewijze vergelijking tussen jaren voor `r soort_naam`. Uitleg van de symbolen in tab. \@ref(tab:regels).
+
+```{r {{id}}-wijziging-jaar-alles, fig.cap = "(ref:{{id}}:raster)", eval = output_format == "html" && nrow(deze_wijziging) > 0}
 deze_wijziging %>%
   mutate(
     lcl = qnorm(0.05, log_mean, log_sd),
@@ -90,12 +94,36 @@ plot_ly(
     )
   ) %>%
   colorbar(
-    title = "wijziging", tickvals = tickvals, ticktext = index_labels(tickvals)
+    title = list(
+      text = "wijziging", 
+      font = list(
+        family = "FlandersArtSans-Bold, Verdana, Arial, sans-serif",
+        color = "#000000"
+      )
+    ), 
+    tickvals = tickvals, 
+    ticktext = index_labels(tickvals)
   ) %>%
-  layout(xaxis = list(title = list(text = NULL)))
+  layout(
+    font = list(family = "FlandersArtSans-Regular, Verdana, Arial, sans-serif"),
+    plot_bgcolor = inbo.achtergrond,
+    xaxis = list(
+      title = list(text = NULL),
+      color = inbo.steun.donkerroos,
+      gridcolor = "#FFFFFF"
+    ),
+    yaxis = list(
+      title = list(
+        text = "referentie", 
+        font = list(color = "#000000")
+      ),
+      color = inbo.steun.donkerroos,
+      gridcolor = "#FFFFFF"
+    )
+  )
 ```
 
-```{r {{id}}-wijziging-jaar-alles2, fig.cap = paste0("Paarsgewijze vergelijking tussen jaren voor ", soort_naam, "."), eval = output_format != "html" && nrow(deze_wijziging) > 0}
+```{r {{id}}-wijziging-jaar-alles2, fig.cap = "(ref:{{id}}:raster)", eval = output_format != "html" && nrow(deze_wijziging) > 0}
 ggplot(deze_wijziging, aes(x = naar, y = referentie, colour = log_mean)) +
   stat_effect(
     aes(
