@@ -108,6 +108,33 @@ display_trend <- function(mean, lcl, ucl, duration = 1) {
 }
 ```
 
+```{r document-packages}
+package_list <- c("R", "git2rdata", "abvanalysis", "n2kanalysis")
+references <- readLines("references.bib")
+paste(package_list, collapse = "|") %>%
+  sprintf(fmt = "^@.+\\{(%s),$") %>%
+  grep(references) -> start
+end <- grep("^\\}$", references)
+lapply(
+  start, 
+  function(i) {
+    i:head(end[i < end], 1)
+  }
+) %>%
+  do.call(what = c) -> existing_citation
+cite_package <- function(x) {
+  citation(ifelse(x == "R", "base", x)) %>%
+  toBibtex() %>%
+  str_replace("Manual\\{,", paste0("Manual\\{", x, ","))
+}
+package_list %>%
+  map(cite_package) %>%
+  c(references[-existing_citation]) %>%
+  do.call(what = c) %>%
+  writeLines("references.bib")
+```
+
+
 ```{r import-data}
 resultaten <- readRDS("../results.rds")
 resultaten$meta %>%
@@ -156,7 +183,7 @@ Deze set komt opnieuw aan bod in jaren 5, 8, 11, ...
 Tenslotte kiezen de waarnemers in het derde jaar een laatste set van 300 hokken uit de laatste 900 hokken.
 Deze set hokken bemonsteren we in de jaren 3, 6, 9, 12, ...
 
-Fig. \@ref(fig:inspanning) geeft de effectieve monitoringsinspanning weer.
+Figuur \@ref(fig:inspanning) geeft de effectieve monitoringsinspanning weer.
 Merk op dat de driejarige cyclus voor de meest hokken wordt gerespecteerd.
 Voor sommige hokken is de inspanning variabel, soms frequenter dan om de drie jaar, soms zit er meer tijd tussen.
 Sommige hokken werden slechts in een of twee jaar onderzocht.
@@ -182,7 +209,7 @@ inspanning %>%
   inner_join(inspanning, by = "location") -> inspanning
 ggplot(inspanning, aes(x = year, y = hok, group = hok)) +
   geom_line(alpha = 0.2) +
-  geom_point(alpha = 0.2) +
+  geom_point(alpha = 0.2, size = ifelse(output_format == "html", 4, 1)) +
   facet_wrap(~stratum, scales = "free_y") +
   scale_x_continuous(breaks = pretty) +
   theme(
@@ -234,25 +261,26 @@ Hoewel we alle waargenomen vogelsoorten op een meetpunt noteren, toch zijn niet 
 Om de redenering op te bouwen, beschouwen we een fictieve soort die enkel op een afgelegen eiland voorkomt.
 Alle vogeltellingen buiten dit eiland zijn uiteraard niet informatief voor wijzigingen in de aantallen van deze fictieve soort.
 Buiten het eiland zullen de getelde aantallen immers per definitie nul zijn.
-Wanneer we deze tellingen toch zouden in rekening brengen, dan zullen ze de werkelijke trend afvlakken.
-Als een locatie steeds nul geeft, dan zijn lokaal wiskundig 'stabiel' (geen lokale trend).
+Wanneer we deze tellingen toch zouden in rekening brengen, dan zullen ze de globale trend afvlakken.
+De globale trend is min of meer equivalent met een 'gemiddelde' trend over de verschillende locaties.
+Als een locatie steeds nul geeft, dan zijn lokaal de aantallen wiskundig 'stabiel' (geen lokale trend).
 Daarom is het noodzakelijk om de locaties die niet relevant zijn voor een soort buiten beschouwing te houden.
 
 In Vlaanderen is de situatie niet zo zwart-wit als bij het voorbeeld met het afgelegen eiland.
 Daarom hebben nood aan een set regels die we toepassen op de beschikbare gegevens.
 
-1. Een hok is relevant voor een soort wanneer we deze soort tijdens minstens twee verschillende driejarige cycli waarnemen. 
+1. We beschouwen een hok als relevant voor een soort wanneer we deze soort tijdens minstens twee verschillende driejarige cycli waarnemen. 
 Op deze manier sluiten we hokken uit waar de soort nooit of slechts toevallig waargenomen is.
-Hokken die slechts binnen één driejarige cyclus onderzocht zijn kunnen hierdoor voorlopig niet gebruiken.
-Fig. \@ref(fig:potentieel) geeft een overzicht van het aantal hokken die gedurende minstens twee cycli onderzocht zijn.
+Hokken die slechts binnen één driejarige cyclus onderzocht zijn, kunnen we hierdoor voorlopig niet gebruiken.
+Figuur \@ref(fig:potentieel) geeft een overzicht van het aantal hokken die gedurende minstens twee cycli onderzocht zijn.
 1. Een stratum is relevant voor een soort wanneer het minstens drie relevante hokken bevat.
-1. Op basis van de overblijvende gegevens berekenen we het (meetkundig) gemiddelde[^geometrisch] van de aantallen in elk van de drie perioden.
+1. Op basis van de overblijvende gegevens berekenen we het (meetkundig[^geometrisch]) gemiddelde van de aantallen in elk van de drie perioden.
 De periode met het hoogste gemiddelde gebruiken we als referentieperiode.
 We houden enkel de periodes waarbij het gemiddelde minstens 15% van de referentieperiode bedraagt.
 Op deze manier sluiten we periodes uit waarbij de soort zelden gezien wordt.
 Bijvoorbeeld een trekvogel die pas in de loop van de tweede periode toekomt en waarvoor de eerste periode bijgevolg niet relevant is.
 1. We passen de regels voor relevante hokken en strata opnieuw toe.
-Het negeren van een of twee periodes kan er voor zorgen dat een hok niet langer relevant is.
+Het negeren van een of twee irrelevante periodes kan er voor zorgen dat een hok niet langer relevant is.
 
 [^geometrisch]: Het meetkundig gemiddelde of geometrisch gemiddelde van $n$ getallen wordt verkregen door de getallen met elkaar te vermenigvuldigen en vervolgens van het product de $n$-de-machtswortel te nemen. $$m=\left(\prod _{i=1}^{n}a_{i}\right)^{1/n}$$
 
@@ -273,22 +301,22 @@ inspanning %>%
 ```
 
 Na het toepassen van deze regels gaan we na of we minstens 100 waarnemingen van de soort hebben.
-Hierbij is een waarneming de telling van minstens een dier in een combinatie van jaar, periode, hok en meetpunt.
-Stel dat we een soort hebben waarbij we de drie periodes weerhouden en de waarneming ziet de soort op elk van de zes meetpunten tijdens alle periodes van een bepaald jaar, dan hebben we $3 \times 6 = 18$ waarnemingen voor dat hok in dat jaar.
+Hierbij is een waarneming de telling van minstens één dier in een combinatie van jaar, periode, hok en meetpunt.
+Stel dat we een soort hebben waarbij we de drie periodes weerhouden en de waarnemer ziet de soort op elk van de zes meetpunten tijdens alle periodes van een bepaald jaar, dan hebben we $3 \times 6 = 18$ waarnemingen voor dat hok in dat jaar.
 
 Als we minder dan 100 waarnemingen voorhouden voor een soort, dan stopt voorlopig het verhaal voor deze soort.
 We hebben dan te weinig waarnemingen voor een betrouwbare trendberekening.
 Dit wil niet zeggen dat we deze soort permanent afschrijven!
-Wanneer we deze regels in de toekomst opnieuw toepassen hebben we mogelijk wel volgende waarnemingen.
+Wanneer we deze regels in de toekomst opnieuw toepassen hebben we mogelijk wel voldoende waarnemingen.
 Ook hokken of strata in de toekomst gekoloniseerd worden, worden dan opgepikt.
 
-## Trendberekening
+## Trendberekening {#s:trendberekening}
 
 ### Niet-lineaire trends
 
 Om de trends te berekenen, voorspellen we de waargenomen aantallen aan de hand van een statistisch model.
 $Y_{jpshm}$ is de voorspelling voor jaar $j$, periode $p$, stratum $s$, hok $h$ en meetpunt $m$.
-Veronderstellen dat deze aantallen uit een _zero-inflated negative binomial_"_^[Een negatief binomiale verdeling met een overmaat aan nullen.] verdeling komen met parameters $\mu_{jpshm}$, $\nu$ en $\pi$.
+Veronderstellen dat deze aantallen uit een _zero-inflated negative binomial_^[Een negatief binomiale verdeling met een overmaat aan nullen.] verdeling komen met parameters $\mu_{jpshm}$, $\nu$ en $\pi$.
 
 $$Y_{jpshm} \sim ZINB(\mu_{jpshm}, \nu, \pi)$$
 
@@ -299,6 +327,7 @@ Door deze $\log$ link kunnen we de individuele termen van de lineare predictor i
 $$\log\mu_{jpshm} = \eta_{jpshm}$$
 
 En nu wordt het interessant want deze lineaire predictor hangt af van vijf termen:
+
 - $\beta_s$: het effect van stratum $s$.
 - $\beta_p$: het verschil tussen periode $p$ en de referentieperiode.
 - $b_h$: het effect van hok $h$.
@@ -314,7 +343,7 @@ $$b_h \sim \mathcal{N}(0, \sigma^2_h)$$
 $$b_m \sim \mathcal{N}(0, \sigma^2_m)$$
 $$b_{j,s} - b_{j-1, s} = \Delta b_{j,s} \sim \mathcal{N}(0, \sigma^2_j)$$
 
-De random walk is de term die ons het meest interesseert aangezien deze modelleert hoe de aantallen in de tijd wijzigen.
+De random walk $b_{j,s}$ is de term die ons het meest interesseert aangezien deze modelleert hoe de aantallen in de tijd wijzigen.
 Het komt er op neer dat de aantallen in jaar $j$ en stratum $s$ een factor $e^{\Delta b_{j,s}}$ verschillen van het voorgaande jaar in datzelfde stratum.
 De variantie $\sigma^2_j$ bepaalt hoe groot de sterkste schommelingen tussen de opeenvolgende jaren kunnen zijn.
 Het model laat toe dat elk stratum zijn eigen trend heeft.
@@ -325,23 +354,23 @@ Een standaard distributie voor aantallen is de Poisson verdeling.
 Deze heeft als kenmerk dat de variantie gelijk is aan het gemiddelde ($\sigma^2 = \mu$).
 Bij veel ecologisch gegevens zien we dat de variantie in de praktijk groter is dan het gemiddelde, een fenomeen dat we overdispersie noemen.
 In dat geval kunnen we een negatief binomiale verdeling gebruiken.
-De heeft als variantie $\sigma^2 = \mu + \mu/\nu$, waarbij de parameter $\nu$ is een maat voor overdispersie.
-Merk op dat als de overdisperieparameter zeer groot wordt $\nu = \infty$, dan wordt de term $\mu/\nu = 0$ en bijgevolg reduceert de negatief binomiale verdeling tot een Poisson verdeling.
+Deze heeft als variantie $\sigma^2 = \mu + \mu^2/\nu$, waarbij de parameter $\nu$ is een maat voor overdispersie.
+Merk op dat als de overdisperieparameter zeer groot wordt ($\nu = \infty$), dan wordt de term $\mu/\nu = 0$ en bijgevolg reduceert de negatief binomiale verdeling dan tot een Poisson verdeling.
 
 Sommige ecologische gegevens vertonen een "overmaat" aan nullen, dat zijn meer nulwaarnemingen dan de Poisson of negatief binomiale verdeling kan modelleren.
-In dergelijke gevallen kunnen we overschakelen naar de _zero-inflated_ versies van deze verdelingen.
-Deze hebben een parameters $\pi$ die een maat is voor de kans op een overmatige nul.
+In dergelijke gevallen kunnen we overschakelen naar de _zero-inflated_ versie van deze verdelingen.
+Deze hebben een parameter $\pi$ die een maat is voor de kans op een overmatige nul.
 
 Bij het modelleren zullen we in eerste instantie deze twee parameters instellen op $\nu = \infty$ en $\pi = 0$, m.a.w. geen overdispersie en geen overmaat aan nullen zodat we een Poisson verdeling krijgen.
 Vervolgens gaan we na over er voldoende aanwijzingen voor overdispersie of een overmaat aan nullen.
-In het geval van overdispersie laten we $\nu$ door het model schatten waardoor we overgaan van een Poisson naar een negatief binomiale verdeling.
-In het geval van een overmaat aan nullen laten we $\pi$ door het model schatten waardoor we overgan van een Poisson naar een _zero-inflated_ Poisson verdeling.
+In het geval van overdispersie laten we $\nu$ door het model schatten waardoor we overgaan van een Poisson naar een negatief binomiaal.
+In het geval van een overmaat aan nullen laten we $\pi$ door het model schatten waardoor we overgaan van een Poisson naar een _zero-inflated_ Poisson.
 Soms hebben we zowel aanwijzingen voor overdispersie als een overmaat aan nullen.
-In die gevallen kiezen we de negatief binomiale of _zero-inflated_ Poisson naargelang welke de sterkste aanwijzingen heeft.
+In die gevallen kiezen we de negatief binomiaal of _zero-inflated_ Poisson naargelang welke de sterkste aanwijzingen heeft.
 Vervolgens gaan we na of we de andere parameter ook nog een probleem vormt.
-Zo ja, gaan we over naar een _zero-inflated negative binomial_ waarbij het model zowel $\nu$ als $\pi$ zal schatten.
+Zo ja, gaan we over naar een _zero-inflated_ negatief binomiaal waarbij het model zowel $\nu$ als $\pi$ zal schatten.
 
-### Lineaire trends
+### Lineaire trends {#s:lineairetrend}
 
 Lineaire trends veronderstellen dat er een constante wijziging is over de volledige looptijd.
 Het model dat we hiervoor gebruiken is nagenoeg identiek aan het niet-lineaire model.
@@ -351,7 +380,7 @@ $$\eta_{jpshm} = \beta_s + \beta_p + b_h + b_m + \beta_{s1} j$$
 
 Het lineaire model is een vereenvoudiging van het niet-lineaire model.
 We kunnen deze modellen met elkaar vergelijken op basis van het _Wantanabe-Akaike Information Criterion_ (WAIC) [@gelmanUnderstandingPredictiveInformation2014].
-De WAIC waarde daalt bij een betere modelfit en stijgt wanneer het model complexere wordt.
+De WAIC waarde daalt bij een betere modelfit en stijgt wanneer het model complexer wordt.
 Als we modellen met elkaar vergelijken op basis van WAIC, zal het model met de laagste WAIC de beste mix zijn tussen een goede modelfit en een zo eenvoudig mogelijk model.
 We beschouwen de trend als **lineair** wanneer het lineaire model de laagste WAIC heeft.
 Wanneer de WAIC van het niet-lineaire model minder dan 2 eenheden lager is dan deze van het lineaire model, beschouwen de trend als **mogelijk niet-lineair**.
@@ -376,11 +405,11 @@ Daarom moeten priors specifiëren voor de (hyper-)parameters.
 
 Een gemiddeld hok heeft als effect $b_h = 0$ en een gemiddeld meetpunt $b_m = 0$.
 In de referentieperiode is $\beta_p = 0$.
-In deze gevallen vereenvoudig de lineaire predictor tot het effect van stratum $s$ en de trend in dat stratum:
+In deze gevallen vereenvoudigt de lineaire predictor tot het effect van stratum $s$ en de trend in dat stratum:
 
 $$\eta_{js} = \beta_s + b_{j,s}$$
 
-Door de effecten van de strata te vermenigvuldigen met het gewicht van hun stratum ($\gamma_s$) krijgen we een schatting voor Vlaanderen.
+Door de effecten van de strata te vermenigvuldigen met hun stratumgewicht ($\gamma_s$) krijgen we een schatting voor Vlaanderen.
 
 $$\eta_{j} = \sum_s(\gamma_s\beta_s + \gamma_sb_{j,s})$$
 
@@ -395,19 +424,19 @@ We kunnen twee jaren $a$ en $b$ met elkaar vergelijken door hun lineaire predict
 
 $$\eta_a - \eta_b = \sum_s(\gamma_s\beta_s + \gamma_sb_{a,s}) - \sum_s(\gamma_s\beta_s + \gamma_sb_{b,s})$$
 
-Aangezien het globale stratumeffect in beide jaren even groot is en de stratumgewichten niet wijzigen in de tijd, kunnen we dit vereenvoudigen tot
+Aangezien het globale stratumeffecten en de stratumgewichten niet wijzigen in de tijd, kunnen we dit vereenvoudigen tot
 
 $$\eta_a - \eta_b = \sum_s\gamma_s(b_{a,s} -b_{b,s})$$
 
-Of de wijziging in Vlaanderen is het gewogen gemiddelde van de wijzigingen in de strata.
+De wijziging in Vlaanderen is het gewogen gemiddelde van de wijzigingen in de strata.
 Na omzetting van de $log$ schaal naar de natuurlijke schaal krijgen we het relatieve aantal $I_{a|b}$ van jaar $a$ t.o.v. jaar $b$
 
-$$I_{a|b}=\frac{e^\nu_a}{e^\nu_b} = \prod_s\left(\frac{e^{\gamma_sb_{a,s}}}{e^{\gamma_sb_{b,s}}}\right)$$
+$$I_{a|b}=\frac{e^{\nu_a}}{e^{\nu_b}} = \prod_s\left(\frac{e^{\gamma_sb_{a,s}}}{e^{\gamma_sb_{b,s}}}\right)$$
 
 Wanneer we een jaar met zichzelf vergelijken krijgen we per definitie $I_{a|a} = 1 = 100\%$.
 Wanneer we meerdere jaren met eenzelfde referentiejaar vergelijken krijgen we een indexwaarde: het relatieve verschil van elk jaar t.o.v. van een bepaald referentiejaar.
 
-## Gewicht van de strata
+## Gewicht van de strata {#s:stratumgewicht}
 
 In het vorige onderdeel hebben gebruikt gemaakt van stratumgewichten $\gamma_s$ zonder deze te definiëren.
 We bepalen het gewicht van een stratum op basis van drie kenmerken: het totaal aantal hokken van het stratum in Vlaanderen ($N_s$), het aantal onderzochte hokken in het stratum ($T_s$) ongeacht of ze al dan niet relevant zijn voor de soort en het aantal relevante hokken voor de soort in het stratum ($R_s$).
@@ -428,11 +457,11 @@ $$\gamma_s = \frac{\gamma_{sb}}{\sum_s\gamma_{sb}}$$
 Merk op dat het aantal relevante hokken per stratum ($R_s$) soortafhankelijk is.
 Bijgevolg zijn de stratumgewichten eveneens soortafhankelijk.
 
-## Samengestelde indices
+## Samengestelde indices {#s:samengesteld}
 
 We berekenen een aantal samengestelde indices die de trends voor een groep van soorten aggregeren.
 Deze indices zijn het meetkundig gemiddelde van de verschillen tussen jaren voor alle soorten van de groep.
-Bij de berekening maken we gebruik van de truuk dat we een product kunnen schrijven als een som van logaritmes die we nadien terug exponentiëren.
+Bij de berekening maken we gebruik van het truukje dat we een product kunnen schrijven als een som van logaritmes die we nadien terug exponentiëren.
 Een meetkundig gemiddelde in de natuurlijke schaal kunnen we dat schrijven als een rekenkundig gemiddelde in de log-schaal.
 
 $$\sqrt[n]{\prod_{i+1}^na_i} = \exp\left(\frac{\sum_{i = 1}^n\log a_i}{n}\right)$$
@@ -454,34 +483,34 @@ Waardoor we de kwantielen van de betrouwbaarheidsintervallen zonder probleem kun
 ## Onzekerheid {#s:onzekerheid}
 
 Alle resultaten zijn gebaseerd op een steekproef en op de waarnemingen zit onvermijdelijk een zekere meetfout.
-Vandaar dat we naast de schattingen tevens een betrouwbaarheidsinterval zetten.
+Vandaar dat we bij de puntschattingen tevens een betrouwbaarheidsinterval weergeven.
 In de tekst gebruiken we het 90% (5%; 95%) interval waarbij er 5% kans is dat de werkelijke waarde kleiner is dan de ondergrens en 5% dat ze groter is dan de bovengrens.
 Het 90% interval is iets smaller dan het traditionele 95% (2.5%; 97.5%) interval.
 Door een smaller interval te kiezen zullen we sneller uitspraken kunnen doen, waardoor de kans kleiner wordt dat we ten onrechte stellen dat er geen effect is.
-De prijs die we hiervoor betalen is dat de kans dat we ten onrechte stellen dat er een significant effect is stijgt van 5% naar 10%.
+De prijs die we hiervoor betalen is dat de kans dat we ten onrechte stellen dat er een significant effect is, stijgt van 5% naar 10%.
 De doelstelling van de algemene broedvogelmonitoring is zo spoedig mogelijk detecteren wanneer er iets aan de hand is de broedvogels.
 Vanuit dat oogpunt is het vermijden van vals negatieve signalen (ten onrechte stellen dat er niets aan de hand is) belangrijker dan het vermijden van vals positieve signalen (ten onrechte stellen dat er iets aan de hand is).
 
 Wanneer we het interval op een figuur (bijvoorbeeld fig. \@ref(fig:trendklasse)) weergeven, vullen we het 90% interval aan met een 60% (20%; 80%) interval en een 30% (35%; 65%) interval.
 @britton.fisher.ea1998InflationReportProjections waren de inspiratie voor deze manier van weergeven.
 Het 30% interval vormt het donkerste deel van het interval en geeft de meeste waarschijnlijke locatie van de werkelijke waarde weer.
-Naarmate het interval lichter wordt neemt de onzekerheid toe.
+Naarmate het interval lichter wordt, neemt de onzekerheid toe.
 
 ## Opdeling van de effecten in een aantal klassen {#s:trendklasse}
 
 Bij het niet-lineaire model berekenen we alle paarsgewijze relatieve verschillen tussen de verschillende jaren.
 Bij het lineaire model hebben we de gemiddelde jaarlijkse relatieve verandering.
-Deze rekenen we tevens om naar de totale wijziging over de looptijd van het meetnet omdat deze eenvoudiger te interpreteren zijn.
+Deze laatste rekenen we tevens om naar de totale wijziging over de looptijd van het meetnet omdat dit eenvoudiger te interpreteren is.
 Vergelijk een daling met -5% per jaar of een daling met -50% over 15 jaar.
-Deze laatste klinkt dramatischer door het grotere cijfers, terwijl -5% per jaar overeenkomt met -54% over 15 jaar.
+Deze laatste klinkt dramatischer door het grotere cijfer, terwijl -5% per jaar overeenkomt met -54% over 15 jaar.
 De totale wijziging over de looptijd van het lineaire model is tevens vergelijkbaar met de wijziging tussen het eerste en laatste jaar van het niet-lineaire model.
 
-Om de interpretatie makkelijker te maken, delen we de wijzingen op in tien klassen door hun 90% interval te vergelijken met een referentie, ondergrens en bovengrens.
+Om de interpretatie makkelijker te maken, delen we de wijzigingen op in tien klassen door hun 90% interval te vergelijken met een referentie, onder- en bovengrens.
 Een effect is significant wanneer de referentie buiten het 90% interval ligt.
 We spreken over een **toename** (**afname**) als het interval volledig boven (onder) de referentie ligt.
-Niet-significante effect zijn ook informatief wanneer het bijhorende interval voldoende smal is.
+Niet-significante effect is ook informatief wanneer het bijhorende interval voldoende smal is.
 Bijvoorbeeld als het interval volledig tussen een onder- en bovengrens ligt.
-In dat geval kunnen we stellen dat het effect niet-significant en klein is, het immers zeker minder sterk dat de ondergrens en minder sterk dat de bovengrens.
+In dat geval kunnen we stellen dat het effect niet-significant en klein is, het immers zeker minder sterk dan de ondergrens en minder sterk dan de bovengrens.
 Dergelijk effect krijgt de naam **stabiel**.
 Heeft het effect een breed interval dat zowel de boven- als ondergrens bevat, spreken we over een **onduidelijk** effect.
 Daarnaast is er nog de mogelijkheid dat het interval zowel de bovengrens (ondergrens) als de referentie bevat maar niet de ondergrens (bovengrens).
@@ -490,8 +519,8 @@ We kunnen de boven- en ondergrens eveneens gebruiken om een verder onderscheid t
 Een interval volledig boven (onder) de bovengrens (ondergrens) wordt dan een **sterke toename** (**sterke afname**).
 Een interval volledig tussen de referentie en de de bovengrens (ondergrens) wordt dan een **matige toename** (**matige afname**).
 Een interval dat de referentie niet bevat maar wel de bovengrens (ondergrens) blijft een **toename** (**afname**).
-Merk op dat de indeling volledig gebaseerd is op de onzekerheid rond het effect en niet op de schatting van het effect zelf.
-We vatten de opdeling met bijhorende afkortingen, symbolen en regels samen in tabel \@ref(tab:regels), fig. \@ref(fig:trendklasse) geeft een grafische voorstelling.
+Merk op dat de indeling volledig gebaseerd is op de onzekerheid rond het effect en niet op de puntschatting van het effect zelf.
+We vatten de opdeling met bijhorende afkortingen, symbolen en regels samen in tabel \@ref(tab:regels), figuur \@ref(fig:trendklasse) geeft een grafische voorstelling.
 
 (ref:regels) Overzicht van de benamingen van de tien effectklasses, met hun afkorting zowel met als zonder teken, het standaard symbool op de grafieken en de regels. $R$: referentie, $L$: ondergrens, $B$: bovengrens, $l$: ondergrens van het 90% interval, $b$: bovengrens van het 90% interval. $L < R < B$ en $l < b$.
 
@@ -557,7 +586,7 @@ Uiteraard hangt de opdeling sterk af van de keuze van de boven- en ondergrens.
 De soortenmeetnetten voor de Natura 2000 monitoring streven er naar om een daling in populatiegrootte met -25% over 25 jaar tijd vast te kunnen stellen.
 Blijkbaar wordt een wijziging in de populatiegrootte van -25% als belangrijk aanzien.
 Daarom hanteren we voor de algemene broedvogelmonitoring ook -25% als ondergrens, zowel bij de paarsgewijze verschillen tussen de jaren als de lineaire wijziging over de looptijd van het meetnet.
-Een van daling van -25% komt overeen dat de aantallen nog 3/4 van de uitgangssituatie bedragen.
+Een van daling van -25% komt overeen met aantallen die nog 3/4 van de uitgangssituatie bedragen.
 Een even sterke wijziging in de omgekeerde richting zorgt er voor dat de aantallen toenemen tot 4/3 van de uitgangssituatie, of een toename met +33% wat we als bovengrens gebruiken.
 
 Bij de samengestelde indices hebben we aangepaste grenswaarden nodig.
@@ -567,7 +596,7 @@ De breedte van een betrouwhaarheidsinterval hangt samen met de standaard afwijki
 Hierdoor zullen de breedtes van de betrouwbaarheidsintervallen van de samengestelde index een factor $\sqrt{n}$ kleiner zijn.
 Vandaar dat we de grenswaarden van de indices evens aanpassen door ze met een factor $\sqrt{n}$ te verkleinen.
 Elke samengestelde index heeft zijn eigen soortenlijst met een variabele aantal soorten.
-Daarom zullen we bij elke samengestelde index zijn aangepaste grenswaarde vermelden.
+Daarom zullen we bij elke samengestelde index zijn aangepaste grenswaarden vermelden.
 
 ## Overzicht van de lineaire trends
 
@@ -577,28 +606,28 @@ Hierdoor start de tabel met de soorten met de sterkste positieve trends.
 Bij de volgende soorten zal de trend minder sterk worden tot we aan de soorten met een stabiele trend komen.
 Daarna volgen de soorten met een negatieve trend waarbij de trend steeds sterker negatief wordt.
 We sluiten de tabel af met de soorten met een mogelijke of onduidelijke trend.
-De tabel bevat de trend uitgedrukt als een jaarlijkse wijzigingen en als een wijziging over de volledige looptijd van het meetnet.
-Verder bevat de tabel de opdeling van de trend in klassen en een indicatie of de trend al dan niet lineair is.
+De tabel bevat de trend uitgedrukt als een jaarlijkse wijziging en als een wijziging over de volledige looptijd van het meetnet.
+Verder bevat de tabel de opdeling van de trend in klassen en een indicatie of de trend al dan niet lineair is (zie §\@ref(s:lineairetrend)).
 De naam van de soort is een snelkoppeling naar de detail van de soort zelf.
 We raden aan om hiervan gebruikt te maken bij de interpretie van niet-lineaire trends.
 
 ## Evolutie van gemiddelde aantallen per soort
 
 Deze figuur geeft de evolutie van de gemiddelde aantallen per meetpunt weer volgens het niet-lineair model.
-Indien het model lineair is, zal het patroon van de niet-lineaire trend dicht bij een rechte lijn liggen.
+Indien het model lineair is, zal het patroon van de niet-lineaire trend dicht bij een lineaire trend liggen.
 De lijn bevat de puntschatting van het gemiddelde aantal in elk jaar.
-Rond de lijn tonen we het 30%, 60% en 90% interval (zie \@ref(s:onzekerheid)).
+Rond de lijn tonen we het 30%, 60% en 90% interval (zie §\@ref(s:onzekerheid)).
 In de webversie van het rapport is de figuur interactief.
-Wanneer de gebruiker met de muis over de figuur gaat verschijnt er in de buurt van de lijn een pop-up met de exacte schatting van dat punt inclusief het 90% betrouwbaarheidsinterval en het jaartal.
+Wanneer de gebruiker met de muis over de figuur gaat verschijnt er in de buurt van de lijn een pop-up met de exacte schatting van dat jaar inclusief het 90% betrouwbaarheidsinterval en het jaartal.
 
 ## Paarsgewijze vergelijking van jaren
 
 Deze informatie hebben we telkens in twee figuren samengevat.
 De eerste figuur geeft het verschil van elk jaar t.o.v. 2007, het jaar waarin de metingen gestart zijn.
-Voor 2007 geven we geen cijfer omdat per definitie 1 is en geen informatie bevat.
-Het punt geeft de puntschatting van het relatieve verschil t.o.v. 2007 weer.
-De vorm van het punt geeft de opdeling van de sterkte van het effect weer (zie tab. \@ref(tab:regels)).
-Rond elke puntschatting tonen we het 30%, 60% en 90% interval (zie \@ref(s:onzekerheid)).
+Voor 2007 geven we geen cijfer omdat het per definitie 1 is en geen informatie bevat.
+Het symbool geeft de puntschatting van het relatieve verschil t.o.v. 2007 weer.
+De vorm van het symbool geeft de opdeling van de sterkte van het effect weer (zie tab. \@ref(tab:regels)).
+Rond elke puntschatting tonen we het 30%, 60% en 90% interval (zie §\@ref(s:onzekerheid)).
 De horizontale streepjeslijn geeft de referentie van 0% verschil weer.
 De horizontale puntlijnen geven de bovengrens (+33%) en ondergrens (-25%) weer.
 Deze laten toe om de vlot zelf de betrouwbaarheidsintervallen te vergelijken met de referentie, boven- en ondergrens.
@@ -609,15 +638,64 @@ Een procentueel verschil van +50% is equivalent met een relatieve verschil van 1
 
 We stellen vast dat veel gebruikers ook andere jaren met elkaar willen vergelijken.
 Een correcte vergelijking is enkel mogelijk indien we een van deze jaren als referentie gebruiken.
-Een afzonderlijke figuur waarbij we elk jaar om de beurt als referentiejaar gebruiken zou het rapport onoverzichtelijk groot maken.
+Voor elk jaar een afzonderlijke figuur maken, zou het rapport onoverzichtelijk groot maken.
 Om de vergelijkingen toch mogelijk te maken hebben we alle paarsgewijze verschillen tussen de jaren in een raster weergeven.
 Elke rij is het raster staat voor een ander referentiejaar.
 De kolommen geven de verschillen van een bepaald jaar weer t.o.v. de verschillende referentiejaren.
-De kleur van de punten geeft de sterkte van het verschil (gebaseerd op de puntschatting).
-Zwakke effect zijn grijs, sterke positieve effecten rood, sterke negatieve effecten blauw.
-De vorm van het punt geeft zicht op de sterkte en onzekerheid van het effect (zie tab. \@ref(tab:regels)).
+Op de diagonaal staan geen waarden omdat we daar een jaar met zichzelf vergelijken.
+De kleur van de symbolen geeft de sterkte van het verschil (gebaseerd op de puntschatting).
+Zwakke verschillen zijn grijs, sterke positieve verschillen rood, sterke negatieve verschillen blauw.
+De vorm van de symbolen geeft zicht op de sterkte en onzekerheid van het effect (zie tab. \@ref(tab:regels)).
 Wanneer een rij volledig rood (blauw) is, zijn alle verschillen met dit referentiejaar positief (negatief) m.a.w. dit is het referentiejaar met de laagste (hoogste) aantallen.
 Wanneer een kolom volledig rood (blauw) is, zijn alle verschillen van dit jaar t.o.v. alle referentiejaren negatief (positief) m.a.w. dit is het jaar met de hoogste (laagste) aantallen.
 Clusters van punten met een gelijkaardige kleur geven periodes aan waarin de aantallen geleidelijk wijzigen.
 In de webversie van dit rapport is deze grafiek interactief.
-Wanneer de gebruiker met de muis over de figuur gaat verschijnt er in de buurt van de lijn een pop-up met de exacte schatting van dat punt inclusief het 90% betrouwbaarheidsinterval en het jaartal.
+Wanneer de gebruiker met de muis over de figuur gaat verschijnt er in de buurt van de lijn een pop-up met de exacte schatting van dat punt inclusief het 90% betrouwbaarheidsinterval en het jaartal en referentiejaar.
+
+# Reproduceerbaarheid en traceerbaarheid van de gegevensverwerking
+
+## Versiebeheer
+
+De waarnemers voeren hun waarnemingen via een webapplicatie toe aan de databank.
+De analyse start met het importeren van de relevante gegevens uit de databank aan de hand van een R-script.
+De bekomen dataset bewaren we als een collectie van tekstbestanden met behulp van het `git2rdata` package [@git2rdata].
+Zowel deze code als de tekstbestanden bewaren we onze versiebeheer met [git](https://git-scm.com/).
+Git is een gratis en open source gedistribueerd versiebeheersysteem dat is ontworpen om alles van kleine tot zeer grote projecten snel en efficiëntie te beheren.
+De code zit vervat in het `abvanalysis` package [@abvanalysis], dat vrij online beschikbaar is.
+De tekstbestanden met de gegevens zijn momenteel niet publiek toegankelijk.
+De ruwe gegevens worden op hokniveau en met drie jaar vertraging publiek ontsloten via [GBIF](https://doi.org/10.15468/xj0ikb) [@vermeersch.anselin.ea2018ABVCommonBreeding].
+
+## Reproduceerbaarheid
+
+Om de reproduceerbaarheid te garanderen starten we de analyses steeds vanaf de tekstbestanden.
+Aan de hand van code in het `abvanalysis` package definiëren we hoe we de tekstbestanden omzetten naar de verschillende analyses ($\@ref(s:trendberekening)).
+Dit resulteert in een resem op zichzelf staande analyseobjecten van het `n2kanalysis` package [@n2kanalysis].
+Dergelijk analyseobject bevat naast de nodige gegevens en de modeldefinitie tevens de nodige metadata zoals alle gebruikte R packages, inclusief hun versie, en een verwijziging naar de voorafgaande analyses waarvan deze analyse afhangt.
+Zo verwijst de analyse van een samengestelde index (§\@ref(s:samengesteld)) naar de trendberekening van de bijhorende soorten (§\@ref(s:trendberekening)).
+De individuele trendberekeningen verwijzen naar de 'analyse' die de gegevens importeerde uit de databank.
+Deze laatste bevat de nodige links naar de tekstbestanden en hun versie.
+
+## Traceerbaarheid {#s:traceerbaarheid}
+
+De `n2kanalysis` objecten hebben elk twee data-hashes.
+Elk data-hash is een reeks van 40 hexadecimale^[Hexadecimaal betekent letterlijk zestientallig. Het is een talstelsel waarbij niet, zoals gebruikelijk, met tien cijfers wordt gewerkt, maar met zestien cijfers. De cijfers 0 t/m 9 worden daarom uitgebreid met 'a' (=10) t/m 'f' (=15).] cijfers die het resultaat zijn van de cryptografische [hashfunctie](https://nl.wikipedia.org/wiki/Hashfunctie) [SHA-1](https://nl.wikipedia.org/wiki/SHA-familie).
+Deze hashfunctie heeft een aantal belangrijke eigenschappen:
+
+1. Ze zetten elke invoer om naar een uitvoer met vaste lengte (40 hexadecimale cijfers).
+1. De uitvoer is stabiel: als je de hash van een bepaalde invoer opnieuw berekent krijg je steeds dezelfde uitvoer.
+1. Het is niet mogelijk om de invoer te reconstrueren op basis van de uitvoer.
+1. Eenders welke kleine wijziging aan de invoer resulteert in een sterke wijziging van de uitvoer.
+1. De kans dat twee verschillende invoeren dezelfde uitvoer opleveren is zeer klein.
+
+De eerste data-hash van het analyseobject is gebaseerd op alle informatie die gekend is op het moment dat we het analyseobject definïeren en die nooit zal wijzigen tijdens de analyse.
+Denk hierbij aan de definitie van de analyse, de gegevens, de soort, ...
+Gezien de eigenschappen van de hashfunctie kunnen we deze data-hash gebruiken om ondubbelzinnig te verwijzen naar een specifieke analyse (inclusief de gebruikte gegevens.)
+
+De tweede data-hash van het analyseobject baseren we enerzijds op de eerste data-hash en anderzijds van alle onderdelen van het analyseobject die wijzigen in de loop van de analyse.
+Dit is o.a. het resultaat van de statistische analyse, de gebruikte software, ...
+De analyse opnieuw uitrekenen met software van een andere versie zal de tweede data-hash aanpassen.
+
+De combinatie van deze twee data-hashes laat enerzijds toe om naar een specifieke versie van de analyse te verwijzen.
+Anderzijds bieden ze een garantie over de inhoud van het analyseobject.
+In het geval van twijfel over een analyse kunnen we teruggrijpen naar de analyseobject in kwestie.
+De data-hashes bewijzen dan dat we het correcte analyseobject hebben.

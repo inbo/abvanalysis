@@ -130,8 +130,8 @@ Hierdoor start de tabel met de soorten met de sterkste positieve trends.
 Bij de volgende soorten zal de trend minder sterk worden tot we aan de soorten met een stabiele trend komen.
 Daarna volgen de soorten met een negatieve trend waarbij de trend steeds sterker negatief wordt.
 We sluiten de tabel af met de soorten met een mogelijke of onduidelijke trend.
-De tabel bevat de trend uitgedrukt als een jaarlijkse wijzigingen en als een wijziging over de volledige looptijd van het meetnet.
-Verder bevat de tabel de opdeling van de trend in klassen en een indicatie of de trend al dan niet lineair is.
+De tabel bevat de trend uitgedrukt als een jaarlijkse wijziging en als een wijziging over de volledige looptijd van het meetnet.
+Verder bevat de tabel de opdeling van de trend in klassen en een indicatie of de trend al dan niet lineair is (zie §\@ref(s:lineairetrend)).
 De naam van de soort is een snelkoppeling naar de detail van de soort zelf.
 We raden aan om hiervan gebruikt te maken bij de interpretie van niet-lineaire trends.
 

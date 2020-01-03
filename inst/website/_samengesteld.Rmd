@@ -19,7 +19,7 @@ resultaten$meta %>%
 composite_soort %>%
   filter(hash == id) %>%
   arrange(soort) %>%
-  mutate(soort = sprintf("[%s](#soort-%s)", soort, hash)) %>%
+  mutate(soort = sprintf("[%s](#soort-%s)", soort, soort_hash)) %>%
   pull(soort) -> deze_soorten
 deze_threshold <- log(0.75) / sqrt(length(deze_soorten))
 ```
@@ -30,9 +30,9 @@ Deze indicator is gebaseerd op volgende soorten: `r paste(deze_soorten, collapse
 De indicator bestaat uit `r length(deze_soorten)` soorten.
 De aangepaste grenswaarden zijn `r sprintf("%+.1f%%", exp(deze_threshold) * 100 - 100)` en `r sprintf("%+.1f%%", exp(-deze_threshold) * 100 - 100)`.
 
-(ref:{{id}}:index) Wijzigingen t.o.v. het eerste jaar voor `r soort_naam`. Zie sectie \@ref(s:onzekerheid) voor een verklaring van de intervallen en sectie \@ref(s:trendklasse) voor uitleg over de symbolen en referentielijnen.
+(ref:{{id}}-index) Wijzigingen t.o.v. het eerste jaar voor `r soort_naam`. Zie §\@ref(s:onzekerheid) voor een verklaring van de intervallen en §\@ref(s:trendklasse) voor uitleg over de symbolen en referentielijnen.
 
-```{r {{id}}-wijziging-jaar, fig.cap = "(ref:{{id}}:index)", eval = nrow(deze_wijziging) > 0}
+```{r {{id}}-wijziging-jaar, fig.cap = "(ref:{{id}}-index)", eval = nrow(deze_wijziging) > 0}
 deze_wijziging %>%
   filter(referentie == min(referentie)) %>%
   ggplot(aes(x = naar, y = log_mean, link_sd = log_sd)) +
@@ -60,9 +60,9 @@ deze_wijziging %>%
   theme(axis.title.x = element_blank())
 ```
 
-(ref:{{id}}:raster) Paarsgewijze vergelijking tussen jaren voor `r soort_naam`. Uitleg van de symbolen in tab. \@ref(tab:regels).
+(ref:{{id}}-raster) Paarsgewijze vergelijking tussen jaren voor `r soort_naam`. Uitleg van de symbolen in tabel \@ref(tab:regels).
 
-```{r {{id}}-wijziging-jaar-alles, fig.cap = "(ref:{{id}}:raster)", eval = output_format == "html" && nrow(deze_wijziging) > 0}
+```{r {{id}}-wijziging-jaar-alles, fig.cap = "(ref:{{id}}-raster)", eval = output_format == "html" && nrow(deze_wijziging) > 0}
 deze_wijziging %>%
   mutate(
     lcl = qnorm(0.05, log_mean, log_sd),
@@ -123,7 +123,7 @@ plot_ly(
   )
 ```
 
-```{r {{id}}-wijziging-jaar-alles2, fig.cap = "(ref:{{id}}:raster)", eval = output_format != "html" && nrow(deze_wijziging) > 0}
+```{r {{id}}-wijziging-jaar-alles2, fig.cap = "(ref:{{id}}-raster)", eval = output_format != "html" && nrow(deze_wijziging) > 0}
 ggplot(deze_wijziging, aes(x = naar, y = referentie, colour = log_mean)) +
   stat_effect(
     aes(
@@ -144,4 +144,13 @@ ggplot(deze_wijziging, aes(x = naar, y = referentie, colour = log_mean)) +
     axis.title.x = element_blank(),
     axis.text.x = element_text(angle = 90, vjust = 0.5)
   )
+```
+
+(ref:{{id}}-hash) Data-hashes van de analyse in het kader van traceerbaarheid (zie §\@ref(s:traceerbaarheid)).
+
+```{r {{id}}-hash}
+resultaten$meta %>%
+  filter(hash == id, !cycle, nonlinear) %>%
+  select(analyse = analysis, status) %>%
+  kable(caption = "(ref:{{id}}-hash)")
 ```

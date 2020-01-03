@@ -33,10 +33,11 @@ resultaten$relation %>%
   inner_join(
     resultaten$meta %>%
       filter(!cycle, nonlinear) %>%
-      select(analysis, "species_group"),
+      select(analysis, species_group, species_hash = hash),
     by = c("parent" = "analysis")
   ) %>%
-  select(hash, soort = species_group) -> composite_soort
+  select(hash, soort = species_group, soort_hash = species_hash) -> 
+  composite_soort
 ```
 
 ```{r composite-indices, results='asis', cache = FALSE, eval = TRUE}

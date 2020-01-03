@@ -41,9 +41,9 @@ if (sum(aantal$hash == id) == 0) {
 De trend is `r deze_lineair$interpretatie`.
 Gemiddeld zien we `r deze_lineair$tekst` `r deze_lineair$jaarlijks` per jaar of `r deze_lineair$looptijd` over de volledige looptijd van het meetnet.
 
-(ref:{{id}}:aantal) Evolutie van het gemodeleerde gemiddeld aantal waargenomen dieren op een meetpunt voor `r soort_naam` tijdens de referentieperiode. Zie sectie \@ref(s:onzekerheid) voor een verklaring van de intervallen.
+(ref:{{id}}-aantal) Evolutie van het gemodeleerde gemiddeld aantal waargenomen dieren op een meetpunt voor `r soort_naam` tijdens de referentieperiode. Zie §\@ref(s:onzekerheid) voor een verklaring van de intervallen.
 
-```{r {{id}}-aantal, fig.cap = "(ref:{{id}}:aantal)", eval = output_format == "html" && nrow(dit_aantal) > 0, warning = FALSE}
+```{r {{id}}-aantal, fig.cap = "(ref:{{id}}-aantal)", eval = output_format == "html" && nrow(dit_aantal) > 0, warning = FALSE}
 plot_ly(
   data = dit_aantal,
   x = ~parameter, y = ~median,
@@ -94,7 +94,7 @@ plot_ly(
  )
 ```
 
-```{r {{id}}-aantal2, fig.cap = "(ref:{{id}}:aantal)", eval = output_format != "html" && nrow(dit_aantal) > 0, warning = FALSE}
+```{r {{id}}-aantal2, fig.cap = "(ref:{{id}}-aantal)", eval = output_format != "html" && nrow(dit_aantal) > 0, warning = FALSE}
 ggplot(dit_aantal, aes(x = parameter, y = exp(log_mean), link_sd = log_sd)) +
   stat_fan(link = "log") +
   geom_line() +
@@ -106,9 +106,9 @@ ggplot(dit_aantal, aes(x = parameter, y = exp(log_mean), link_sd = log_sd)) +
   theme(axis.title.x = element_blank())
 ```
 
-(ref:{{id}}:index) Wijzigingen t.o.v. het eerste jaar voor `r soort_naam`. Zie sectie \@ref(s:onzekerheid) voor een verklaring van de intervallen en sectie \@ref(s:trendklasse) voor uitleg over de symbolen en referentielijnen.
+(ref:{{id}}-index) Wijzigingen t.o.v. het eerste jaar voor `r soort_naam`. Zie §\@ref(s:onzekerheid) voor een verklaring van de intervallen en §\@ref(s:trendklasse) voor uitleg over de symbolen en referentielijnen.
 
-```{r {{id}}-wijziging-jaar, fig.cap = "(ref:{{id}}:index)", eval = nrow(deze_wijziging) > 0}
+```{r {{id}}-wijziging-jaar, fig.cap = "(ref:{{id}}-index)", eval = nrow(deze_wijziging) > 0}
 deze_wijziging %>%
   filter(referentie == min(referentie)) %>%
   ggplot(aes(x = naar, y = log_mean, link_sd = log_sd)) +
@@ -133,9 +133,9 @@ deze_wijziging %>%
   theme(axis.title.x = element_blank())
 ```
 
-(ref:{{id}}:raster) Paarsgewijze vergelijking tussen jaren voor `r soort_naam`. Uitleg van de symbolen in tab. \@ref(tab:regels).
+(ref:{{id}}-raster) Paarsgewijze vergelijking tussen jaren voor `r soort_naam`. Uitleg van de symbolen in tabel \@ref(tab:regels).
 
-```{r {{id}}-wijziging-jaar-alles, fig.cap = "(ref:{{id}}:raster)", eval = output_format == "html" && nrow(deze_wijziging) > 0}
+```{r {{id}}-wijziging-jaar-alles, fig.cap = "(ref:{{id}}-raster)", eval = output_format == "html" && nrow(deze_wijziging) > 0}
 deze_wijziging %>%
   mutate(
     klasse = classification(log(lcl90), log(ucl90), log(0.75)),
@@ -194,7 +194,7 @@ plot_ly(
   )
 ```
 
-```{r {{id}}-wijziging-jaar-alles2, fig.cap = "(ref:{{id}}:raster)", eval = output_format != "html" && nrow(deze_wijziging) > 0}
+```{r {{id}}-wijziging-jaar-alles2, fig.cap = "(ref:{{id}}-raster)", eval = output_format != "html" && nrow(deze_wijziging) > 0}
 ggplot(deze_wijziging, aes(x = naar, y = referentie, colour = log_mean)) +
   stat_effect(
     aes(ymin = lcl90, ymax = ucl90), 
@@ -215,6 +215,11 @@ ggplot(deze_wijziging, aes(x = naar, y = referentie, colour = log_mean)) +
   )
 ```
 
+(ref:{{id}}-stratumgewicht) Stratumgewicht, raming aan het aantal hokken waarin de soort aanwezig is, 
+aantal relevant hokken voor de analyse, aantal onderzochte hokken in het 
+stratum, totaal aantal hokken van het stratum in Vlaanderen en aantal bezoeken 
+aan een meetpunt voor `r soort_naam` (zie §\@ref(s:stratumgewicht)).
+
 ```{r {{id}}-stratum-gewicht}
 dit_stratum %>%
   select(-hash) %>%
@@ -223,13 +228,22 @@ dit_stratum %>%
     aanwezig = round(aanwezig, 1)
   ) %>%
   kable(
-    caption = paste(
-"Stratumgewicht, raming aan het aantal hokken waarin de soort aanwezig is, 
-aantal relevant hokken voor de analyse, aantal onderzochte hokken in het 
-stratum, totaal aantal hokken van het stratum in Vlaanderen en aantal bezoeken 
-aan een meetpunt voor ", soort_naam, "."
-    ),
+    caption = "(ref:{{id}}-stratumgewicht)",
     align = c("lrrrrrr")
   )
+```
+
+(ref:{{id}}-hash) Data-hashes van de analyses in het kader van traceerbaarheid (zie §\@ref(s:traceerbaarheid)).
+
+```{r {{id}}-hash}
+resultaten$meta %>%
+  filter(hash == id, !cycle) %>%
+  arrange(nonlinear) %>%
+  transmute(
+    model = ifelse(nonlinear, "lineair", "niet-lineair"),
+    analyse = analysis, 
+    status
+  ) %>%
+  kable(caption = "(ref:{{id}}-hash)")
 ```
 
