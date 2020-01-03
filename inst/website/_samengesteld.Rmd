@@ -130,7 +130,7 @@ ggplot(deze_wijziging, aes(x = naar, y = referentie, colour = log_mean)) +
       ymin = qnorm(0.05, log_mean, log_sd), 
       ymax = qnorm(0.95, log_mean, log_sd)
     ), 
-    threshold = log(0.75)
+    threshold = deze_threshold
   ) +
   scale_x_continuous(breaks = pretty) +
   scale_y_continuous(breaks = pretty) +
