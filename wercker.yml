@@ -1,6 +1,10 @@
 build:
   box: inbobmk/rn2k
   steps:
+    - code: |
+      Rscript -e 'remotes::install_github("inbo/n2khelper@v0.4.3", dependencies = FALSE, upgrade = FALSE)'
+      Rscript -e 'remotes::install_github("inbo/n2kanalysis@v0.2.9", dependencies = FALSE, upgrade = FALSE)'
+      Rscript -e 'remotes::install_github("inbo/n2kupdate@v0.1.1", dependencies = FALSE, upgrade = FALSE)'
     - inbobmk/r-check
     - inbobmk/r-coverage
     - inbobmk/r-lint
