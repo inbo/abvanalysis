@@ -4,7 +4,6 @@ build:
     - script:
         name: "Install dependencies"
         code: |
-          apt-get install r-cran-littler
           Rscript -e 'remotes::install_github("inbo/n2khelper", dependencies = FALSE, upgrade = FALSE)'
           Rscript -e 'remotes::install_github("inbo/n2kanalysis", dependencies = FALSE, upgrade = FALSE)'
           Rscript -e 'remotes::install_github("inbo/n2kupdate", dependencies = FALSE, upgrade = FALSE)'
