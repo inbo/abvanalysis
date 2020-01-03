@@ -6,9 +6,9 @@
 ^_builds$
 ^_projects$
 ^_steps$
-^inst/intern_rapport/.*\.rds$
-^inst/intern_rapport/css$
-^inst/intern_rapport/figure$
+^inst/*rds$
+^inst/*css$
+^inst/*figure$
 ^inst/output$
-^inst/.*\.log$
+^inst/*\.log$
 ^env.list$

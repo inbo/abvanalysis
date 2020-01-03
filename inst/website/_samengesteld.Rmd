@@ -19,12 +19,16 @@ resultaten$meta %>%
 composite_soort %>%
   filter(hash == id) %>%
   arrange(soort) %>%
-  mutate(soort = sprintf("[%s](#soort-%s)", soort, soort_hash)) %>%
+  mutate(
+    soort = tolower(soort) %>%
+      str_replace_all(" ", "-") %>%
+      sprintf(fmt = "[%2$s](#soort-%1$s)", soort)
+  ) %>%
   pull(soort) -> deze_soorten
 deze_threshold <- log(0.75) / sqrt(length(deze_soorten))
 ```
 
-# `r sprintf("%s {#soort-%s}", soort_naam, id)`
+# `r sprintf("%s {#index-%s}", soort_naam, soort_naam)`
 
 Deze indicator is gebaseerd op volgende soorten: `r paste(deze_soorten, collapse = ", ")`.
 De indicator bestaat uit `r length(deze_soorten)` soorten.

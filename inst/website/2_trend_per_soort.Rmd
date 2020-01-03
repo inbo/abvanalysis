@@ -81,9 +81,12 @@ resultaten$meta %>%
       threshold = log(0.75)
     )
   ) %>%
-  arrange(klasse, desc(mean)) %>%  transmute(
+  arrange(klasse, desc(mean)) %>% 
+  transmute(
     hash, 
-    soort = sprintf("[%s](#soort-%s)", species_group, hash), 
+    soort = tolower(species_group) %>%
+      str_replace_all(" ", "-") %>%
+      sprintf(fmt = "[%2$s](#soort-%1$s)", species_group), 
     klasse, interpretatie,
     jaarlijks = display_trend(mean, lcl, ucl),
     looptijd = display_trend(mean, lcl, ucl, duration - 1),

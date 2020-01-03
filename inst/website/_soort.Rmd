@@ -12,6 +12,7 @@ if (interactive()) {
 if (sum(aantal$hash == id) == 0) {
   dit_aantal <- data.frame()
   deze_wijziging <- data.frame(cycle = logical(0))
+  titel <- ""
 } else {
   aantal %>%
     filter(hash == id) %>%
@@ -33,10 +34,13 @@ if (sum(aantal$hash == id) == 0) {
     filter(hash == id) -> deze_lineair
   stratum_gewicht %>%
     filter(hash == id) -> dit_stratum
+  tolower(soort_naam) %>% 
+    str_replace_all(" ", "-") %>% 
+    sprintf(fmt = "# %2$s {#soort-%1$s}", soort_naam) -> titel
 }
 ```
 
-# `r sprintf("%s {#soort-%s}", soort_naam, id)`
+`r titel`
 
 De trend is `r deze_lineair$interpretatie`.
 Gemiddeld zien we `r deze_lineair$tekst` `r deze_lineair$jaarlijks` per jaar of `r deze_lineair$looptijd` over de volledige looptijd van het meetnet.
