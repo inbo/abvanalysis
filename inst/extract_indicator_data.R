@@ -4,10 +4,19 @@ root <- repository(indicatoren_repo)
 results <- readRDS("inst/results.rds")
 species <- readRDS("inst/species.rds")
 results$meta %>%
-  filter(modeltype == "composite index: year non linear") %>%
+  filter(str_detect(modeltype, "composite index: (year|cycle) non linear")) %>%
   inner_join(species, by = c("species" = "fingerprint")) %>%
   filter(species_group %in% c("Bos", "Generalist", "Landbouw")) %>%
-  transmute(analysis, status, indicator = factor(species_group)) %>%
+  transmute(
+    analysis,
+    status,
+    indicator = factor(species_group),
+    frequentie = factor(
+      str_detect(modeltype, "cycle"),
+      levels = c(FALSE, TRUE),
+      labels = c("jaarlijks", "driejaarlijks")
+    )
+  ) %>%
   inner_join(results$index, by = "analysis") %>%
   filter(str_detect(parameter, "change")) %>%
   extract(
@@ -34,7 +43,7 @@ results$meta %>%
     pattern = "log_(.*)_exp",
     replacement = "\\1"
   ) %>%
-  arrange(indicator, naar, referentie) -> basis
+  arrange(indicator, frequentie, naar, referentie) -> basis
 basis %>%
   select(-analysis, -status) %>%
   write_vc(
@@ -45,10 +54,26 @@ basis %>%
     stage = TRUE
   )
 basis %>%
-  distinct(indicator, analysis, status) %>%
+  distinct(indicator, frequentie, analysis, status) %>%
   write_vc(
     file = "source/abv/abv_data_hash",
-    sorting = "indicator",
+    sorting = c("indicator", "frequentie"),
+    root = root,
+    optimize = FALSE,
+    stage = TRUE
+  )
+results$relation %>%
+  semi_join(basis, by = "analysis") %>%
+  inner_join(
+    results$meta %>%
+      select(parent = analysis, species),
+    by = "parent"
+  ) %>%
+  inner_join(species, by = c("species" = "fingerprint")) %>%
+  select(analysis, species = species_group) %>%
+  write_vc(
+    file = "source/abv/abv_soorten",
+    sorting = c("species", "analysis"),
     root = root,
     optimize = FALSE,
     stage = TRUE
