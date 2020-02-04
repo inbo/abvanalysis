@@ -189,9 +189,12 @@ Tenslotte kiezen de waarnemers in het derde jaar een laatste set van 300 hokken 
 Deze set hokken bemonsteren we in de jaren 3, 6, 9, 12, ...
 
 Figuur \@ref(fig:inspanning) geeft de effectieve monitoringsinspanning weer.
+In deze figuur hebben we de hokken gesorteerd volgens 1) het eerste jaar met gegevens, 2) het laatste jaar met gegevens, 3) het tweede jaar met gegevens, 4) het derde jaar met gegevens, ...
+Hierdoor staan hokken met een meer gelijkende onderzoeksgeschiedenis dicht bij elkaar.
 Merk op dat de driejarige cyclus voor de meest hokken wordt gerespecteerd.
 Voor sommige hokken is de inspanning variabel, soms frequenter dan om de drie jaar, soms zit er meer tijd tussen.
-Sommige hokken werden slechts in een of twee jaar onderzocht.
+Sommige hokken werden slechts in een of twee jaar onderzocht (fig. \@ref(fig:inspanning-hist)).
+Voor het onderscheid tussen mogelijk bruikbaar en voorlopig niet bruikbaar verwijzen we naar §\@ref(s:relevant).
 
 ```{r inspanning, fig.cap = "Overzicht van de effectieve monitoringsinspanning. Elk punt is een hok dat onderzocht is in een bepaald jaar. De horizontale lijnen verbinden het eerste en meest recente bezoek aan eenzelfde hok."}
 readRDS("../inspanning.rds") %>%
@@ -202,19 +205,36 @@ readRDS("../inspanning.rds") %>%
   ) %>%
   select(-fingerprint) -> inspanning
 inspanning %>%
+  arrange(year) %>%
   group_by(location) %>%
-  summarise(
-    start = min(year),
+  transmute(
+    year,
     end = max(year),
-    jaren = n()
+    year2 = lead(year),
+    year3 = lead(year2),
+    year4 = lead(year3),
+    year5 = lead(year4),
+    year6 = lead(year5),
+    year7 = lead(year6)
   ) %>%
-  arrange(start, end, jaren) %>%
+  slice(1) %>%
+  ungroup() %>%
+  arrange(year, end, year2, year3, year4, year5, year6, year7) %>%
   rowid_to_column("hok") %>%
-  mutate(hok = factor(hok)) %>%
+  transmute(
+    location, 
+    hok = factor(hok), 
+    bruikbaar = ((year - 2007) %/% 3) < ((end - 2007) %/% 3),
+    bruikbaar = factor(
+      bruikbaar, 
+      levels = c(TRUE, FALSE), 
+      labels = c("mogelijk", "voorlopig\nniet")
+    )
+  ) %>%
   inner_join(inspanning, by = "location") -> inspanning
-ggplot(inspanning, aes(x = year, y = hok, group = hok)) +
+ggplot(inspanning, aes(x = year, y = hok, group = hok, colour = bruikbaar)) +
   geom_line(alpha = 0.2) +
-  geom_point(alpha = 0.2, size = ifelse(output_format == "html", 4, 1)) +
+  geom_point(alpha = 0.5, size = ifelse(output_format == "html", 4, 1)) +
   facet_wrap(~stratum, scales = "free_y") +
   scale_x_continuous(breaks = pretty) +
   theme(
@@ -222,6 +242,19 @@ ggplot(inspanning, aes(x = year, y = hok, group = hok)) +
     axis.text.x = element_text(angle = 90),
     axis.text.y = element_blank()
   )
+```
+
+```{r inspanning-hist, fig.cap = "Histogram van het aantal jaren waarin een hok onderzocht is opgesplitst per stratum."}
+inspanning %>%
+  count(stratum, location, bruikbaar) %>%
+  ggplot(aes(x = n, fill = bruikbaar)) +
+  geom_histogram(binwidth = 1) +
+  facet_wrap(~stratum) +
+  scale_x_continuous(
+    "Aantal jaren waarin een hok onderzocht is", breaks = pretty,
+    limits = c(0, NA)
+  ) +
+  ylab("Aantal hokken")
 ```
 
 ## Steekproefeenheid
@@ -243,7 +276,7 @@ expand.grid(
       0, 0, 1, 1
     ),
     aes(xmin = x, ymin = y, xmax = xend, ymax = yend),
-    fill = FALSE, colour = inbo.steun.blauw
+    fill = NA, colour = inbo.steun.blauw
   ) +
   geom_point() +
   coord_fixed() +
@@ -260,7 +293,7 @@ Overvliegende groepen vogels worden hierbij niet meegeteld.
 
 # Verwerking van de gegevens
 
-## Selectie van relevante gegevens per soort
+## Selectie van relevante gegevens per soort {#s:relevant}
 
 Hoewel we alle waargenomen vogelsoorten op een meetpunt noteren, toch zijn niet alle hokken even relevant voor een bepaalde soort.
 Om de redenering op te bouwen, beschouwen we een fictieve soort die enkel op een afgelegen eiland voorkomt.
