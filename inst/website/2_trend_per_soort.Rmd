@@ -164,10 +164,25 @@ Verder bevat de tabel de opdeling van de trend in klassen en een indicatie of de
 De naam van de soort is een snelkoppeling naar de detail van de soort zelf.
 We raden aan om hiervan gebruikt te maken bij de interpretie van niet-lineaire trends.
 
-(ref:jaarlijkse-trends) Gemiddelde wijziging in veronderstelling van een lineaire trend. `++`: sterke toename, `+`: toename, `+~`: matige toename, `~`: stabiel, `~-`: matige afname, `-`: afname, `--`: sterke afname, `?+`: mogelijke toename, `?-`: mogelijke afname, `?`: onduidelijke trend. Referentie: 0%, ondergrens: -25% over de looptijd, bovengrens: +33% over de looptijd.
+(ref:driejaarlijkse-trends) Gemiddelde wijziging in veronderstelling van een lineaire trend gebaseerd op driejaarlijkse gegevens. `++`: sterke toename, `+`: toename, `+~`: matige toename, `~`: stabiel, `~-`: matige afname, `-`: afname, `--`: sterke afname, `?+`: mogelijke toename, `?-`: mogelijke afname, `?`: onduidelijke trend. Referentie: 0%, ondergrens: -25% over de looptijd, bovengrens: +33% over de looptijd.
+
+```{r driejaarlijkse-trends, results = "asis"}
+lineair %>%
+  filter(frequentie == "driejaarlijks") %>%
+  transmute(
+    soort, klasse = format(klasse, type = "markdown"), interpretatie, 
+    `jaarlijkse wijziging` = jaarlijks, `wijziging over de looptijd` = looptijd
+  ) %>%
+  kable(
+    caption = "(ref:driejaarlijkse-trends)", format = "pandoc", escape = FALSE
+  )
+```
+
+(ref:jaarlijkse-trends) Gemiddelde wijziging in veronderstelling van een lineaire trend gebaseerd op jaarlijkse gegevens. `++`: sterke toename, `+`: toename, `+~`: matige toename, `~`: stabiel, `~-`: matige afname, `-`: afname, `--`: sterke afname, `?+`: mogelijke toename, `?-`: mogelijke afname, `?`: onduidelijke trend. Referentie: 0%, ondergrens: -25% over de looptijd, bovengrens: +33% over de looptijd.
 
 ```{r jaarlijkse-trends, results = "asis"}
 lineair %>%
+  filter(frequentie == "jaarlijks") %>%
   transmute(
     soort, klasse = format(klasse, type = "markdown"), interpretatie, 
     `jaarlijkse wijziging` = jaarlijks, `wijziging over de looptijd` = looptijd
