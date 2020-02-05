@@ -22,6 +22,7 @@ composite_soort %>%
   mutate(
     soort = tolower(soort) %>%
       str_replace_all(" ", "-") %>%
+      str_remove_all("'") %>%
       sprintf(fmt = "[%2$s](#soort-%1$s)", soort)
   ) %>%
   pull(soort) -> deze_soorten
@@ -34,11 +35,44 @@ Deze indicator is gebaseerd op volgende soorten: `r paste(deze_soorten, collapse
 De indicator bestaat uit `r length(deze_soorten)` soorten.
 De aangepaste grenswaarden zijn `r sprintf("%+.1f%%", exp(deze_threshold) * 100 - 100)` en `r sprintf("%+.1f%%", exp(-deze_threshold) * 100 - 100)`.
 
+(ref:{{id}}-index-cyclus) Wijzigingen t.o.v. de eerste driejarige cyclus voor `r soort_naam`. Zie §\@ref(s:onzekerheid) voor een verklaring van de intervallen en §\@ref(s:trendklasse) voor uitleg over de symbolen en referentielijnen.
+
+```{r {{id}}-wijziging-cyclus, fig.cap = "(ref:{{id}}-index-cyclus)", eval = nrow(deze_wijziging) > 0}
+deze_wijziging %>%
+  filter(referentie == min(referentie), frequentie == "driejaarlijks") %>%
+  mutate(
+    naar = sprintf("%i-%i", naar, naar + 2) %>%
+      factor()
+  ) %>%
+  ggplot(aes(x = naar, y = log_mean, link_sd = log_sd)) +
+  geom_hline(yintercept = 0, linetype = 2) +
+  geom_hline(yintercept = c(-1, 1) * deze_threshold, linetype = 3) +
+  stat_fan(geom = "rect") +
+  stat_effect(
+    aes(
+      ymin = qnorm(0.05, log_mean, log_sd), 
+      ymax = qnorm(0.95, log_mean, log_sd)
+    ), 
+    threshold = deze_threshold
+  ) +
+  scale_effect("klasse") +
+  scale_y_continuous(
+    "procentuele wijziging t.o.v. 2007-2009", 
+    breaks = index_breaks, labels = index_labels,
+    sec.axis = sec_axis(
+      trans = exp, name = "relatieve wijziging t.o.v. 2007-2009",
+      breaks = function(x){exp(index_breaks(log(x)))}, 
+      labels = function(x){signif(x, 3)}
+    )
+  ) +
+  theme(axis.title.x = element_blank())
+```
+
 (ref:{{id}}-index) Wijzigingen t.o.v. het eerste jaar voor `r soort_naam`. Zie §\@ref(s:onzekerheid) voor een verklaring van de intervallen en §\@ref(s:trendklasse) voor uitleg over de symbolen en referentielijnen.
 
 ```{r {{id}}-wijziging-jaar, fig.cap = "(ref:{{id}}-index)", eval = nrow(deze_wijziging) > 0}
 deze_wijziging %>%
-  filter(referentie == min(referentie)) %>%
+  filter(referentie == min(referentie), frequentie == "jaarlijks") %>%
   ggplot(aes(x = naar, y = log_mean, link_sd = log_sd)) +
   geom_hline(yintercept = 0, linetype = 2) +
   geom_hline(yintercept = c(-1, 1) * deze_threshold, linetype = 3) +
@@ -65,6 +99,8 @@ deze_wijziging %>%
 ```
 
 (ref:{{id}}-raster) Paarsgewijze vergelijking tussen jaren voor `r soort_naam`. Uitleg van de symbolen in tabel \@ref(tab:regels).
+
+(ref:{{id}}-raster3) Paarsgewijze vergelijking tussen driejarige cycli voor `r soort_naam`. Uitleg van de symbolen in tabel \@ref(tab:regels).
 
 ```{r {{id}}-wijziging-jaar-alles, fig.cap = "(ref:{{id}}-raster)", eval = output_format == "html" && nrow(deze_wijziging) > 0}
 deze_wijziging %>%
@@ -127,8 +163,42 @@ plot_ly(
   )
 ```
 
+```{r {{id}}-wijziging-jaar-alles3, fig.cap = "(ref:{{id}}-raster3)", eval = output_format != "html" && nrow(deze_wijziging) > 0}
+deze_wijziging %>%
+  filter(frequentie == "driejaarlijks") %>%
+  ggplot(aes(x = naar, y = referentie, colour = log_mean)) +
+  stat_effect(
+    aes(
+      ymin = qnorm(0.05, log_mean, log_sd), 
+      ymax = qnorm(0.95, log_mean, log_sd)
+    ), 
+    threshold = deze_threshold
+  ) +
+  scale_x_continuous(
+    breaks = function(x) {seq(2007, x[2], by = 3)},
+    labels = function(x) {sprintf("%02i-%02i", x, x + 2)}
+  ) +
+  scale_y_continuous(
+    breaks = function(x) {seq(2007, x[2], by = 3)},
+    labels = function(x) {sprintf("%02i-%02i", x, x + 2)}
+  ) +
+  scale_effect("klasse", guide = guide_legend(ncol = 3)) +
+  scale_colour_gradient2(
+    "wijziging", mid = inbo.lichtgrijs, low = inbo.steun.blauw, high = inbo.rood,
+    breaks = index_breaks2, labels = index_labels,
+    guide = guide_colorbar(barheight = unit(5, "lines"))
+  ) +
+  coord_fixed() +
+  theme(
+    axis.title.x = element_blank(),
+    axis.text.x = element_text(angle = 90, vjust = 0.5)
+  )
+```
+
 ```{r {{id}}-wijziging-jaar-alles2, fig.cap = "(ref:{{id}}-raster)", eval = output_format != "html" && nrow(deze_wijziging) > 0}
-ggplot(deze_wijziging, aes(x = naar, y = referentie, colour = log_mean)) +
+deze_wijziging %>%
+  filter(frequentie == "jaarlijks") %>%
+  ggplot(aes(x = naar, y = referentie, colour = log_mean)) +
   stat_effect(
     aes(
       ymin = qnorm(0.05, log_mean, log_sd), 
@@ -138,7 +208,7 @@ ggplot(deze_wijziging, aes(x = naar, y = referentie, colour = log_mean)) +
   ) +
   scale_x_continuous(breaks = pretty) +
   scale_y_continuous(breaks = pretty) +
-  scale_effect("klasse", guide = guide_legend(ncol = 2)) +
+  scale_effect("klasse", guide = guide_legend(ncol = 3)) +
   scale_colour_gradient2(
     "wijziging", mid = inbo.lichtgrijs, low = inbo.steun.blauw, high = inbo.rood,
     breaks = index_breaks2, labels = index_labels

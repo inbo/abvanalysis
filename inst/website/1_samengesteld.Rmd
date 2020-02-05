@@ -19,8 +19,14 @@ wijziging %>%
   bind_rows(wijziging) %>%
   inner_join(
     resultaten$meta %>%
-      filter(!cycle) %>%
-      select(analysis, hash),
+      transmute(
+        analysis, hash, 
+        frequentie = factor(
+          cycle, 
+          levels = c(TRUE, FALSE), 
+          labels = c("driejaarlijks", "jaarlijks")
+        )
+      ),
     by = "analysis"
   ) -> wijziging
 resultaten$relation %>%

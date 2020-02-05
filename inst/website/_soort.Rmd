@@ -36,6 +36,7 @@ if (sum(aantal$hash == id) == 0) {
     filter(hash == id) -> dit_stratum
   tolower(soort_naam) %>% 
     str_replace_all(" ", "-") %>% 
+    str_remove_all("'") %>%
     sprintf(fmt = "# %2$s {#soort-%1$s}", soort_naam) -> titel
 }
 ```
@@ -199,6 +200,8 @@ deze_wijziging %>%
 
 (ref:{{id}}-raster) Paarsgewijze vergelijking tussen jaren voor `r soort_naam`. Uitleg van de symbolen in tabel \@ref(tab:regels).
 
+(ref:{{id}}-raster3) Paarsgewijze vergelijking tussen driejarige cycli voor `r soort_naam`. Uitleg van de symbolen in tabel \@ref(tab:regels).
+
 ```{r {{id}}-wijziging-jaar-alles, fig.cap = "(ref:{{id}}-raster)", eval = output_format == "html" && nrow(deze_wijziging) > 0}
 deze_wijziging %>%
   mutate(
@@ -258,7 +261,7 @@ plot_ly(
   )
 ```
 
-```{r {{id}}-wijziging-jaar-alles3, fig.cap = "(ref:{{id}}-raster)", eval = output_format != "html" && nrow(deze_wijziging) > 0}
+```{r {{id}}-wijziging-jaar-alles3, fig.cap = "(ref:{{id}}-raster3)", eval = output_format != "html" && nrow(deze_wijziging) > 0}
 deze_wijziging %>%
   filter(cycle) %>%
   ggplot(aes(x = naar, y = referentie, colour = log_mean)) +
@@ -277,7 +280,8 @@ deze_wijziging %>%
   ) +
   scale_effect("klasse", guide = guide_legend(ncol = 3)) +
   scale_colour_gradient2(
-    "wijziging", breaks = index_breaks2, labels = index_labels
+    "wijziging", breaks = index_breaks2, labels = index_labels,
+    guide = guide_colorbar(barheight = unit(5, "lines"))
   ) +
   coord_fixed() +
   theme(

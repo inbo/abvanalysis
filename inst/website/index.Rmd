@@ -167,7 +167,7 @@ Zowel jaarlijkse fluctuaties als meerjarige trends zijn daarbij interessante res
 
 Hier beschrijven we beknopt het veldwerk, voor de details verwijzen we naar @ABVmethode.
 
-## Steekproef
+## Steekproef {#s:steekproef}
 
 De UTM 1x1 hokken vormen de basis waaruit de steekproef getrokken is.
 Bij de start van het meetnet hebben we de hokken opgedeeld in een aantal strata.
@@ -427,6 +427,38 @@ Pas wanneer de WAIC van het niet-lineaire model duidelijk lager is dan het linea
 In dat geval de gebruiker moet de gerapporteerde lineaire trend met de nodige voorzichtheid interpreteren.
 Kijk zeker naar de bijhorende niet-lineaire trend vooraleer de cijfers te interpreteren.
 
+### Resultaten per driejarige cyclus
+
+Zoals aangegeven in §\@ref(s:steekproef) zullen we een bepaald hok in principe om de drie jaar herbezoeken.
+Hierdoor krijgen we drie sets van hokken.
+Er bestaat een kans dat de schatting voor een bepaald jaar beïnvloed is door de set van hokken die in dat jaar onderzocht worden.
+Om dit effect uit te schakelen, analyseren we de gegevens tevens op basis van de driejarige cyclus $c$ i.p.v. jaar $j$.
+
+De eerste cyclus omvat de eerste drie jaar sinds de start van het meetnet (2007-2009).
+De volgende cyclus omvat telkens de volgende drie jaar aansluitend op de vorige cyclus.
+Aangezien we alle beschikbare gegevens gebruiken bij de analyse bevat de laatste cyclus mogelijk minder dan drie jaar.
+Dit is duidelijk zichtbaar doordat het laatste jaar van de cyclus op dat ogenblik in de toekomst ligt.
+Als bijvoorbeeld 2019 het meest recente jaar met gegevens is, dan is de laatste cyclus 2019-2021.
+
+Hieronder geven we aan op welke manier we de eerste beschreven modellen aanpassen.
+
+$$Y_{cpshm} \sim ZINB(\mu_{cpshm}, \nu, \pi)$$
+$$\log\mu_{cpshm} = \eta_{cpshm}$$
+
+**Niet-lineaire trend**
+
+$$\eta_{cpshm} = \beta_s + \beta_p + b_h + b_m + b_{c,s}$$
+$$b_{c,s} - b_{c-1, s} = \Delta b_{c,s} \sim \mathcal{N}(0, \sigma^2_c)$$
+
+$b_{c,s}$: het effect van driejarige cyclus $c$ in stratum $s$.
+Dit effect modelleert een eerste orde random walk per stratum.
+Het verschil tussen twee opeenvolgende driejarige cycli komt uit een Gaussiaanse verdeling met gemiddelde 0 en variantie $\sigma^2_c$.
+
+**Lineaire trend**
+
+$$\eta_{cpshm} = \beta_s + \beta_p + b_h + b_m + \beta_{s1} c$$
+
+
 ### Modellen fitten
 
 We fitten de statische modellen in R [@R] met het INLA package [@rueINLAFunctionsWhich2009].
@@ -437,6 +469,7 @@ Daarom moeten priors specifiëren voor de (hyper-)parameters.
 - $\sigma^2_h$ krijgt een _penalised complexity_  prior [@simpson.rue.ea2017PenalisingModelComponent] zodat $Prob(\sigma_h > 1) = 0.01$.
 - $\sigma^2_m$ krijgt een _penalised complexity_  prior zodat $Prob(\sigma_m > 1) = 0.01$.
 - $\sigma^2_j$ krijgt een _penalised complexity_  prior zodat $Prob(\sigma_j > 0.5) = 0.01$.
+- $\sigma^2_c$ krijgt een _penalised complexity_  prior zodat $Prob(\sigma_c > 0.5) = 0.01$.
 - $\nu$ krijgt een Gamma prior zodat $\nu \sim \Gamma(1/7, 1/7)$.
 - $\pi$ wordt intern geparametriseerd als $\theta = \log\frac{\pi}{1 - \pi}$ met Gaussianse prior $\theta ~ \sim \mathcal{N}(-1, 5)$.
 

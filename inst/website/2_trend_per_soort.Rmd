@@ -86,6 +86,7 @@ resultaten$meta %>%
     hash, 
     soort = tolower(species_group) %>%
       str_replace_all(" ", "-") %>%
+      str_remove_all("'") %>%
       sprintf(fmt = "[%2$s](#soort-%1$s)", species_group), 
     frequentie = factor(
       cycle, levels = c(TRUE, FALSE), labels = c("driejaarlijks", "jaarlijks")
