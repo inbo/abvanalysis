@@ -42,8 +42,12 @@ if (sum(aantal$hash == id) == 0) {
 
 `r titel`
 
-De trend is `r deze_lineair$interpretatie`.
-Gemiddeld zien we `r deze_lineair$tekst` `r deze_lineair$jaarlijks` per jaar of `r deze_lineair$looptijd` over de volledige looptijd van het meetnet.
+Op basis van driejaarlijkse gegevens zien we gemiddeld `r deze_lineair$tekst[deze_lineair$frequentie == "driejaarlijks"]` `r deze_lineair$jaarlijks[deze_lineair$frequentie == "driejaarlijks"]` per jaar of `r deze_lineair$looptijd[deze_lineair$frequentie == "driejaarlijks"]` over de volledige looptijd van het meetnet.
+Deze trend is `r deze_lineair$interpretatie[deze_lineair$frequentie == "driejaarlijks"]`.
+
+Op basis van jaarlijkse gegevens zien we gemiddeld `r deze_lineair$tekst[deze_lineair$frequentie == "jaarlijks"]` `r deze_lineair$jaarlijks[deze_lineair$frequentie == "jaarlijks"]` per jaar of `r deze_lineair$looptijd[deze_lineair$frequentie == "jaarlijks"]` over de volledige looptijd van het meetnet.
+Deze trend is `r deze_lineair$interpretatie[deze_lineair$frequentie == "jaarlijks"]`.
+
 
 (ref:{{id}}-aantal) Evolutie van het gemodeleerde gemiddeld aantal waargenomen dieren op een meetpunt voor `r soort_naam` tijdens de referentieperiode. Zie §\@ref(s:onzekerheid) voor een verklaring van de intervallen.
 
@@ -98,8 +102,34 @@ plot_ly(
  )
 ```
 
+```{r {{id}}-aantal3, fig.cap = "(ref:{{id}}-aantal)", eval = output_format != "html" && nrow(dit_aantal) > 0, warning = FALSE}
+dit_aantal %>%
+  filter(cycle) %>%
+  mutate(
+    parameter = factor(
+      parameter,
+      levels = sort(unique(parameter)),
+      labels = sprintf(
+        "%i-%i", 
+        sort(unique(parameter)), 
+        sort(unique(parameter)) + 2
+      )
+    )
+  ) %>%
+  ggplot(aes(x = parameter, y = exp(log_mean), link_sd = log_sd)) +
+  stat_fan(link = "log", geom = "rect") +
+  geom_point() +
+  scale_y_continuous(
+    "gemiddeld aantal dieren per meetpunt", 
+    limits = c(0, NA)
+  ) +
+  theme(axis.title.x = element_blank())
+```
+
 ```{r {{id}}-aantal2, fig.cap = "(ref:{{id}}-aantal)", eval = output_format != "html" && nrow(dit_aantal) > 0, warning = FALSE}
-ggplot(dit_aantal, aes(x = parameter, y = exp(log_mean), link_sd = log_sd)) +
+dit_aantal %>%
+  filter(!cycle) %>%
+  ggplot(aes(x = parameter, y = exp(log_mean), link_sd = log_sd)) +
   stat_fan(link = "log") +
   geom_line() +
   scale_x_continuous(breaks = pretty) +
@@ -110,11 +140,41 @@ ggplot(dit_aantal, aes(x = parameter, y = exp(log_mean), link_sd = log_sd)) +
   theme(axis.title.x = element_blank())
 ```
 
+(ref:{{id}}-index3) Wijzigingen t.o.v. het eerste driejarige cyclus voor `r soort_naam`. Zie §\@ref(s:onzekerheid) voor een verklaring van de intervallen en §\@ref(s:trendklasse) voor uitleg over de symbolen en referentielijnen.
+
+```{r {{id}}-wijziging-cyclus, fig.cap = "(ref:{{id}}-index3)", eval = nrow(deze_wijziging) > 0}
+deze_wijziging %>%
+  filter(referentie == min(referentie), cycle) %>%
+  mutate(
+    naar = sprintf("%i-%i", naar, naar + 2) %>%
+      factor()
+  ) %>%
+  ggplot(aes(x = naar, y = log_mean, link_sd = log_sd)) +
+  geom_hline(yintercept = 0, linetype = 2) +
+  geom_hline(yintercept = log(c(3/4, 4/3)), linetype = 3) +
+  stat_fan(geom = "rect") +
+  stat_effect(
+    aes(ymin = log(lcl90), ymax = log(ucl90)), 
+    threshold = log(0.75)
+  ) +
+  scale_effect("klasse") +
+  scale_y_continuous(
+    "procentuele wijziging t.o.v. 2007-2009", 
+    breaks = index_breaks, labels = index_labels,
+    sec.axis = sec_axis(
+      trans = exp, name = "relatieve wijziging t.o.v. 2007-2009",
+      breaks = function(x){exp(index_breaks(log(x)))}, 
+      labels = function(x){signif(x, 3)}
+    )
+  ) +
+  theme(axis.title.x = element_blank())
+```
+
 (ref:{{id}}-index) Wijzigingen t.o.v. het eerste jaar voor `r soort_naam`. Zie §\@ref(s:onzekerheid) voor een verklaring van de intervallen en §\@ref(s:trendklasse) voor uitleg over de symbolen en referentielijnen.
 
 ```{r {{id}}-wijziging-jaar, fig.cap = "(ref:{{id}}-index)", eval = nrow(deze_wijziging) > 0}
 deze_wijziging %>%
-  filter(referentie == min(referentie)) %>%
+  filter(referentie == min(referentie), !cycle) %>%
   ggplot(aes(x = naar, y = log_mean, link_sd = log_sd)) +
   geom_hline(yintercept = 0, linetype = 2) +
   geom_hline(yintercept = log(c(3/4, 4/3)), linetype = 3) +
@@ -198,8 +258,38 @@ plot_ly(
   )
 ```
 
+```{r {{id}}-wijziging-jaar-alles3, fig.cap = "(ref:{{id}}-raster)", eval = output_format != "html" && nrow(deze_wijziging) > 0}
+deze_wijziging %>%
+  filter(cycle) %>%
+  ggplot(aes(x = naar, y = referentie, colour = log_mean)) +
+  stat_effect(
+    aes(ymin = lcl90, ymax = ucl90), 
+    threshold = c(0.75, 1/0.75), 
+    reference = 1
+  ) +
+  scale_x_continuous(
+    breaks = function(x) {seq(2007, x[2], by = 3)},
+    labels = function(x) {sprintf("%02i-%02i", x, x + 2)}
+  ) +
+  scale_y_continuous(
+    breaks = function(x) {seq(2007, x[2], by = 3)},
+    labels = function(x) {sprintf("%02i-%02i", x, x + 2)}
+  ) +
+  scale_effect("klasse", guide = guide_legend(ncol = 3)) +
+  scale_colour_gradient2(
+    "wijziging", breaks = index_breaks2, labels = index_labels
+  ) +
+  coord_fixed() +
+  theme(
+    axis.title.x = element_blank(),
+    axis.text.x = element_text(angle = 90, vjust = 0.5)
+  )
+```
+
 ```{r {{id}}-wijziging-jaar-alles2, fig.cap = "(ref:{{id}}-raster)", eval = output_format != "html" && nrow(deze_wijziging) > 0}
-ggplot(deze_wijziging, aes(x = naar, y = referentie, colour = log_mean)) +
+deze_wijziging %>%
+  filter(!cycle) %>%
+  ggplot(aes(x = naar, y = referentie, colour = log_mean)) +
   stat_effect(
     aes(ymin = lcl90, ymax = ucl90), 
     threshold = c(0.75, 1/0.75), 
@@ -207,10 +297,9 @@ ggplot(deze_wijziging, aes(x = naar, y = referentie, colour = log_mean)) +
   ) +
   scale_x_continuous(breaks = pretty) +
   scale_y_continuous(breaks = pretty) +
-  scale_effect("klasse", guide = guide_legend(ncol = 2)) +
+  scale_effect("klasse", guide = guide_legend(ncol = 3)) +
   scale_colour_gradient2(
-    "wijziging", mid = inbo.lichtgrijs, low = inbo.steun.blauw, high = inbo.rood,
-    breaks = index_breaks2, labels = index_labels
+    "wijziging", breaks = index_breaks2, labels = index_labels
   ) +
   coord_fixed() +
   theme(
@@ -239,15 +328,19 @@ dit_stratum %>%
 
 (ref:{{id}}-hash) Data-hashes van de analyses in het kader van traceerbaarheid (zie §\@ref(s:traceerbaarheid)).
 
-```{r {{id}}-hash}
+```{r {{id}}-hash, results = "asis"}
 resultaten$meta %>%
-  filter(hash == id, !cycle) %>%
-  arrange(nonlinear) %>%
+  filter(hash == id) %>%
+  arrange(cycle, nonlinear) %>%
   transmute(
+    frequentie = factor(
+      cycle, 
+      levels = c(TRUE, FALSE), 
+      labels = c("driejaarlijks", "jaarlijks")
+    ),
     model = ifelse(nonlinear, "lineair", "niet-lineair"),
-    analyse = analysis, 
-    status
+    analyse = str_replace(analysis, "(.{20})", "\\1 "), 
+    status = str_replace(status, "(.{20})", "\\1 ")
   ) %>%
-  kable(caption = "(ref:{{id}}-hash)")
+  pandoc.table(caption = "(ref:{{id}}-hash)")
 ```
-

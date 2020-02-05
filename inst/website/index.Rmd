@@ -42,6 +42,7 @@ opts_chunk$set(
 library(tidyverse)
 library(effectclass)
 library(plotly)
+library(pander)
 library(INBOtheme)
 output_format <- ifelse(interactive(), "html", opts_knit$get("rmarkdown.pandoc.to"))
 switch(
@@ -58,7 +59,7 @@ switch(
   },
   latex = {
     opts_chunk$set(dev = "cairo_pdf")
-    update_geom_defaults("point", list(size = 1.5))
+    update_geom_defaults("point", list(size = 2))
     theme_set(
       theme_inbo(
         base_family = "Flanders Art Sans",

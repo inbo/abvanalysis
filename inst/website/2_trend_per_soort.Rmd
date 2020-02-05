@@ -22,16 +22,14 @@ wijziging %>%
   bind_rows(wijziging) %>%
   inner_join(
     resultaten$meta %>%
-      filter(!cycle) %>%
-      select(analysis, hash),
+      select(analysis, hash, cycle),
     by = "analysis"
   ) -> wijziging
 resultaten$voorspelling %>%
   filter(str_detect(parameter, "ratio", TRUE)) %>%
   inner_join(
     resultaten$meta %>%
-      filter(!cycle) %>%
-      select(analysis, hash),
+      select(analysis, hash, cycle),
     by = "analysis"
   ) %>%
   mutate(
@@ -39,8 +37,8 @@ resultaten$voorspelling %>%
       as.integer()
   ) -> aantal
 resultaten$meta %>%
-  filter(!composite, !cycle) %>%
-  select(hash, waic, nonlinear) %>%
+  filter(!composite) %>%
+  select(hash, waic, nonlinear, cycle) %>%
   mutate(
     nonlinear = factor(
       nonlinear, 
@@ -65,16 +63,18 @@ resultaten$meta %>%
       filter(parameter == "Trend") %>%
       inner_join(
         resultaten$meta %>%
-          filter(!cycle) %>%
-          select(hash, analysis, duration, species_group),
+          select(hash, analysis, duration, species_group, cycle),
         by = "analysis"
       ),
-    by = "hash"
+    by = c("hash", "cycle")
   ) %>%
   arrange(hash) %>%
   mutate(
     lcl = qnorm(0.05, mean, sd),
     ucl = qnorm(0.95, mean, sd),
+    mean = ifelse(cycle, 1/3, 1) * mean,
+    lcl = ifelse(cycle, 1/3, 1) * lcl,
+    ucl = ifelse(cycle, 1/3, 1) * ucl,
     klasse = classification(
       lcl = (duration - 1) * lcl, 
       ucl = (duration - 1) * ucl, 
@@ -87,9 +87,24 @@ resultaten$meta %>%
     soort = tolower(species_group) %>%
       str_replace_all(" ", "-") %>%
       sprintf(fmt = "[%2$s](#soort-%1$s)", species_group), 
+    frequentie = factor(
+      cycle, levels = c(TRUE, FALSE), labels = c("driejaarlijks", "jaarlijks")
+    ),
     klasse, interpretatie,
-    jaarlijks = display_trend(mean, lcl, ucl),
-    looptijd = display_trend(mean, lcl, ucl, duration - 1),
+    jaarlijks = format_ci(
+      exp(mean) - 1, 
+      lcl = exp(lcl) - 1, 
+      ucl = exp(ucl) - 1, 
+      percent = TRUE,
+      sign = TRUE
+    ),
+    looptijd = format_ci(
+      exp(mean * (duration - 1)) - 1, 
+      lcl = exp(lcl * (duration - 1)) - 1, 
+      ucl = exp(ucl * (duration - 1)) - 1, 
+      percent = TRUE,
+      sign = TRUE
+    ),
     tekst = factor(
       klasse,
       levels = levels(klasse),
@@ -104,13 +119,24 @@ resultaten$meta %>%
   ) -> lineair
 resultaten$strata %>%
   inner_join(
-    resultaten$meta %>%
+    x = resultaten$meta %>%
       filter(!cycle) %>%
       select(hash, analysis),
     by = "analysis"
   ) %>%
-  mutate(stratum = str_remove(stratum, "stratum")) %>%
-  inner_join(resultaten$inspanning, by = c("stratum", "analysis")) %>%
+  mutate(
+    stratum = str_remove(stratum, "^stratum")
+  ) %>%
+  inner_join(
+    resultaten$inspanning, 
+    by = c("stratum", "analysis")
+  ) %>%
+  mutate(
+    stratum = recode(
+      stratum, 
+      "één stratum" = "e3979aa4d3d2aed3182a54cfe076ab7506970165"
+    )
+  ) %>%
   inner_join(x = strata, by = c("fingerprint" = "stratum")) %>%
   transmute(
     hash,
