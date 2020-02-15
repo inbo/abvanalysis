@@ -40,6 +40,7 @@ opts_chunk$set(
   message = TRUE
 )
 library(tidyverse)
+library(scales)
 library(effectclass)
 library(plotly)
 library(pander)
@@ -77,6 +78,12 @@ switch(
       )
     )
   }
+)
+```
+
+```{r helper-functies}
+kleurgradient <- div_gradient_pal(
+  low = inbo.rood, mid = inbo.lichtgrijs, high = inbo.steun.blauw
 )
 index_breaks <- function(x) {
   z <- 1 - c(9/10, 4/5, 3/4, 2/3, 1/2, 1/3, 1/4, 1/5, 1/10, 1/20, 1/50, 1/100, 1/200, 0)
@@ -401,7 +408,7 @@ In dergelijke gevallen kunnen we overschakelen naar de _zero-inflated_ versie va
 Deze hebben een parameter $\pi$ die een maat is voor de kans op een overmatige nul.
 
 Bij het modelleren zullen we in eerste instantie deze twee parameters instellen op $\nu = \infty$ en $\pi = 0$, m.a.w. geen overdispersie en geen overmaat aan nullen zodat we een Poisson verdeling krijgen.
-Vervolgens gaan we na over er voldoende aanwijzingen voor overdispersie of een overmaat aan nullen.
+Vervolgens gaan we na of er voldoende aanwijzingen zijn voor overdispersie of een overmaat aan nullen.
 In het geval van overdispersie laten we $\nu$ door het model schatten waardoor we overgaan van een Poisson naar een negatief binomiaal.
 In het geval van een overmaat aan nullen laten we $\pi$ door het model schatten waardoor we overgaan van een Poisson naar een _zero-inflated_ Poisson.
 Soms hebben we zowel aanwijzingen voor overdispersie als een overmaat aan nullen.
@@ -463,7 +470,7 @@ $$\eta_{cpshm} = \beta_s + \beta_p + b_h + b_m + \beta_{s1} c$$
 
 We fitten de statische modellen in R [@R] met het INLA package [@rueINLAFunctionsWhich2009].
 INLA gebruikt een Bayesiaanse benadering om de modellen te fitten.
-Daarom moeten priors specifiëren voor de (hyper-)parameters.
+Daarom moeten we priors specifiëren voor de (hyper-)parameters.
 
 - $\beta_s$, $\beta_p$ en $\beta_{s1}$ krijgen een Gaussiaanse prior $\mathcal{N}(0, 5)$.
 - $\sigma^2_h$ krijgt een _penalised complexity_  prior [@simpson.rue.ea2017PenalisingModelComponent] zodat $Prob(\sigma_h > 1) = 0.01$.
@@ -485,7 +492,7 @@ Door de effecten van de strata te vermenigvuldigen met hun stratumgewicht ($\gam
 
 $$\eta_{j} = \sum_s(\gamma_s\beta_s + \gamma_sb_{j,s})$$
 
-Om de schatting van het gemiddelde aantal in Vlaanderen te krijgen moeten de lineaire predictor terug omzetten van de $\log$ schaal naar de natuurlijke schaal en corrigeren voor de eventuele overmaat aan nullen.
+Om de schatting van het gemiddelde aantal in Vlaanderen te krijgen, moeten we de lineaire predictor terug omzetten van de $\log$ schaal naar de natuurlijke schaal en corrigeren voor de eventuele overmaat aan nullen.
 We krijgen dan:
 
 $$E[Y_j] = (1 - \pi) e^{\eta_j} \prod_s(e^{\gamma_s \beta_s} e ^ {\gamma_s b_{j,s}})$$
@@ -592,25 +599,27 @@ Een interval volledig boven (onder) de bovengrens (ondergrens) wordt dan een **s
 Een interval volledig tussen de referentie en de de bovengrens (ondergrens) wordt dan een **matige toename** (**matige afname**).
 Een interval dat de referentie niet bevat maar wel de bovengrens (ondergrens) blijft een **toename** (**afname**).
 Merk op dat de indeling volledig gebaseerd is op de onzekerheid rond het effect en niet op de puntschatting van het effect zelf.
-We vatten de opdeling met bijhorende afkortingen, symbolen en regels samen in tabel \@ref(tab:regels), figuur \@ref(fig:trendklasse) geeft een grafische voorstelling.
+We vatten de opdeling met bijhorende afkortingen en regels samen in tabel \@ref(tab:regels).
+Figuur \@ref(fig:trendklasse) geeft een grafische voorstelling waarbij we de afkortingen in combinatie met aangepaste symbolen gebruiken.
+De afkortingen zelf zijn te fijn om als symbool te gebruiken.
 
-(ref:regels) Overzicht van de benamingen van de tien effectklasses, met hun afkorting zowel met als zonder teken, het standaard symbool op de grafieken en de regels. $R$: referentie, $L$: ondergrens, $B$: bovengrens, $l$: ondergrens van het 90% interval, $b$: bovengrens van het 90% interval. $L < R < B$ en $l < b$.
+(ref:regels) Overzicht van de benamingen van de tien effectklasses met hun afkorting en de regels. $R$: referentie, $L$: ondergrens, $B$: bovengrens, $l$: ondergrens van het 90% interval, $b$: bovengrens van het 90% interval. $L < R < B$ en $l < b$.
 
 ```{r regels}
 tribble(
-  ~ benaming, ~afkorting, ~symbool, ~regels,
-  "sterke toename",    "`++` / `**`", "driehoek",   "$B < l$",
-  "toename",           "`+` / `*`",   "vierkant",   "$R < l < B$ en $B < b$",
-  "matige toename",    "`+~` / `*~`", "ruit",       "$R < l < B$ en $b < B$",
-  "stabiel",           "`~` / `~`",   "cirkel",     "$L < l < R$ en $R < b < B$",
-  "matige afname",     "`-~` / `*~`", "ruit",       "$L < l < R$ en $b < R$",
-  "afname",            "`-` / `*`",   "vierkant",   "$l < L$ en $L < b < R$",
-  "sterke afname",     "`--` / `**`", "driehoek",   "$l < L$",
-  "mogelijke toename", "`?+` / `?*`", "open ruit",  "$L < l < R$ en $B < b$",
-  "mogelijke afname",  "`?-` / `?*`", "open ruit",  "$l < L$ en $R < b < B$",
-  "onduidelijk",       "`?` / `?`",   "open cirkel", "$l < L$ en $B < b$" 
+  ~ benaming, ~afkorting, ~regels,
+  "sterke toename",    "`++`", "$B < l$",
+  "toename",           "`+`",  "$R < l < B$ en $B < b$",
+  "matige toename",    "`+~`", "$R < l < B$ en $b < B$",
+  "stabiel",           "`~`",  "$L < l < R$ en $R < b < B$",
+  "matige afname",     "`-~`", "$L < l < R$ en $b < R$",
+  "afname",            "`-`",  "$l < L$ en $L < b < R$",
+  "sterke afname",     "`--`", "$l < L$",
+  "mogelijke toename", "`?+`", "$L < l < R$ en $B < b$",
+  "mogelijke afname",  "`?-`", "$l < L$ en $R < b < B$",
+  "onduidelijk",       "`?`",  "$l < L$ en $B < b$" 
 ) %>%
-  kable(caption = "(ref:regels)", format = "pandoc", escape = FALSE)
+  kable(caption = "(ref:regels)", format = "pandoc", escape = FALSE, align = "lcc")
 ```
 
 (ref:trendklasse) Voorbeeld van de tien mogelijke interpretaties van een effect door het 90% interval te vergelijken met een referentie, ondergrens en bovengrens.
@@ -637,7 +646,7 @@ tribble(
   ) %>%
   arrange(klasse) %>%
   mutate(
-    x = factor(x, levels = x)
+    x = factor(x, levels = rev(x))
   ) %>%
   ggplot(aes(x = x, y = y, ymin = lcl, ymax = ucl, link_sd = s)) +
   geom_hline(yintercept = 0, linetype = 2) +
@@ -656,7 +665,7 @@ tribble(
 
 Uiteraard hangt de opdeling sterk af van de keuze van de boven- en ondergrens.
 De soortenmeetnetten voor de Natura 2000 monitoring streven er naar om een daling in populatiegrootte met -25% over 25 jaar tijd vast te kunnen stellen.
-Blijkbaar wordt een wijziging in de populatiegrootte van -25% als belangrijk aanzien.
+Hierbij wordt een wijziging in de populatiegrootte van -25% als belangrijk aanzien.
 Daarom hanteren we voor de algemene broedvogelmonitoring ook -25% als ondergrens, zowel bij de paarsgewijze verschillen tussen de jaren als de lineaire wijziging over de looptijd van het meetnet.
 Een van daling van -25% komt overeen met aantallen die nog 3/4 van de uitgangssituatie bedragen.
 Een even sterke wijziging in de omgekeerde richting zorgt er voor dat de aantallen toenemen tot 4/3 van de uitgangssituatie, of een toename met +33% wat we als bovengrens gebruiken.
@@ -672,7 +681,7 @@ Daarom zullen we bij elke samengestelde index zijn aangepaste grenswaarden verme
 
 ## Overzicht van de lineaire trends
 
-Tabel \@ref(tab:jaarlijkse-trends) geeft een overzicht van de lineaire trends voor elke soort.
+Tabellen \@ref(tab:driejaarlijkse-trends) en \@ref(tab:jaarlijkse-trends) geven een overzicht van de lineaire trends voor elke soort.
 We hebben de trends gesorteerd volgens opdeling van de klassen en binnen de klasse volgens puntschatting van de trend.
 Hierdoor start de tabel met de soorten met de sterkste positieve trends.
 Bij de volgende soorten zal de trend minder sterk worden tot we aan de soorten met een stabiele trend komen.
@@ -698,21 +707,21 @@ Deze informatie hebben we telkens in twee figuren samengevat.
 De eerste figuur geeft het verschil van elk jaar t.o.v. 2007, het jaar waarin de metingen gestart zijn.
 Voor 2007 geven we geen cijfer omdat het per definitie 1 is en geen informatie bevat.
 Het symbool geeft de puntschatting van het relatieve verschil t.o.v. 2007 weer.
-De vorm van het symbool geeft de opdeling van de sterkte van het effect weer (zie tab. \@ref(tab:regels)).
+De vorm van het symbool geeft de opdeling van de sterkte van het effect weer (zie fig. \@ref(fig:trendklasse)).
 Rond elke puntschatting tonen we het 30%, 60% en 90% interval (zie §\@ref(s:onzekerheid)).
 De horizontale streepjeslijn geeft de referentie van 0% verschil weer.
 De horizontale puntlijnen geven de bovengrens (+33%) en ondergrens (-25%) weer.
 Deze laten toe om de vlot zelf de betrouwbaarheidsintervallen te vergelijken met de referentie, boven- en ondergrens.
 De figuur heeft twee y-assen.
 Beide assen geven dezelfde informatie weer, enkel de formatering van de labels is anders.
-De linker-as toont procentuele verschillen terwijl de rechteras de relatieve verschillen toont.
-Een procentueel verschil van +50% is equivalent met een relatieve verschil van 1,5.
+De linkeras toont procentuele verschillen terwijl de rechteras de relatieve verschillen toont.
+Een procentueel verschil van +50% is equivalent met een relatieve verschil (verhouding) met een factor 1,5.
 
 We stellen vast dat veel gebruikers ook andere jaren met elkaar willen vergelijken.
 Een correcte vergelijking is enkel mogelijk indien we een van deze jaren als referentie gebruiken.
 Voor elk jaar een afzonderlijke figuur maken, zou het rapport onoverzichtelijk groot maken.
 Om de vergelijkingen toch mogelijk te maken hebben we alle paarsgewijze verschillen tussen de jaren in een raster weergeven.
-Elke rij is het raster staat voor een ander referentiejaar.
+Elke rij in het raster staat voor een ander referentiejaar.
 De kolommen geven de verschillen van een bepaald jaar weer t.o.v. de verschillende referentiejaren.
 Op de diagonaal staan geen waarden omdat we daar een jaar met zichzelf vergelijken.
 De kleur van de symbolen geeft de sterkte van het verschil (gebaseerd op de puntschatting).

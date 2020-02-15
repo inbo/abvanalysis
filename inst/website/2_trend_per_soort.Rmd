@@ -24,6 +24,28 @@ wijziging %>%
     resultaten$meta %>%
       select(analysis, hash, cycle),
     by = "analysis"
+  ) %>%
+  mutate(
+    klasse = classification(log(lcl90), log(ucl90), log(0.75)),
+    wijziging = sprintf(
+      "%s: %s t.o.v. %s (%s)", 
+       ifelse(
+        cycle, 
+        paste(naar, naar + 2, sep = "-"),
+        naar
+      ),
+      format_ci(
+        median - 1, lcl = lcl90 - 1, ucl = ucl90 - 1, 
+        percent = TRUE, sign = TRUE
+      ),
+       ifelse(
+        cycle, 
+        paste(referentie, referentie + 2, sep = "-"),
+        referentie
+      ),
+      klasse
+    ),
+    klasse = format(klasse, type = "plot")
   ) -> wijziging
 resultaten$voorspelling %>%
   filter(str_detect(parameter, "ratio", TRUE)) %>%
@@ -34,7 +56,16 @@ resultaten$voorspelling %>%
   ) %>%
   mutate(
     parameter = str_remove(parameter, "-[0-9]*") %>%
-      as.integer()
+      as.integer(),
+    hover = format_ci(log_mean, log_sd, link = "log") %>%
+      sprintf(
+        fmt = "%2$s: %1$s", 
+        ifelse(
+          cycle,
+          sprintf("%i-%i", parameter, parameter + 2),
+          parameter
+        )
+      )
   ) -> aantal
 resultaten$meta %>%
   filter(!composite) %>%
@@ -79,7 +110,7 @@ resultaten$meta %>%
       lcl = (duration - 1) * lcl, 
       ucl = (duration - 1) * ucl, 
       threshold = log(0.75)
-    )
+    ),
   ) %>%
   arrange(klasse, desc(mean)) %>% 
   transmute(

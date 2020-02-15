@@ -10,8 +10,6 @@ if (interactive()) {
 ```
 
 ```{r {{id}}-basis}
-wijziging %>%
-  filter(hash == id) -> deze_wijziging
 resultaten$meta %>%
   filter(hash == id) %>%
   slice(1) %>%
@@ -27,6 +25,32 @@ composite_soort %>%
   ) %>%
   pull(soort) -> deze_soorten
 deze_threshold <- log(0.75) / sqrt(length(deze_soorten))
+wijziging %>%
+  filter(hash == id) %>%
+  mutate(
+    log_lcl90 = qnorm(0.05, log_mean, log_sd),
+    log_ucl90 = qnorm(0.95, log_mean, log_sd),
+    klasse = classification(log_lcl90, log_ucl90, deze_threshold),
+    wijziging = sprintf(
+      "%s: %s t.o.v. %s (%s)", 
+       ifelse(
+        frequentie == "jaarlijks", 
+        naar, 
+        paste(naar, naar + 2, sep = "-")
+      ),
+      format_ci(
+        exp(log_mean) - 1, lcl = exp(log_lcl90) - 1, ucl = exp(log_ucl90) - 1, 
+        percent = TRUE, sign = TRUE
+      ),
+       ifelse(
+        frequentie == "jaarlijks", 
+        referentie, 
+        paste(referentie, referentie + 2, sep = "-")
+      ),
+      klasse
+    ),
+    klasse = format(klasse, type = "plot")
+  ) -> deze_wijziging
 ```
 
 # `r sprintf("%s {#index-%s}", soort_naam, soort_naam)`
@@ -104,62 +128,115 @@ deze_wijziging %>%
 
 ```{r {{id}}-wijziging-jaar-alles, fig.cap = "(ref:{{id}}-raster)", eval = output_format == "html" && nrow(deze_wijziging) > 0}
 deze_wijziging %>%
+  filter(frequentie == "jaarlijks") %>%
   mutate(
-    lcl = qnorm(0.05, log_mean, log_sd),
-    ucl = qnorm(0.95, log_mean, log_sd),
-    klasse = classification(lcl, ucl, deze_threshold),
-    wijziging = sprintf(
-      "%i: %s t.o.v. %i (%s)", 
-      naar,
-      display_trend(log_mean, lcl, ucl),
-      referentie,
-      klasse
-    ),
-    klasse = remove_sign(klasse)
-  ) -> change
-tickvals <- index_breaks2(change$log_mean)
-plot_ly(
-  change,
-  x = ~naar, y = ~referentie, color = ~log_mean, symbol = ~klasse, 
-  text = ~wijziging, hoverinfo = "text"
-) %>%
-  add_markers(
-    colors = c(inbo.steun.blauw, inbo.lichtgrijs, inbo.rood),
-    marker = list(
-      size = 12
-    ),
-    symbols = c(
-      "triangle-up", "square", "diamond", "circle", "diamond-open", 
-      "circle-open"
-    )
-  ) %>%
-  colorbar(
-    title = list(
-      text = "wijziging", 
-      font = list(
-        family = "FlandersArtSans-Bold, Verdana, Arial, sans-serif",
-        color = "#000000"
+    kleur = rescale_mid(log_mean, c(0, 1), range(log_mean)) %>%
+      kleurgradient()
+  ) -> change_jaar
+deze_wijziging %>%
+  filter(frequentie == "driejaarlijks") %>%
+  mutate(
+    kleur = rescale_mid(log_mean, c(0, 1), range(log_mean)) %>%
+      kleurgradient()
+  ) -> change_cyclus
+change_cyclus %>%
+  filter(frequentie == "driejaarlijks") %>%
+  transmute(naar, label = sprintf("%i-%i", naar, naar + 2)) -> cyclus_labs
+updatemenus <- list(
+  list(
+    active = 0,
+    showactive = FALSE, 
+    type = "dropdown",
+    y = 1.2,
+    buttons = list(
+      list(
+        label = "Driejaarlijks",
+        method = "update",
+        args = list(
+          list(visible = c(FALSE, TRUE)),
+          list(
+            title = paste(
+              "Paarsgewijze wijzigingen tussen driejarige cycli\nvoor", 
+              soort_naam
+            ),
+            xaxis = list(
+              tickvals = cyclus_labs$naar,
+              ticktext = cyclus_labs$label
+            ),
+            yaxis = list(
+              title = "Referentiecyclus",
+              tickvals = cyclus_labs$naar,
+              ticktext = cyclus_labs$label
+            )
+          )
+        )
+      ),
+      list(
+        label = "Jaarlijks",
+        method = "update",
+        args = list(
+          list(visible = c(TRUE, FALSE)),
+          list(
+            title = paste(
+              "Paarsgewijze wijzigingen tussen jaren\nvoor", 
+              soort_naam
+            ),
+            xaxis = list(tick0 = 2008, dtick = 1),
+            yaxis = list(tick0 = 2008, dtick = 1, title = "Referentiejaar")
+          )
+        )
       )
-    ), 
-    tickvals = tickvals, 
-    ticktext = index_labels(tickvals)
+    )
+  )
+)
+plot_ly(
+  data = change_jaar,
+  x = ~naar, y = ~referentie, text = ~klasse, showlegend = FALSE
+) %>%
+  add_text(
+    textfont = list(color = ~change_jaar$kleur, size = 20), 
+    hoverinfo = "none", visible = FALSE
+  ) %>%
+  add_text(
+    data = change_cyclus,
+    textfont = list(color = ~change_cyclus$kleur, size = 20), 
+    hoverinfo = "none"
+  ) %>%
+  add_markers(
+    data = change_jaar,
+    text = ~wijziging, hoverinfo = "text", opacity = 0, visible = FALSE
+  ) %>%
+  add_markers(
+    data = change_cyclus, text = ~wijziging, 
+    hoverinfo = "text", opacity = 0
   ) %>%
   layout(
-    font = list(family = "FlandersArtSans-Regular, Verdana, Arial, sans-serif"),
-    plot_bgcolor = inbo.achtergrond,
+    updatemenus = updatemenus,
     xaxis = list(
-      title = list(text = NULL),
-      color = inbo.steun.donkerroos,
-      gridcolor = "#FFFFFF"
+      title = "",
+      tickvals = cyclus_labs$naar,
+      ticktext = cyclus_labs$label
     ),
     yaxis = list(
-      title = list(
-        text = "referentie", 
-        font = list(color = "#000000")
-      ),
-      color = inbo.steun.donkerroos,
-      gridcolor = "#FFFFFF"
+      title = "Referentiecyclus",
+      tickvals = cyclus_labs$naar,
+      ticktext = cyclus_labs$label
+    ),
+    title = paste(
+      "Paarsgewijze wijzigingen tussen driejarige cycli\nvoor", 
+      soort_naam
+    ),
+    hoverlabel = list(
+      bgcolor = inbo.lichtblauw,
+      bordercolor = inbo.steun.blauw
     )
+  ) %>%
+  config(
+    modeBarButtonsToRemove = list(
+      "lasso2d", "select2d", "autoScale2d", "hoverClosestCartesian", 
+      "hoverCompareCartesian", "toggleSpikelines"
+    ),
+    displaylogo = FALSE
   )
 ```
 
@@ -222,9 +299,18 @@ deze_wijziging %>%
 
 (ref:{{id}}-hash) Data-hashes van de analyse in het kader van traceerbaarheid (zie §\@ref(s:traceerbaarheid)).
 
-```{r {{id}}-hash}
+```{r {{id}}-hash, results = "asis"}
 resultaten$meta %>%
-  filter(hash == id, !cycle, nonlinear) %>%
-  select(analyse = analysis, status) %>%
-  kable(caption = "(ref:{{id}}-hash)")
+  filter(hash == id, nonlinear) %>%
+  arrange(cycle) %>%
+  transmute(
+    frequentie = factor(
+      cycle, 
+      levels = c(TRUE, FALSE), 
+      labels = c("driejaarlijks", "jaarlijks")
+    ),
+    analyse = str_replace(analysis, "(.{20})", "\\1 "), 
+    status = str_replace(status, "(.{20})", "\\1 ")
+  ) %>%
+  pandoc.table(caption = "(ref:{{id}}-hash)")
 ```
