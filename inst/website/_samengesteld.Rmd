@@ -59,9 +59,200 @@ Deze indicator is gebaseerd op volgende soorten: `r paste(deze_soorten, collapse
 De indicator bestaat uit `r length(deze_soorten)` soorten.
 De aangepaste grenswaarden zijn `r sprintf("%+.1f%%", exp(deze_threshold) * 100 - 100)` en `r sprintf("%+.1f%%", exp(-deze_threshold) * 100 - 100)`.
 
+(ref:{{id}}-index) Wijzigingen t.o.v. de start van het meetnet voor `r soort_naam`. Zie §\@ref(s:onzekerheid) voor een verklaring van de intervallen en §\@ref(s:trendklasse) voor uitleg over de symbolen en referentielijnen.
+
+```{r {{id}}-wijziging-jaar, fig.cap = "(ref:{{id}}-index)", eval = output_format == "html" && nrow(deze_wijziging) > 0, warning = FALSE}
+deze_wijziging %>%
+  filter(referentie == min(referentie)) %>%
+  transmute(
+    naar, cycle,
+    lcl90 = exp(qnorm(0.05, log_mean, log_sd)),
+    lcl60 = exp(qnorm(0.1, log_mean, log_sd)),
+    lcl30 = exp(qnorm(0.35, log_mean, log_sd)),
+    ucl30 = exp(qnorm(0.65, log_mean, log_sd)),
+    ucl60 = exp(qnorm(0.8, log_mean, log_sd)),
+    ucl90 = exp(qnorm(0.95, log_mean, log_sd))
+  ) %>%
+  select(naar, cycle, starts_with("lcl"), starts_with("ucl")) %>%
+  pivot_longer(c(starts_with("lcl"), starts_with("ucl"))) %>%
+  extract(name, into = c("threshold", "level"), "(.cl)(.*)") %>%
+  inner_join(
+    expand.grid(
+      cycle = c(FALSE, TRUE),
+      delta = c(-1, 1)
+    ), 
+    by = "cycle"
+  ) %>%
+  mutate(
+    value = log(value),
+    delta = (cycle + 0.4) * delta,
+    x = naar + delta
+  ) %>%
+  group_by(cycle, level, naar) %>%
+  arrange(threshold, ifelse(threshold == "lcl", x, -x)) -> change
+breaks <- index_breaks(change$value)
+deze_wijziging %>%
+  filter(cycle) %>%
+  transmute(naar, label = sprintf("%i-%i", naar, naar + 2)) -> cyclus_labs
+updatemenus <- list(
+  list(
+    active = 0,
+    showactive = FALSE, 
+    type = "dropdown",
+    y = 1.2,
+    buttons = list(
+      list(
+        label = "Driejaarlijks",
+        method = "update",
+        args = list(
+          list(visible = c(FALSE, TRUE)),
+          list(
+            title = paste("Wijziging t.o.v. 2007-2009 voor", soort_naam),
+            xaxis = list(
+              tickvals = cyclus_labs$naar,
+              ticktext = cyclus_labs$label
+            )
+          )
+        )
+      ),
+      list(
+        label = "Jaarlijks",
+        method = "update",
+        args = list(
+          list(visible = c(TRUE, FALSE)),
+          list(
+            title = paste("Wijziging t.o.v. 2007 voor", soort_naam),
+            xaxis = list(tick0 = 2008, dtick = 1)
+          )
+        )
+      )
+    )
+  )
+)
+plot_ly(
+  fillcolor = inbo.steun.blauw, opacity = 0.3, showlegend = FALSE, 
+  hoverinfo = "none"
+) %>%
+  add_polygons(
+    data = filter(change, !cycle, level == "90"), 
+    x = ~x, y = ~value, 
+    line = list(width = 0), visible = FALSE
+  ) %>%
+  add_polygons(
+    data = filter(change, cycle, level == "90"), 
+    x = ~x, y = ~value, 
+    line = list(width = 0)
+  ) %>%
+  add_polygons(
+    data = filter(change, !cycle, level == "60"), 
+    x = ~x, y = ~value, 
+    line = list(width = 0), visible = FALSE
+  ) %>%
+  add_polygons(
+    data = filter(change, cycle, level == "60"), 
+    x = ~x, y = ~value, 
+    line = list(width = 0)
+  ) %>%
+  add_polygons(
+    data = filter(change, !cycle, level == "30"), 
+    x = ~x, y = ~value, 
+    line = list(width = 0), visible = FALSE
+  ) %>%
+  add_polygons(
+    data = filter(change, cycle, level == "30"), 
+    x = ~x, y = ~value, 
+    line = list(width = 0)
+  ) %>%
+  add_text(
+    data = filter(deze_wijziging, !cycle, referentie == 2007),
+    x = ~naar, y = ~log_mean, text = ~klasse,
+    textfont = list(color = inbo.steun.blauw, size = 20), 
+    opacity = 1, visible = FALSE
+  ) %>%
+  add_text(
+    data = filter(deze_wijziging, cycle, referentie == 2007),
+    x = ~naar, y = ~log_mean, text = ~klasse,
+    textfont = list(color = inbo.steun.blauw, size = 20), 
+    opacity = 1
+  ) %>%
+  add_markers(
+    data = filter(deze_wijziging, !cycle, referentie == 2007),
+    x = ~naar, y = ~log_mean, text = ~wijziging,
+    hoverinfo = "text", opacity = 0, visible = FALSE
+  ) %>%
+  add_markers(
+    data = filter(deze_wijziging, cycle, referentie == 2007),
+    x = ~naar, y = ~log_mean, text = ~wijziging,
+    hoverinfo = "text", opacity = 0
+  ) %>%
+  add_lines(
+    data = expand.grid(
+      x = range(change$naar[!change$cycle]) + c(-0.5, 0.5), 
+      y = deze_threshold * c(-1, 1)
+    ) %>%
+      group_by(y),
+    x = ~x, y = ~y,
+    line = list(color = inbo.steun.blauw, dash = "dash"), opacity = 1, 
+    visible = FALSE
+  ) %>%
+  add_lines(
+    data = expand.grid(
+      x = range(change$naar[change$cycle]) + c(-1.5, 1.5), 
+      y = deze_threshold * c(-1, 1)
+    ) %>%
+      group_by(y),
+    x = ~x, y = ~y,
+    line = list(color = inbo.steun.blauw, dash = "dash"), opacity = 1
+  ) %>%
+  add_lines(
+    data = expand.grid(
+      x = range(change$naar[!change$cycle]) + c(-0.5, 0.5), 
+      y = 0
+    ) %>%
+      group_by(y),
+    x = ~x, y = ~y,
+    line = list(color = inbo.steun.blauw), opacity = 1, visible = FALSE
+  ) %>%
+  add_lines(
+    data = expand.grid(
+      x = range(change$naar[change$cycle]) + c(-1.5, 1.5), 
+      y = 0
+    ) %>%
+      group_by(y),
+    x = ~x, y = ~y,
+    line = list(color = inbo.steun.blauw), opacity = 1
+  ) %>%
+  layout(
+    updatemenus = updatemenus,
+    xaxis = list(
+      title = "",
+      tickvals = cyclus_labs$naar,
+      ticktext = cyclus_labs$label
+    ),
+    yaxis = list(
+      title = "Procentuele wijziging",
+      tickvals = breaks,
+      ticktext = index_labels(breaks),
+      zeroline = FALSE
+    ),
+    title = paste("Wijziging t.o.v. 2007-2009 voor", soort_naam),
+    hoverlabel = list(
+      bgcolor = inbo.lichtblauw,
+      bordercolor = inbo.steun.blauw
+    )
+  ) %>%
+  config(
+    modeBarButtonsToRemove = list(
+      "lasso2d", "select2d", "autoScale2d", "hoverClosestCartesian", 
+      "hoverCompareCartesian", "toggleSpikelines"
+    ),
+    displaylogo = FALSE
+  )
+```
+
 (ref:{{id}}-index-cyclus) Wijzigingen t.o.v. de eerste driejarige cyclus voor `r soort_naam`. Zie §\@ref(s:onzekerheid) voor een verklaring van de intervallen en §\@ref(s:trendklasse) voor uitleg over de symbolen en referentielijnen.
 
-```{r {{id}}-wijziging-cyclus, fig.cap = "(ref:{{id}}-index-cyclus)", eval = nrow(deze_wijziging) > 0}
+```{r {{id}}-wijziging-cyclus, fig.cap = "(ref:{{id}}-index-cyclus)", eval = output_format != "html" && nrow(deze_wijziging) > 0}
 deze_wijziging %>%
   filter(referentie == min(referentie), frequentie == "driejaarlijks") %>%
   mutate(
@@ -92,9 +283,9 @@ deze_wijziging %>%
   theme(axis.title.x = element_blank())
 ```
 
-(ref:{{id}}-index) Wijzigingen t.o.v. het eerste jaar voor `r soort_naam`. Zie §\@ref(s:onzekerheid) voor een verklaring van de intervallen en §\@ref(s:trendklasse) voor uitleg over de symbolen en referentielijnen.
+(ref:{{id}}-index2) Wijzigingen t.o.v. het eerste jaar voor `r soort_naam`. Zie §\@ref(s:onzekerheid) voor een verklaring van de intervallen en §\@ref(s:trendklasse) voor uitleg over de symbolen en referentielijnen.
 
-```{r {{id}}-wijziging-jaar, fig.cap = "(ref:{{id}}-index)", eval = nrow(deze_wijziging) > 0}
+```{r {{id}}-wijziging-jaar2, fig.cap = "(ref:{{id}}-index2)", eval = output_format != "html" && nrow(deze_wijziging) > 0}
 deze_wijziging %>%
   filter(referentie == min(referentie), frequentie == "jaarlijks") %>%
   ggplot(aes(x = naar, y = log_mean, link_sd = log_sd)) +

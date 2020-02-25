@@ -20,7 +20,7 @@ wijziging %>%
   inner_join(
     resultaten$meta %>%
       transmute(
-        analysis, hash, 
+        analysis, hash, cycle, 
         frequentie = factor(
           cycle, 
           levels = c(TRUE, FALSE), 

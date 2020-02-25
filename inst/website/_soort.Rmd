@@ -402,7 +402,6 @@ plot_ly(
   )
 ```
 
-
 (ref:{{id}}-index3) Wijzigingen t.o.v. het eerste driejarige cyclus voor `r soort_naam`. Zie §\@ref(s:onzekerheid) voor een verklaring van de intervallen en §\@ref(s:trendklasse) voor uitleg over de symbolen en referentielijnen.
 
 ```{r {{id}}-wijziging-cyclus, fig.cap = "(ref:{{id}}-index3)", eval = output_format != "html" && nrow(deze_wijziging) > 0}

@@ -1,5 +1,14 @@
 # (PART) Resultaten per soort {-}
 
+```{r relevante_soort}
+resultaten$meta %>%
+  filter(!composite, nonlinear) %>%
+  semi_join(resultaten$voorspelling, by = "analysis") %>%
+  count(species_group, hash) %>%
+  filter(n >= 2) %>%
+  arrange(species_group) -> relevant
+```
+
 ```{r soort-set}
 resultaten$voorspelling %>%
   filter(str_detect(parameter, "ratio")) %>%
@@ -70,6 +79,7 @@ resultaten$voorspelling %>%
 resultaten$meta %>%
   filter(!composite) %>%
   select(hash, waic, nonlinear, cycle) %>%
+  semi_join(relevant, by = "hash") %>%
   mutate(
     nonlinear = factor(
       nonlinear, 

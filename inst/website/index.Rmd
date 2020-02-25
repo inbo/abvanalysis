@@ -1,5 +1,6 @@
 ---
 title: "Trends op basis van de Algemene Broedvogelmonitoring Vlaanderen (ABV)"
+subtitle: "Technisch achtergrondrapport"
 author: 
   - 
     name: "Thierry Onkelinx"
@@ -171,3 +172,11 @@ De samenwerking tussen deze organisaties staat garant voor een goede ondersteuni
 
 Het project werd opgestart in 2007 en heeft als doelstelling het beschrijven van aantalsontwikkelingen van een set van ca. 80 algemene broedvogelsoorten in Vlaanderen. 
 Zowel jaarlijkse fluctuaties als meerjarige trends zijn daarbij interessante resultaten in functie van lokaal, regionaal en/of internationaal beleid.
+
+Dit rapport is bedoeld als een technisch achtergrondrapport.
+Het bestaat uit drie delen: 
+het eerste deel beschrijft de methodiek van de verwerking en de weergave van de resultaten;
+het tweede deel geeft een aantal indicatoren gebaseerd op trends van meerdere soorten;
+het derde deel beschrijft de tijdreeks van individuele soorten.
+We beperken ons in delen twee en drie tot een droge, gestandaardiseerde weergave van de cijfers zonder ecologische interpretatie.
+Voor een ecologische interpretatie van de resultaten verwijzen we naar andere publicaties zoals [INBO Vogelnieuws](https://pureportal.inbo.be/portal/nl/publications/search.html?lastName=&search=&organisationName=&publicationYearsFrom=&organisations=&advanced=true&documents=%20&language=%20&publicationYearsTo=&type=%2Fdk%2Fatira%2Fpure%2Fresearchoutput%2Fresearchoutputtypes%2Fcontributiontojournal%2Finbovogelnieuws&uri=&logicalname=%2Fdk%2Fatira%2Fpure%2Fthematic&ordering=researchOutputOrderByPublicationYear&descending=true).
