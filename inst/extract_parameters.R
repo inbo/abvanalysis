@@ -5,7 +5,7 @@ remotes::install_github(
   upgrade = FALSE
 )
 remotes::install_github(
-  "inbo/n2kanalysis@v0.2.9",
+  "inbo/n2kanalysis@v0.2.8",
   dependencies = FALSE,
   upgrade = FALSE
 )

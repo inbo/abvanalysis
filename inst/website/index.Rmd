@@ -16,6 +16,7 @@ author:
 bibliography: references.bib
 link-citations: TRUE
 site: bookdown::bookdown_site
+reportnr: https://doi.org/10.21436/inbor.17888433
 output:
   bookdown::gitbook:
     split_by: "chapter+number"

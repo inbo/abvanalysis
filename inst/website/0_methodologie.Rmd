@@ -579,7 +579,7 @@ De ruwe gegevens worden op hokniveau en met drie jaar vertraging publiek ontslot
 ## Reproduceerbaarheid
 
 Om de reproduceerbaarheid te garanderen starten we de analyses steeds vanaf de tekstbestanden.
-Aan de hand van code in het `abvanalysis` package definiëren we hoe we de tekstbestanden omzetten naar de verschillende analyses ($\@ref(s:trendberekening)).
+Aan de hand van code in het `abvanalysis` package definiëren we hoe we de tekstbestanden omzetten naar de verschillende analyses (§\@ref(s:trendberekening)).
 Dit resulteert in een resem op zichzelf staande analyseobjecten van het `n2kanalysis` package [@n2kanalysis].
 Dergelijk analyseobject bevat naast de nodige gegevens en de modeldefinitie tevens de nodige metadata zoals alle gebruikte R packages, inclusief hun versie, en een verwijziging naar de voorafgaande analyses waarvan deze analyse afhangt.
 Zo verwijst de analyse van een samengestelde index (§\@ref(s:samengesteld)) naar de trendberekening van de bijhorende soorten (§\@ref(s:trendberekening)).
