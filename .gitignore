@@ -1,7 +1,16 @@
 .Rproj.user
 .Rhistory
 .RData
-*.Rproj
 _builds
 _projects
 _steps
+inst/output
+env.list
+*.rds
+_bookdown_files
+css
+*.log
+figure
+*.tsv
+*.yml
+*.tex

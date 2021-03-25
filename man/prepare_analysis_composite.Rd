@@ -4,14 +4,26 @@
 \alias{prepare_analysis_composite}
 \title{Prepare the analysis files for the composite indices}
 \usage{
-prepare_analysis_composite(dataset, raw.connection, analysis.path)
+prepare_analysis_composite(frequency, type, species_group, location_group,
+  models, base, project, overwrite = FALSE)
 }
 \arguments{
-\item{dataset}{the raw dataset}
+\item{frequency}{a indicator of the frequency of the analysis}
 
-\item{raw.connection}{a git-connection object to write the output to}
+\item{type}{the model type}
 
-\item{analysis.path}{the path to store the rda files for the analysis}
+\item{species_group}{the species_group ID}
+
+\item{location_group}{the location_group ID}
+
+\item{models}{a data.frame with the metadata of the models}
+
+\item{base}{The base location to store the model.}
+
+\item{project}{Will be a relative path within the base location.}
+
+\item{overwrite}{Should an existing object be overwritten?
+Defaults to TRUE.}
 }
 \description{
 Prepare the analysis files for the composite indices

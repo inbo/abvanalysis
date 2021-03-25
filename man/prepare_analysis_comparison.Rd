@@ -4,14 +4,24 @@
 \alias{prepare_analysis_comparison}
 \title{Prepare comparison among models}
 \usage{
-prepare_analysis_comparison(dataset, raw.connection, analysis.path)
+prepare_analysis_comparison(frequency, species_group, location_group,
+  models, base, project, overwrite = FALSE)
 }
 \arguments{
-\item{dataset}{A data.frame with the parent analyses}
+\item{frequency}{a indicator of the frequency of the analysis}
 
-\item{raw.connection}{a git-connection object to write the output to}
+\item{species_group}{the species_group ID}
 
-\item{analysis.path}{the path to store the rda files for the analysis}
+\item{location_group}{the location_group ID}
+
+\item{models}{a data.frame with the metadata of the models}
+
+\item{base}{The base location to store the model.}
+
+\item{project}{Will be a relative path within the base location.}
+
+\item{overwrite}{Should an existing object be overwritten?
+Defaults to TRUE.}
 }
 \description{
 Prepare comparison among models

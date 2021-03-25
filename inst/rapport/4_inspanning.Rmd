@@ -1,0 +1,160 @@
+# Overzicht van de monitoringsinspanning
+
+## Aantal onderzochte hokken per jaar
+
+Figuur \@ref(fig:hokken-jaar) heeft voor elk jaar het aantal hokken dat minstens een keer bezocht werd. In iguur \@ref(fig:hokken-jaar-stratum) splitsen we dit aantal hokken uit over de verschillende strata.
+
+```{r hokken-jaar, fig.cap = "Aantal onderzochte hokken per jaar"}
+visits %>%
+  distinct(year, location) %>%
+  count(year) %>%
+  ggplot(aes(year, y = n)) +
+  geom_hline(yintercept = 300, linetype = 2) +
+  geom_line() +
+  scale_y_continuous("aantal hokken", limits = c(0, NA)) +
+  theme(
+    axis.title.x = element_blank()
+  )
+```
+
+```{r hokken-jaar-stratum, fig.cap = "Aantal onderzochte hokken per jaar opgesplitst per stratum"}
+visits %>%
+  distinct(year, stratum, location) %>%
+  count(year, stratum) %>%
+  ggplot(aes(year, y = n, colour = stratum)) +
+  geom_line() +
+  scale_y_continuous("aantal hokken", limits = c(0, NA)) +
+  theme(
+    axis.title.x = element_blank()
+  )
+```
+
+Het is de bedoeling dat een hok tijdens een jaar in drie verschillende periodes onderzocht wordt. In figuur \@ref(fig:hokken-jaar-periode) geven we het aantal hokken weer dat tijdens 1, 2 en 3 periodes onderzocht werd.
+
+```{r hokken-jaar-periode, fig.cap = "Aantal onderzochte hokken per jaar in functie van het aantal periodes waarin het hok onderzocht werd."}
+visits %>%
+  distinct(year, period, location) %>%
+  count(year, location) %>%
+  count(year, n) %>%
+  ggplot(aes(x = year, y = nn, colour = factor(n, levels = 3:1))) +
+  geom_hline(yintercept = 300, linetype = 2) +
+  geom_line() +
+  scale_y_continuous("aantal hokken", limits = c(0, NA)) +
+  scale_colour_discrete("aantal\nperiodes") +
+  theme(
+    axis.title.x = element_blank()
+  )
+```
+
+## Aantal onderzochte punten
+
+Elk hok bevat zes punten waar de tellingen uitgevoerd worden. In de mate van het mogelijke worden alle zes punten bezocht tijdens elk bezoek. De volle lijn in figuur \@ref(fig:punten-jaar) geeft het gemiddeld aantal onderzochte punten per hok weer. De band geeft de spreiding tussen het minimum en het maximum weer. Voor elke periode hebben een een afzonderlijke subplot gemaakt. Meer gedetailleerde cijfers zijn beschikbaar in tabel \@ref(tab:punten-jaar-detail). Merk op dat het aantal onderzochte punten soms groter is dan 6. Dit is het gevolg van twee bezoeken binnen eenzelfde periode. Vaak is een van beide bezoeken bedoelt als een bezoek voor de vorige of volgende periode.
+
+```{r punten-jaar, fig.cap = "Aantal onderzochte punten per hok opgesplitst per periode."}
+visits %>%
+  count(year, period, location) %>%
+  group_by(year, period) %>%
+  summarise(
+    mean = mean(n),
+    min = min(n),
+    max = max(n)
+  ) %>%
+  ggplot(aes(x = year, y = mean, ymin = min, ymax = max)) +
+  geom_hline(yintercept = 6, linetype = 2) +
+  geom_ribbon(alpha = 0.2) +
+  geom_line() +
+  scale_y_continuous(
+    "aantal punten", limits = c(0, NA), breaks = seq(0, 12, by = 3)
+  ) +
+  facet_wrap(~period) +
+  theme(
+    axis.title.x = element_blank()
+  )
+```
+
+```{r punten-jaar-detail, results="asis"}
+visits %>%
+  count(year, period, location) %>%
+  count(jaar = year, periode = period, n) %>%
+  spread(n, nn) %>%
+  kable(caption = "Aantal hokken per jaar en per periode (rijen) en per aantal bezochte punten (kolommen)")
+```
+
+## Herbezoek van hokken
+
+```{r}
+n_cyclus <- ceiling((as.integer(format(Sys.Date(), "%Y")) - 2006) / 3)
+```
+
+We streven er naar om elk hok om de drie jaar opnieuw te bezoeken. Als we hierbij de jaarlijkse inspanning min of meer constant houden, zouden we drie sets van hokken krijgen. De eerste set wordt tijdens jaar 1 onderzocht, de tweede set in jaar 2 en de derde set in jaar 3. In jaar 4 herbeginnen we opnieuw met de eerste set. Na `n_cyclus` driejarige cycli, verwachte we dus hoofdzakelijk hokken met `n_cyclys` jaren gegevens (figuur \@ref(fig:herbezoek-hok)). 
+
+De herbezoeken zijn cruciaal omdat we enkel hokken die in meerdere jaren onderzocht zijn kunnen gebruiken om de trends te bepalen. Hokken die slechts in één jaar onderzocht zijn, zijn hierdoor niet bruikbaar (figuur \@ref(fig:herbezoek-hok)). Het loont echter de moeite om dergelijke hokken in de toekomst toch nog opnieuw te onderzoeken.
+
+```{r herbezoek-hok, fig.cap = "Histogram van het aantal jaar waarin een hok onderzocht werd"}
+visits %>%
+  distinct(year, location) %>%
+  count(location) %>%
+  mutate(bruikbaar = ifelse(n > 1, "ja", "neen")) %>%
+  ggplot(aes(x = n, fill = bruikbaar)) +
+  geom_histogram(binwidth = 1) +
+  geom_vline(xintercept = n_cyclus, linetype = 2) +
+  scale_x_continuous("aantal jaar met gegevens") +
+  scale_y_continuous("aantal hokken")
+```
+
+In de praktijk worden de hokken niet altijd om de drie jaar herbezocht. In figuur \@ref(fig:herbezoek-tijd) geven we voor elk jaar het gemiddeld aantal jaar sinds het vorige bezoek aan een hok. Aangezien het meetnet in 2007 van start ging, zijn de eerste herbezoeken pas sinds 2008 mogelijk. De bleke band geeft de spreiding tussen het minimum en maximum aantal jaar sinds het vorige bezoek weer. De donkere band geeft de spreiding tussen 10% en 90% van het aantal hokken weer.
+
+Hoewel we streven naar een herbezoek om de drie jaar, kiezen sommige medewerkers er voor om hokken frequenter opnieuw te bezoeken. Dit is overigens een meerwaarde voor de trendberekening. We zien ook dan er bijna elk jaar hokken zijn die dan pas voor het eerst herbezocht worden. 
+
+```{r herbezoek-tijd, fig.cap = "Aantal jaar tussen twee opeenvolgende bezoeken van een hok"}
+visits %>%
+  distinct(location, year) %>%
+  group_by(location) %>%
+  arrange(year) %>%
+  mutate(delta = year - lag(year)) %>%
+  filter(!is.na(delta)) %>%
+  group_by(year) %>%
+  summarise(
+    mean = mean(delta),
+    lcl = quantile(delta, 0.1),
+    ucl = quantile(delta, 0.9),
+    min = min(delta),
+    max = max(delta)
+  ) %>%
+  ggplot(aes(x = year, y = mean, ymin = min, ymax = max)) +
+  geom_abline(intercept = -2007, linetype = 3) +
+  geom_hline(yintercept = c(1, 3), linetype = c(3, 2)) +
+  geom_ribbon(alpha = 0.2) +
+  geom_ribbon(aes(ymin = lcl, ymax = ucl), alpha = 0.2) +
+  geom_line() +
+  scale_x_continuous(breaks = pretty_breaks(n = 6)) +
+  scale_y_continuous("aantal jaar sinds vorige bezoek") + 
+  theme(
+    axis.title.x = element_blank()
+  )
+```
+
+```{r hokken-cummulatief, fig.cap = "Cummulatief aantal onderzochte hokken"}
+visits %>%
+  distinct(year, location) %>%
+  group_by(location) %>%
+  summarise(
+    first = min(year),
+    bruikbaar = ifelse(n() > 1, "ja", "neen")
+  ) %>%
+  ungroup() %>%
+  count(bruikbaar, first) %>%
+  complete(bruikbaar, first, fill = list(n = 0)) %>%
+  group_by(bruikbaar) %>%
+  mutate(totaal = cumsum(n)) %>%
+  ggplot(aes(x = first, y = totaal, colour = bruikbaar)) +
+  geom_hline(yintercept = 900, linetype = 2) +
+  geom_line() +
+  scale_y_continuous(
+    "totaal aantal hokken", limits = c(0, NA), breaks = seq(0, 1200, by = 300)
+  ) +
+  theme(
+    axis.title.x = element_blank()
+  )
+```
+

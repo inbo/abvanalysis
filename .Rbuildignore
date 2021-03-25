@@ -6,3 +6,9 @@
 ^_builds$
 ^_projects$
 ^_steps$
+^inst/*rds$
+^inst/*css$
+^inst/*figure$
+^inst/output$
+^inst/*\.log$
+^env.list$

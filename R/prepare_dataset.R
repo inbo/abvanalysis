@@ -1,92 +1,198 @@
 #' Prepare all datasets
+#'
 #' Prepare all datasets and store the version into a git repository
-#' @param result.channel An open RODBC connection to the results database
-#' @param source.channel An open ODBC connection to the source database
-#' @param attribute.connection a git-connection object to the attribute data
-#' @param raw.connection a git-connection object to write the output to
-#' @param scheme.id The id of the scheme
-#' @param verbose Display a progress bar when TRUE (default)
+#' @param result An open ODBC connection to the results database
+#' @param origin `dbplyr::src_dbi` connection to the source database
+#' @param scheme.id the fingerprint of the scheme
+#' @param end.date the latest date to import. Default to now.
+#' @param verbose display the progress
+#' @param repo a \code{\link[git2rdata]{repository}} object
+#' @param push push the changes to the repository. Defaults to `FALSE`.
+#' @param ... arguments passed to \code{\link[git2rdata]{commit}} and
+#' \code{\link[git2rdata]{push}}.
 #' @export
-#' @importFrom assertthat is.count is.flag noNA
-#' @importFrom n2khelper write_delim_git auto_commit
-#' @importFrom plyr d_ply
-#' @importFrom n2khelper git_connect remove_files_git write_delim_git
+#' @importFrom assertthat is.string is.flag noNA
+#' @importFrom git2rdata rm_data write_vc commit recent_commit push prune_meta
+#' @importFrom utils flush.console
+#' @importFrom tibble rownames_to_column
+#' @importFrom purrr map pmap map_chr map_dfr
+#' @importFrom tidyr unnest nest
+#' @importFrom n2kanalysis n2k_import
+#' @importFrom n2kupdate store_n2kImport store_datafield
+#' @importFrom methods slot
+#' @importFrom dplyr %>% mutate transmute n select filter group_by inner_join
+#' @importFrom rlang .data
 prepare_dataset <- function(
-  result.channel,
-  source.channel,
-  attribute.connection,
-  raw.connection,
+  result,
+  origin,
+  repo,
   scheme.id,
-  verbose = TRUE
+  end.date = Sys.time(),
+  verbose = TRUE,
+  push = FALSE,
+  ...
 ){
-  assert_that(is.count(scheme.id))
+  assert_that(is.string(scheme.id))
+  assert_that(inherits(end.date, "POSIXct"))
+  assert_that(length(end.date) == 1)
   assert_that(is.flag(verbose))
   assert_that(noNA(verbose))
-
-  remove_files_git(connection = raw.connection, pattern = "txt$")
+  assert_that(is.flag(push), noNA(push))
 
   if (verbose) {
-    message("Importing observations")
-    utils::flush.console()
+    message("Importing locations")
+    flush.console()
   }
-  observation <- prepare_dataset_observation(
-    source.channel = source.channel,
-    result.channel = result.channel,
-    raw.connection = raw.connection,
-    attribute.connection = attribute.connection,
-    scheme.id = scheme.id
+  location_hash <- prepare_dataset_location(
+    origin = origin, result = result, repo = repo, scheme.id = scheme.id,
+    end.date = end.date
   )
-
   if (verbose) {
     message("Importing species")
-    utils::flush.console()
+    flush.console()
   }
-  species <- prepare_dataset_species(
-    source.channel = source.channel,
-    result.channel = result.channel,
-    raw.connection = raw.connection,
-    scheme.id = scheme.id
+  stored <- prepare_dataset_species(
+    origin = origin, result = result, repo = repo,
+    end.date = end.date, scheme.id = scheme.id
+  )
+  if (verbose) {
+    message("Importing observations")
+    flush.console()
+  }
+  observation <- prepare_dataset_observation(
+    origin = origin, result = result, repo = repo,
+    end.date = end.date, species = stored$species
   )
 
   if (verbose) {
-    progress <- "time"
-    message("Importing observations per species")
-    utils::flush.console()
-  } else {
-    progress <- "none"
+    message("Storing metadata")
+    flush.console()
   }
-#   this.species <- subset(species, SpeciesGroupID == sample(species$SpeciesGroupID, 1))
-  fingerprint <- ddply(
-    .data = species,
-    .variables = "SpeciesGroupID",
-    .progress = progress,
-    .fun = prepare_dataset_species_observation,
-    observation = observation,
-    result.channel = result.channel,
-    source.channel = source.channel,
-    raw.connection = raw.connection,
-    first.year = min(observation$Year),
-    last.year = max(observation$Year),
-    scheme.id = scheme.id
+  dbGetQuery(
+    result$con,
+    "SELECT fingerprint FROM datasource WHERE description = 'Raw data ABV'"
+  ) -> datasource
+  data.frame(
+    filename = c(observation$hashes, stored$hash, location_hash),
+    fingerprint = names(c(observation$hashes, stored$hash, location_hash)),
+    stringsAsFactors = FALSE
+  ) %>%
+    mutate(
+      commit = map(.data$filename, recent_commit, root = repo, data = FALSE)
+    ) %>%
+    unnest(cols = "commit") %>%
+    transmute(
+      .data$fingerprint,
+      .data$filename,
+      import_date = as.POSIXct(.data$when),
+      datasource = datasource$fingerprint,
+      hash = gsub(".*/([[:xdigit:]]{40}).*", "\\1", .data$filename)
+    ) -> dataset
+  read_vc("species/species_group_species", root = repo) %>%
+    group_by(.data$species_group) %>%
+    mutate(
+      species = .data$species[1],
+      n = n()
+    ) %>%
+    filter(.data$n == 1) %>%
+    ungroup() %>%
+    select(-"n") %>%
+    inner_join(dataset, by = c("species" = "hash")) -> sgs
+  dataset %>%
+    filter(!grepl(".*/([[:xdigit:]]{40}).*", .data$filename)) %>%
+    select(-"hash") -> dataset
+  dbGetQuery(
+    result$con,
+    "SELECT fingerprint FROM datasource WHERE description = 'n2kresult_develop'"
+  ) -> result_datasource
+  read_vc("location/location_group", repo) -> location_group
+  sgs %>%
+    select(
+      "species_group", "fingerprint", "filename", "import_date", "datasource"
+    ) %>%
+    group_by(.data$species_group) %>%
+    nest() %>%
+    mutate(
+      data = map(.data$data, bind_rows, dataset),
+      analysis_date = map(.data$data, function(x){max(x[["import_date"]])}),
+      import = pmap(
+        list(
+          sg = .data$species_group,
+          ad = .data$analysis_date,
+          ds = .data$data
+        ),
+        function(sg, ad, ds) {
+          n2k_import(
+            scheme.id = scheme.id,
+            result.datasource.id = result_datasource$fingerprint,
+            status = "converged",
+            species.group.id = sg,
+            location.group.id = location_group$fingerprint,
+            model.type = "Import source data",
+            formula = "~ 1",
+            first.imported.year = observation$period[1],
+            last.imported.year = observation$period[2],
+            analysis.date = ad,
+            dataset = ds,
+            seed = 20070301
+          )
+        }
+      ),
+      hash = map_chr(.data$import, store_n2kImport, conn = result$con)
+    ) -> imports
+  dbGetQuery(
+    result$con,
+    "SELECT fingerprint FROM datasource WHERE description = 'Source data ABV'"
+  ) -> datasource
+  df <- store_datafield(
+    datafield = data.frame(
+      local_id = c("sample", "observation", "autocomplete"),
+      datasource = c(
+        rep(datasource$fingerprint, 2), result_datasource$fingerprint
+      ),
+      table_name = c("fieldwork_sample", "fieldwork_observation", "none"),
+      primary_key = "id",
+      datafield_type = "integer",
+      stringsAsFactors = FALSE
+    ),
+    conn = result$con
   )
-  parent.sha <- write_delim_git(
-    x = fingerprint,
-    file = "parent.txt",
-    connection = raw.connection
-  )
-
-  metadata <- data.frame(
-    Key = c("SchemeID", "FirstImportedYear", "LastImportedYear", "Duration"),
-    Value = c(scheme.id, range(observation$Year), diff(range(observation$Year)) + 1)
-  )
-  metadata.sha <- write_delim_git(
-    x = metadata,
-    file = "metadata.txt",
-    connection = raw.connection
-  )
-
-  auto_commit(
-    package = environmentName(parent.env(environment())),
-    connection = raw.connection
-  )
+  rm_data(root = repo, path = "metadata", stage = TRUE)
+  map_dfr(imports$import, slot, "AnalysisMetadata") %>%
+    select(
+      scheme = "SchemeID",
+      result_datasource = "ResultDatasourceID",
+      analysis = "FileFingerprint",
+      species_group = "SpeciesGroupID",
+      location_group = "LocationGroupID",
+      first_imported_year = "FirstImportedYear",
+      last_imported_year = "LastImportedYear",
+      analysis_date = "AnalysisDate",
+      seed = "Seed",
+      file_fingerprint = "FileFingerprint"
+  ) %>%
+    mutate(
+      sample_df = df$fingerprint[df$local_id == "sample"],
+      observation_df = df$fingerprint[df$local_id == "observation"],
+      autocomplete_df = df$fingerprint[df$local_id == "autocomplete"]
+    ) %>%
+    write_vc(
+      file = "metadata/metadata",
+      root = repo,
+      sorting = "file_fingerprint",
+      stage = TRUE
+    )
+  prune_meta(root = repo, path = "metadata", stage = TRUE)
+  if (length(git2rdata::status(repo)$staged)) {
+    commit(
+      message = "Automated commit from abvanalysis",
+      repo = repo,
+      session = TRUE,
+      ...
+    )
+    if (push) {
+      push(object = repo, ...)
+    }
+  }
+  return(invisible(NULL))
 }

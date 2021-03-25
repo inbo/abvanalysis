@@ -4,17 +4,18 @@
 \alias{prepare_dataset_species}
 \title{Read the species groups and save them to git and the results database}
 \usage{
-prepare_dataset_species(source.channel, result.channel, raw.connection,
-  scheme.id)
+prepare_dataset_species(origin, result, repo, scheme.id, end.date)
 }
 \arguments{
-\item{source.channel}{An open ODBC connection to the source database}
+\item{origin}{`dbplyr::src_dbi` connection to the source database}
 
-\item{result.channel}{An open RODBC connection to the results database}
+\item{result}{An open ODBC connection to the results database}
 
-\item{raw.connection}{a git-connection object to write the output to}
+\item{repo}{a \code{\link[git2rdata]{repository}} object}
 
-\item{scheme.id}{The id of the scheme}
+\item{scheme.id}{the fingerprint of the scheme}
+
+\item{end.date}{the latest date to import. Default to now.}
 }
 \description{
 Read the species groups and save them to git and the results database

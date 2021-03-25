@@ -1,0 +1,239 @@
+---
+title: "Trends op basis van de Algemene Broedvogelmonitoring Vlaanderen (ABV)"
+subtitle: "Technisch achtergrondrapport voor de periode 2007-2020"
+author: 
+  - name: "Thierry Onkelinx"
+    email: "thierry.onkelinx@inbo.be"
+    orcid: "0000-0001-8804-4216"
+  - name: "Glenn Vermeersch"
+    email: "glenn.vermeersch@inbo.be"
+    orcid: "0000-0002-9176-8917"
+  - name: "Koen Devos"
+    email: "koen.devos@inbo.be"
+    orcid: "0000-0001-7265-6349"
+shortauthor: Onkelinx, T. _et al._
+reviewer:
+  - name: Hans Van Calster
+    email: hans.vancalster@inbo.be
+    orcid: 0000-0001-8595-8426
+bibliography: references.bib
+link-citations: TRUE
+site: bookdown::bookdown_site
+doi: https://doi.org/10.21436/inbor.34162521
+year: 2021
+corresponding: thierry.onkelinx@inbo.be
+reportnr: 14
+depotnr: D/2021/3241/106
+cover_description: Merel (_Turdus merula_). © Yves Adams / Vildaphoto.
+cover_image: cover.jpg
+cover: cover.pdf
+cooperation:
+  - Natuurpunt Studie vzw
+  - Coxiestraat 11, 2800 Mechelen
+  - https://www.natuurpunt.be
+cooperation_logo: natuurpunt.png
+output:
+  bookdown::gitbook:
+    split_by: "chapter+number"
+    template: !expr INBOmd::inbo_rapport_css("html")
+    pandoc_args: !expr c("--csl", system.file("research-institute-for-nature-and-forest.csl", package = "INBOmd"))
+    download: "pdf"
+  bookdown::pdf_book:
+    base_format: INBOmd::inbo_rapport
+    floatbarrier: "section"
+    lof: FALSE
+    lot: FALSE
+  bookdown::epub_book:
+    stylesheet: "css/inbo_rapport.css"
+    template: !expr INBOmd::inbo_rapport_css("epub")
+    pandoc_args: !expr c("--csl", system.file("research-institute-for-nature-and-forest.csl", package = "INBOmd"))
+  bookdown::word_document2:
+    template: !expr INBOmd::inbo_rapport_css("html")
+    pandoc_args: !expr c("--csl", system.file("research-institute-for-nature-and-forest.csl", package = "INBOmd"))
+---
+
+```{r setup, include = FALSE}
+library(knitr)
+opts_chunk$set(
+  echo = FALSE, 
+  eval = TRUE,
+  cache = FALSE,
+  warning = FALSE,
+  error = FALSE,
+  message = TRUE
+)
+library(git2rdata)
+library(tidyverse)
+library(scales)
+library(effectclass)
+library(plotly)
+library(pander)
+library(INBOtheme)
+output_format <- ifelse(
+  interactive(), 
+  "html", 
+  opts_knit$get("rmarkdown.pandoc.to")
+)
+output_dir <- ifelse(
+  interactive(), 
+  "../output/website", 
+  opts_knit$get("output.dir")
+)
+switch(
+  output_format,
+  html = {
+    opts_chunk$set(dev = "png", dpi = 72, fig.height = 8, fig.width = 10.5)
+    update_geom_defaults("point", list(size = 4))
+    theme_set(
+      theme_inbo(
+        base_family = "FlandersArtSans-Regular", 
+        base_size = 14
+      )
+    )
+  },
+  latex = {
+    opts_chunk$set(dev = "cairo_pdf")
+    update_geom_defaults("point", list(size = 2))
+    theme_set(
+      theme_inbo(
+        base_family = "Flanders Art Sans",
+        base_size = 8
+      )
+    )
+  },
+  {
+    opts_chunk$set(dev = "png", dpi = 72, fig.height = 8, fig.width = 10.5)
+    update_geom_defaults("point", list(size = 4))
+    theme_set(
+      theme_inbo(
+        base_family = "FlandersArtSans-Regular", 
+        base_size = 14
+      )
+    )
+  }
+)
+```
+
+```{r helper-functies}
+index_breaks <- function(x) {
+  z <- 1 - c(9/10, 4/5, 3/4, 2/3, 1/2, 1/3, 1/4, 1/5, 1/10, 1/20, 1/50, 1/100, 1/200, 0)
+  z <- log(sort(z))
+  z <- z[which(z >= min(-abs(x)))[1] + -1:2]
+  c(z, 0, -z)
+}
+index_breaks2 <- function(x) {
+  z <- 1 - c(9/10, 4/5, 3/4, 2/3, 1/2, 1/3, 1/4, 1/5, 1/10, 1/20, 1/50, 1/100, 1/200, 0)
+  z <- log(sort(z))
+  z <- z[which(z >= min(-abs(x)))[1] + -1:1]
+  c(z, 0, -z)
+}
+index_labels <- function(x) {
+  sprintf("%+.0f%%", 100 * (exp(x) - 1))
+}
+display_trend <- function(mean, lcl, ucl, duration = 1) {
+  mean <- 100 * exp(duration * mean) - 100
+  lcl <- 100 * exp(duration * lcl) - 100
+  ucl <- 100 * exp(duration * ucl) - 100
+  upper <- pmax(abs(lcl), abs(ucl))
+  magnitude <- floor(log10(upper))
+  magnitude <- magnitude - ifelse(upper * 10 ^ -magnitude < 2, 2, 1)
+  sprintf(
+    "%+g%% (%+g%%; %+g%%)",
+    round(mean * 10 ^ -magnitude) * 10 ^ magnitude,
+    round(lcl * 10 ^ -magnitude) * 10 ^ magnitude,
+    round(ucl * 10 ^ -magnitude) * 10 ^ magnitude
+  )
+}
+c(rev(traffic_palette(7)), "grey65", "grey35", "grey50") %>%
+  setNames(
+    c("++", "+", "+~", "~", "-~", "-", "--", "?+", "?-", "?")
+  ) -> kleurgradient
+kleurgradient[4] <- inbo_steun_blauw
+periode_labels <- function(x) {
+  sprintf("%i - %i", x, x + 2)
+}
+```
+
+```{r document-packages}
+package_list <- c("R", "git2rdata", "abvanalysis", "n2kanalysis")
+references <- readLines("references.bib")
+paste(package_list, collapse = "|") %>%
+  sprintf(fmt = "^@.+\\{(%s),$") %>%
+  grep(references) -> start
+end <- grep("^\\}$", references)
+lapply(
+  start, 
+  function(i) {
+    i:head(end[i < end], 1)
+  }
+) %>%
+  do.call(what = c) -> existing_citation
+cite_package <- function(x) {
+  citation(ifelse(x == "R", "base", x)) %>%
+  toBibtex() %>%
+  str_replace("Manual\\{,", paste0("Manual\\{", x, ","))
+}
+package_list %>%
+  map(cite_package) %>%
+  c(references[-existing_citation]) %>%
+  do.call(what = c) %>%
+  writeLines("references.bib")
+```
+
+```{r importeer-aws, eval = !file.exists("../results.rds"), results = "hide"}
+result <- aws.s3::s3readRDS("abv/results/results.rds", bucket = "n2kmonitoring")
+map(result, "design") -> design
+design <- design[!map_lgl(design, is.null)]
+list(
+  meta = map_df(result, "meta"),
+  fixef = map_df(result, "fixef"),
+  ranef = map_df(result, "ranef"),
+  lc = map_df(result, "lc"),
+  inspanning = map_df(design, "inspanning"),
+  herbezoeken = map_df(design, "herbezoeken"),
+  hokken_jaar = map_df(design, "hokken_jaar"),
+  inspanning_per_jaar = map_df(design, "inspanning_per_jaar"),
+  zoekinspanning = map_df(design, "zoekinspanning"),
+  strata = map_df(design, "strata"),
+  delta = map_df(design, "delta"),
+  voorspelling = map_df(design, "voorspelling"),
+  relation = map_df(result, "relation"),
+  index = map_df(result, "index")
+) %>%
+  saveRDS("../results.rds")
+rm(result)
+gc()
+```
+
+```{r import-data}
+resultaten <- readRDS("../results.rds")
+resultaten$meta %>%
+  right_join(
+    x = readRDS("../species.rds"), 
+    by = c("fingerprint" = "species")
+  ) %>%
+  select(-fingerprint) %>%
+  mutate(
+    composite = grepl("composite", modeltype),
+    cycle = grepl("(Cycle|cycle)", modeltype),
+    nonlinear = grepl("(RW1|non linear)", modeltype)
+  ) -> resultaten$meta
+strata <- readRDS("../strata.rds")
+```
+
+# Inleiding
+
+Dit rapport publiceert de meest recente analyses op basis van het telwerk voor het project 'Algemene Broedvogelmonitoring Vlaanderen' of kortweg ABV.
+Dit project is een gezamenlijk initiatief van het Instituut voor Natuur- en Bosonderzoek (INBO) en Natuurpunt Studie in samenwerking met de lokale vogelwerkgroepen. 
+De samenwerking tussen deze organisaties staat garant voor een goede ondersteuning van en communicatie naar het vrijwilligersnetwerk door Natuurpunt Studie, en een degelijke professionele wetenschappelijke ondersteuning en dataverwerking door het INBO.
+
+Het project werd opgestart in 2007 en heeft als doelstelling het beschrijven van aantalsontwikkelingen van een set van ca. 80 algemene broedvogelsoorten in Vlaanderen. 
+Zowel jaarlijkse fluctuaties als meerjarige trends zijn daarbij interessante resultaten in functie van lokaal, regionaal en/of internationaal beleid.
+
+Dit rapport is bedoeld als een technisch achtergrondrapport.
+Het bestaat uit drie delen: 
+het eerste deel beschrijft de methodiek van de verwerking en de weergave van de resultaten;
+het tweede deel geeft een aantal indicatoren gebaseerd op trends van meerdere soorten;
+het derde deel beschrijft de tijdreeks van individuele soorten.
+We beperken ons in delen twee en drie tot een droge, gestandaardiseerde weergave van de cijfers zonder ecologische interpretatie.
+Voor een ecologische interpretatie van de resultaten verwijzen we naar andere publicaties zoals [INBO Vogelnieuws](https://pureportal.inbo.be/portal/nl/publications/search.html?lastName=&search=&organisationName=&publicationYearsFrom=&organisations=&advanced=true&documents=%20&language=%20&publicationYearsTo=&type=%2Fdk%2Fatira%2Fpure%2Fresearchoutput%2Fresearchoutputtypes%2Fcontributiontojournal%2Finbovogelnieuws&uri=&logicalname=%2Fdk%2Fatira%2Fpure%2Fthematic&ordering=researchOutputOrderByPublicationYear&descending=true).

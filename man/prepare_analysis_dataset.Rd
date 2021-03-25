@@ -4,22 +4,43 @@
 \alias{prepare_analysis_dataset}
 \title{Create the analysis dataset based on the available raw data}
 \usage{
-prepare_analysis_dataset(rawdata.file, observation, raw.connection,
-  analysis.path, min.observation, min.stratum)
+prepare_analysis_dataset(species_group, location_group, metadata,
+  observation, repo, base, project, overwrite = FALSE,
+  min.observation = 100, min.stratum = 3, min.cycle = 2,
+  proportion = 0.15)
 }
 \arguments{
-\item{rawdata.file}{The file with the counts per visit}
+\item{species_group}{the species_group ID}
 
-\item{observation}{the dataframe with the visits and location group}
+\item{location_group}{the location_group ID}
 
-\item{raw.connection}{a git-connection object to write the output to}
+\item{metadata}{a dataframe with the metadata of a single import}
 
-\item{analysis.path}{the path to store the rda files for the analysis}
+\item{observation}{The dataframe with the visits and location group.}
 
-\item{min.observation}{The minimum number of positive observations
-(Count > 0)}
+\item{repo}{a \code{\link[git2rdata]{repository}} object}
 
-\item{min.stratum}{minimum of locations per stratum. Strata with less locations will be dropped from the analysis}
+\item{base}{The base location to store the model.}
+
+\item{project}{Will be a relative path within the base location.}
+
+\item{overwrite}{Should an existing object be overwritten?
+Defaults to TRUE.}
+
+\item{min.observation}{The required minimum number of occassion where the
+present was observed.
+Defaults to `100`.}
+
+\item{min.stratum}{The required minimum number of relevant locations per
+stratum.
+Defaults to `3`.}
+
+\item{min.cycle}{The required minimum number of cycles in which the species
+was present at a location.
+Defaults to `2`.}
+
+\item{proportion}{Minimum proportion of the least important period.
+Defaults to `0.15`.}
 }
 \value{
 A data.frame with the species id number of rows in the analysis

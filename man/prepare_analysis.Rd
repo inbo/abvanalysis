@@ -4,18 +4,44 @@
 \alias{prepare_analysis}
 \title{Prepare all datasets and a to do list of models}
 \usage{
-prepare_analysis(raw.connection, analysis.path = ".", min.observation = 100,
-  min.stratum = 3)
+prepare_analysis(repo, base, project, overwrite = FALSE,
+  min.observation = 100, min.stratum = 3, min.cycle = 2,
+  proportion = 0.15, docker = "inbobmk/rn2k:0.6",
+  dependencies = c("inbo/n2khelper@v0.4.3", "inbo/n2kanalysis@v0.2.9",
+  "inbo/n2kupdate@v0.1.1"), volume)
 }
 \arguments{
-\item{raw.connection}{a git-connection object to write the output to}
+\item{repo}{a \code{\link[git2rdata]{repository}} object}
 
-\item{analysis.path}{the path to store the rda files for the analysis}
+\item{base}{The base location to store the model.}
 
-\item{min.observation}{The minimum number of positive observations
-(Count > 0)}
+\item{project}{Will be a relative path within the base location.}
 
-\item{min.stratum}{minimum of locations per stratum. Strata with less locations will be dropped from the analysis}
+\item{overwrite}{Should an existing object be overwritten?
+Defaults to TRUE.}
+
+\item{min.observation}{The required minimum number of occassion where the
+present was observed.
+Defaults to `100`.}
+
+\item{min.stratum}{The required minimum number of relevant locations per
+stratum.
+Defaults to `3`.}
+
+\item{min.cycle}{The required minimum number of cycles in which the species
+was present at a location.
+Defaults to `2`.}
+
+\item{proportion}{Minimum proportion of the least important period.
+Defaults to `0.15`.}
+
+\item{docker}{The docker image to use during model fit.}
+
+\item{dependencies}{A vector of R packages as understood by the `repo`
+argument of \code{\link[remotes]{install_github}}.}
+
+\item{volume}{The argument passed to the '-v' of docker.
+Only used when `base` is a local file system.}
 }
 \description{
 Prepare all datasets and a to do list of models
