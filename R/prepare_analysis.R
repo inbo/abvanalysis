@@ -258,7 +258,7 @@ prepare_analysis <- function(
     nest(
       data = c("fingerprint", "status", "status_fingerprint", "scheme", "seed",
       "result_datasource", "first_imported_year", "last_imported_year",
-      "analysis_date", "parent")
+      "analysis_date", "parent", "analysis")
     ) %>%
     mutate(
       stored = pmap(

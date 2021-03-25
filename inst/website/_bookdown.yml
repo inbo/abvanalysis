@@ -1,5 +1,10 @@
 book_filename: "abv_standaard_rapport.Rmd"
 output_dir: "../output/website"
+rmd_files:
+  html: ["index.Rmd", "0_methodologie.Rmd", "download_html.Rmd", "1_samengesteld.Rmd", "2_trend_per_soort.Rmd", "zzz_bibliografietitel.Rmd"]
+  latex: ["index.Rmd", "0_methodologie.Rmd", "download_non_html.Rmd", "1_samengesteld.Rmd", "2_trend_per_soort.Rmd"]
+  epub: ["index.Rmd", "0_methodologie.Rmd", "download_non_html.Rmd", "1_samengesteld.Rmd", "2_trend_per_soort.Rmd", "zzz_bibliografietitel.Rmd"]
+  word: ["index.Rmd", "0_methodologie.Rmd", "download_non_html.Rmd", "1_samengesteld.Rmd", "2_trend_per_soort.Rmd", "zzz_bibliografietitel.Rmd"]
 delete_merged_file: TRUE
 language:
   label:

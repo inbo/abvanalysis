@@ -46,6 +46,78 @@ resultaten$relation %>%
   composite_soort
 ```
 
+```{r bewaar-indicatoren, eval = output_format == "html"}
+resultaten$meta %>%
+  inner_join(composite_soort, by = "hash") %>%
+  distinct(indicator = species_group, soort) %>%
+  group_by(indicator) %>%
+  mutate(
+    ondergrens = round(exp(log(0.75) / sqrt(n())), 3),
+    bovengrens = round(exp(-log(0.75) / sqrt(n())), 3),
+    threshold = log(0.75) / sqrt(n())
+  ) %>%
+  ungroup() -> tmp
+tmp %>%
+  select(-threshold) %>%
+  write_vc(
+    file = "samengesteld_soorten", root = output_dir,
+    sorting = c("indicator", "soort"), optimize = FALSE
+  ) -> samensteld_groep_vc
+resultaten$meta %>%
+  select(analysis, indicator = species_group, status) %>%
+  inner_join(wijziging, by = "analysis") %>%
+  inner_join(
+    tmp %>%
+      distinct(indicator, threshold),
+    by = "indicator"
+  ) %>%
+  mutate(
+    klasse = pmap(
+      list(m = log_mean, s = log_sd, th = threshold),
+      function(m, s, th) {
+        classification(
+          lcl = qnorm(0.05, m, s), ucl = qnorm(0.95, m, s), threshold = th
+        )
+      }
+    )
+  ) %>%
+  unnest(klasse) %>%
+  transmute(
+    indicator, frequentie, referentie, naar, klasse,
+    schatting = round(exp(log_mean), 3),
+    lcl90 = round(exp(qnorm(0.05, log_mean, log_sd)), 3),
+    ucl90 = round(exp(qnorm(0.95, log_mean, log_sd)), 3),
+    lcl60 = round(exp(qnorm(0.1, log_mean, log_sd)), 3),
+    ucl60 = round(exp(qnorm(0.8, log_mean, log_sd)), 3),
+    lcl30 = round(exp(qnorm(0.35, log_mean, log_sd)), 3),
+    ucl30 = round(exp(qnorm(0.65, log_mean, log_sd)), 3),
+    wijziging = sprintf(
+      "%s: %s t.o.v. %s (%s)", 
+       ifelse(
+        frequentie == "driejaarlijks", 
+        paste(naar, naar + 2, sep = "-"),
+        naar
+      ),
+      format_ci(
+        schatting - 1, lcl = lcl90 - 1, ucl = ucl90 - 1, 
+        percent = TRUE, sign = TRUE
+      ),
+       ifelse(
+        frequentie == "driejaarlijks", 
+        paste(referentie, referentie + 2, sep = "-"),
+        referentie
+      ),
+      klasse
+    ),
+    analyse = analysis, status
+  ) %>%
+  write_vc(
+    file = "samengesteld", root = output_dir, optimize = FALSE,
+    sorting = c("indicator", "frequentie", "referentie", "naar")
+  ) -> samengesteld_vc
+rm(tmp)
+```
+
 ```{r composite-indices, results='asis', cache = FALSE, eval = TRUE}
 resultaten$meta %>%
   filter(composite) %>%

@@ -1,17 +1,17 @@
-devtools::install_github(
-  "inbo/n2khelper@v0.4.2",
+remotes::install_github(
+  "inbo/n2khelper@v0.4.3",
   dependencies = FALSE,
-  upgrade_dependencies = FALSE
+  upgrade = FALSE
 )
-devtools::install_github(
-  "inbo/n2kanalysis@inla_poisson",
+remotes::install_github(
+  "inbo/n2kanalysis@inla_arguments",
   dependencies = FALSE,
-  upgrade_dependencies = FALSE
+  upgrade = FALSE
 )
-devtools::install_github(
-  "inbo/inlatools@extras",
+remotes::install_github(
+  "inbo/inlatools",
   dependencies = TRUE,
-  upgrade_dependencies = FALSE
+  upgrade = FALSE
 )
 library(dplyr)
 library(tibble)
@@ -246,9 +246,16 @@ extract_design <- function(z) {
 available <- aws.s3::get_bucket(bucket = bucket, prefix = project, max = Inf)
 keys <- map_chr(available, "Key")
 hashes <- gsub(".*([[:xdigit:]]{40}).*", "\\1", keys)
-manifests <- grep(paste0(project, "/manifest/[[:xdigit:]]{40}.manifest"), keys)
+manifests <- aws.s3::get_bucket(
+  bucket = bucket, prefix = paste0(project, "/manifest"), max = Inf
+)
+map_chr(manifests, "LastModified") %>%
+  grepl(pattern = "^2021-02") -> current
+manifests[current] %>%
+  map_chr("Key") %>%
+  gsub(pattern = ".*([[:xdigit:]]{40}).*", replacement = "\\1") -> manifests
 manifest <- map_dfr(
-  hashes[manifests],
+  manifests,
   function(m_hash) {
     message("manifest: ", m_hash)
     manifest <- read_manifest(m_hash, base = available, project = project)
@@ -312,8 +319,8 @@ walk(
           model_type = z@AnalysisMetadata$ModelType,
           waic = z@Model$waic$waic
         ) -> result
-      dc <- fast_distribution_check(get_model(z))
-      disp <- dispersion_check(get_model(z), plot = FALSE)
+      dc <- try(fast_distribution_check(get_model(z)))
+      disp <- try(dispersion_check(get_model(z)))
       ds <- extract_design(z)
       saveRDS(
         list(
@@ -321,6 +328,8 @@ walk(
         ),
         file = target
       )
+    } else {
+      stop("b")
     }
     delete_model(x, base = local, project = "abv")
     rm(z)
@@ -329,7 +338,7 @@ walk(
 )
 
 map(
-  hashes[manifests],
+  manifests,
   function(m_hash) {
     message("manifest: ", m_hash)
     manifest <- read_manifest(m_hash, base = available, project = project)

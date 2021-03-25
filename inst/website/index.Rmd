@@ -1,27 +1,43 @@
 ---
 title: "Trends op basis van de Algemene Broedvogelmonitoring Vlaanderen (ABV)"
-subtitle: "Technisch achtergrondrapport"
+subtitle: "Technisch achtergrondrapport voor de periode 2007-2020"
 author: 
-  - 
-    name: "Thierry Onkelinx"
+  - name: "Thierry Onkelinx"
     email: "thierry.onkelinx@inbo.be"
     orcid: "0000-0001-8804-4216"
-  - 
-    name: "Glenn Vermeersch"
+  - name: "Glenn Vermeersch"
     email: "glenn.vermeersch@inbo.be"
     orcid: "0000-0002-9176-8917"
-  - 
-    name: "Koen Devos"
+  - name: "Koen Devos"
     email: "koen.devos@inbo.be"
+    orcid: "0000-0001-7265-6349"
+shortauthor: Onkelinx, T. _et al._
+reviewer:
+  - name: Hans Van Calster
+    email: hans.vancalster@inbo.be
+    orcid: 0000-0001-8595-8426
 bibliography: references.bib
 link-citations: TRUE
 site: bookdown::bookdown_site
-reportnr: https://doi.org/10.21436/inbor.17888433
+doi: https://doi.org/10.21436/inbor.34162521
+year: 2021
+corresponding: thierry.onkelinx@inbo.be
+reportnr: 14
+depotnr: D/2021/3241/106
+cover_description: Merel (_Turdus merula_). © Yves Adams / Vildaphoto.
+cover_image: cover.jpg
+cover: cover.pdf
+cooperation:
+  - Natuurpunt Studie vzw
+  - Coxiestraat 11, 2800 Mechelen
+  - https://www.natuurpunt.be
+cooperation_logo: natuurpunt.png
 output:
   bookdown::gitbook:
     split_by: "chapter+number"
     template: !expr INBOmd::inbo_rapport_css("html")
-    pandoc_args: !expr c("--csl", system.file("inbo.csl", package = "INBOmd"), "--variable", "cover-image=cover.jpg")
+    pandoc_args: !expr c("--csl", system.file("research-institute-for-nature-and-forest.csl", package = "INBOmd"))
+    download: "pdf"
   bookdown::pdf_book:
     base_format: INBOmd::inbo_rapport
     floatbarrier: "section"
@@ -30,8 +46,10 @@ output:
   bookdown::epub_book:
     stylesheet: "css/inbo_rapport.css"
     template: !expr INBOmd::inbo_rapport_css("epub")
-    pandoc_args: !expr c("--csl", system.file("inbo.csl", package = "INBOmd"))
-    cover_image: "cover.jpg"
+    pandoc_args: !expr c("--csl", system.file("research-institute-for-nature-and-forest.csl", package = "INBOmd"))
+  bookdown::word_document2:
+    template: !expr INBOmd::inbo_rapport_css("html")
+    pandoc_args: !expr c("--csl", system.file("research-institute-for-nature-and-forest.csl", package = "INBOmd"))
 ---
 
 ```{r setup, include = FALSE}
@@ -44,6 +62,7 @@ opts_chunk$set(
   error = FALSE,
   message = TRUE
 )
+library(git2rdata)
 library(tidyverse)
 library(scales)
 library(effectclass)
@@ -54,6 +73,11 @@ output_format <- ifelse(
   interactive(), 
   "html", 
   opts_knit$get("rmarkdown.pandoc.to")
+)
+output_dir <- ifelse(
+  interactive(), 
+  "../output/website", 
+  opts_knit$get("output.dir")
 )
 switch(
   output_format,
@@ -91,9 +115,6 @@ switch(
 ```
 
 ```{r helper-functies}
-kleurgradient <- div_gradient_pal(
-  low = inbo.rood, mid = inbo.lichtgrijs, high = inbo.steun.blauw
-)
 index_breaks <- function(x) {
   z <- 1 - c(9/10, 4/5, 3/4, 2/3, 1/2, 1/3, 1/4, 1/5, 1/10, 1/20, 1/50, 1/100, 1/200, 0)
   z <- log(sort(z))
@@ -123,6 +144,14 @@ display_trend <- function(mean, lcl, ucl, duration = 1) {
     round(ucl * 10 ^ -magnitude) * 10 ^ magnitude
   )
 }
+c(rev(traffic_palette(7)), "grey65", "grey35", "grey50") %>%
+  setNames(
+    c("++", "+", "+~", "~", "-~", "-", "--", "?+", "?-", "?")
+  ) -> kleurgradient
+kleurgradient[4] <- inbo_steun_blauw
+periode_labels <- function(x) {
+  sprintf("%i - %i", x, x + 2)
+}
 ```
 
 ```{r document-packages}
@@ -151,6 +180,30 @@ package_list %>%
   writeLines("references.bib")
 ```
 
+```{r importeer-aws, eval = !file.exists("../results.rds"), results = "hide"}
+result <- aws.s3::s3readRDS("abv/results/results.rds", bucket = "n2kmonitoring")
+map(result, "design") -> design
+design <- design[!map_lgl(design, is.null)]
+list(
+  meta = map_df(result, "meta"),
+  fixef = map_df(result, "fixef"),
+  ranef = map_df(result, "ranef"),
+  lc = map_df(result, "lc"),
+  inspanning = map_df(design, "inspanning"),
+  herbezoeken = map_df(design, "herbezoeken"),
+  hokken_jaar = map_df(design, "hokken_jaar"),
+  inspanning_per_jaar = map_df(design, "inspanning_per_jaar"),
+  zoekinspanning = map_df(design, "zoekinspanning"),
+  strata = map_df(design, "strata"),
+  delta = map_df(design, "delta"),
+  voorspelling = map_df(design, "voorspelling"),
+  relation = map_df(result, "relation"),
+  index = map_df(result, "index")
+) %>%
+  saveRDS("../results.rds")
+rm(result)
+gc()
+```
 
 ```{r import-data}
 resultaten <- readRDS("../results.rds")

@@ -35,6 +35,7 @@ wijziging %>%
     by = "analysis"
   ) %>%
   mutate(
+    schatting = median,
     klasse = classification(log(lcl90), log(ucl90), log(0.75)),
     wijziging = sprintf(
       "%s: %s t.o.v. %s (%s)", 
@@ -53,8 +54,7 @@ wijziging %>%
         referentie
       ),
       klasse
-    ),
-    klasse = format(klasse, type = "plot")
+    )
   ) -> wijziging
 resultaten$voorspelling %>%
   filter(str_detect(parameter, "ratio", TRUE)) %>%
@@ -121,7 +121,8 @@ resultaten$meta %>%
       ucl = (duration - 1) * ucl, 
       threshold = log(0.75)
     ),
-  ) %>%
+  ) -> export_lineair
+export_lineair %>%
   arrange(klasse, desc(mean)) %>% 
   transmute(
     hash, 
@@ -170,7 +171,10 @@ resultaten$strata %>%
     stratum = str_remove(stratum, "^stratum")
   ) %>%
   inner_join(
-    resultaten$inspanning, 
+    resultaten$inspanning %>%
+      mutate(
+        stratum = recode(stratum, "<c3><a9><c3><a9>n stratum" = "één stratum")
+      ), 
     by = c("stratum", "analysis")
   ) %>%
   mutate(
@@ -191,6 +195,84 @@ resultaten$strata %>%
     bezoeken
   ) %>%
   arrange(hash, desc(gewicht)) -> stratum_gewicht
+```
+
+```{r bewaar-soorten, eval = output_format == "html"}
+resultaten$meta %>%
+  distinct(hash, soort = species_group) %>%
+  inner_join(stratum_gewicht, by = "hash") %>%
+  select(-hash) %>%
+  mutate(
+    gewicht = round(gewicht, 3),
+    aanwezig = round(aanwezig, 1)
+  ) %>%
+  write_vc(
+    file = "stratumgewicht", root = output_dir, optimize = FALSE,
+    sorting = c("soort", "stratum")
+  )
+export_lineair %>%
+  transmute(
+    soort = species_group,
+    frequentie = factor(
+      cycle, levels = c(TRUE, FALSE), labels = c("driejaarlijks", "jaarlijks")
+    ),
+    jaarlijks = format_ci(
+      exp(mean) - 1, 
+      lcl = exp(lcl) - 1, 
+      ucl = exp(ucl) - 1, 
+      percent = TRUE,
+      sign = TRUE
+    ),
+    looptijd = format_ci(
+      exp(mean * (duration - 1)) - 1, 
+      lcl = exp(lcl * (duration - 1)) - 1, 
+      ucl = exp(ucl * (duration - 1)) - 1, 
+      percent = TRUE,
+      sign = TRUE
+    ),
+    klasse, verloop = interpretatie, analyse = analysis
+  ) %>%
+  inner_join(
+    resultaten$meta %>%
+      distinct(analysis, status),
+    by = c("analyse" = "analysis")
+  ) %>%
+  write_vc(
+    file = "lineaire_trend", root = output_dir, optimize = FALSE,
+    sorting = c("klasse", "soort", "frequentie")
+  )
+resultaten$meta %>%
+  select(soort = species_group, analysis, status) %>%
+  inner_join(aantal, by = "analysis") %>%
+  transmute(
+    soort,
+    frequentie = factor(
+      cycle, levels = c(TRUE, FALSE), labels = c("driejaarlijks", "jaarlijks")
+    ),
+    jaar = parameter, schatting = round(median, 2), lcl90 = round(lcl90, 2),
+    ucl90 = round(ucl90, 2), lcl60 = round(lcl60, 2), ucl60 = round(ucl60, 2),
+    lcl30 = round(lcl30, 2), ucl30 = round(ucl30, 2), analyse = analysis, status
+  ) %>%
+  write_vc(
+    file = "aantallen", root = output_dir, optimize = FALSE,
+    sorting = c("soort", "frequentie", "jaar")
+  )
+resultaten$meta %>%
+  select(soort = species_group, analysis, status) %>%
+  inner_join(wijziging, by = "analysis") %>%
+  transmute(
+    soort,
+    frequentie = factor(
+      cycle, levels = c(TRUE, FALSE), labels = c("driejaarlijks", "jaarlijks")
+    ), wijziging,
+    referentie, naar, schatting = round(median, 3), lcl90 = round(lcl90, 3),
+    ucl90 = round(ucl90, 3), lcl60 = round(lcl60, 3), ucl60 = round(ucl60, 3),
+    lcl30 = round(lcl30, 3), ucl30 = round(ucl30, 3), analyse = analysis, status
+  ) %>%
+  write_vc(
+    file = "index", root = output_dir, optimize = FALSE,
+    sorting = c("soort", "frequentie", "referentie", "naar")
+  )
 ```
 
 # Overzicht van de trends
