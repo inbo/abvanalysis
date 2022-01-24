@@ -1,12 +1,16 @@
 #' Read the species groups and save them to git and the results database
 #' @inheritParams prepare_dataset
-#' @importFrom DBI dbQuoteString dbGetQuery
+#' @inheritParams git2rdata::write_vc
+#' @importFrom DBI dbGetQuery dbQuoteString
+#' @importFrom digest sha1
 #' @importFrom dplyr %>% transmute select mutate bind_rows
+#' @importFrom purrr map_chr
 #' @importFrom rlang .data
-#' @importFrom n2kupdate store_species_group_species
-#' @importFrom git2rdata rm_data write_vc prune_meta
+#' @importFrom git2rdata prune_meta rm_data write_vc
 #' @export
-prepare_dataset_species <- function(origin, result, repo, scheme.id, end.date){
+prepare_dataset_species <- function(origin, repo, end_date, strict = FALSE) {
+  rm_data(root = repo, path = "location", stage = TRUE)
+
   sprintf("
     WITH cte AS (
       SELECT fo.species_id
@@ -23,123 +27,91 @@ prepare_dataset_species <- function(origin, result, repo, scheme.id, end.date){
     )
 
     SELECT
-      'S' || s.id AS local_id,
-      s.id AS external_code,
-      s.scientific_name,
-      s.name AS nl,
-      s.reference_inbo AS nbn_key
+      s.id, s.scientific_name, s.name AS nl, s.euring_code AS euring
     FROM cte
     INNER JOIN species_species AS s ON cte.species_id = s.id
     WHERE s.reference_inbo IS NOT NULL",
-    dbQuoteString(origin$con, as.character(end.date))
+    dbQuoteString(origin, as.character(end_date))
   ) %>%
-    dbGetQuery(conn = origin$con) -> source_species
-  source_species %>%
-    transmute(
-      source_species_local_id = .data$local_id,
-      species_local_id = .data$local_id
-    ) -> source_species_species
-  source_species %>%
-    select(-"external_code") -> species
-  source_species %>%
-    select("local_id", "external_code", description = "nl") %>%
-    mutate(datafield_local_id = 1) -> source_species
-  language <- data.frame(
-    code = "nl",
-    description = "Nederlands",
-    stringsAsFactors = FALSE
+    dbGetQuery(conn = origin) %>%
+    mutate(
+      datafield_id = get_field_id(
+        repo = repo, table_name = "species_species", field_name = "id"
+      )
+    ) -> species
+  write_vc(
+    species, file = file.path("species", "species"), root = repo,
+    sorting = "euring", stage = TRUE
   )
-  dbGetQuery(result$con, "
-    SELECT fingerprint AS datasource
-    FROM datasource
-    WHERE description = 'Source data ABV'
-  ") -> datasource
-  data.frame(
-    local_id = 1,
-    datasource = datasource$datasource,
-    table_name = "species_species",
-    primary_key = "id",
-    datafield_type = "integer",
-    stringsAsFactors = FALSE
-  ) -> datafield
   dbGetQuery(
-    origin$con, "
+    origin, "
     SELECT
-      'G' || id AS local_id,
+      id AS external_id,
       REGEXP_REPLACE(name, '(.*) \\(ABV\\)', '\\1') AS description
     FROM species_group
     WHERE REGEXP_REPLACE(name, '.* \\((.*)\\)$', '\\1') = 'ABV'
   ") %>%
-    bind_rows(
-      species %>%
-      select("local_id", description = "nl")
-    ) %>%
-    mutate(scheme = scheme.id) -> species_group
+    mutate(
+      datafield_id = get_field_id(
+        repo = repo, table_name = "species_group", field_name = "id"
+      ),
+      id = map_chr(.data$description, sha1)
+    ) -> speciesgroup
+  species %>%
+    transmute(
+      external_id = .data$id,
+      id = map_chr(.data$nl, sha1),
+      description = .data$nl,
+      .data$datafield_id
+    ) -> speciesgroup2
   dbGetQuery(
-    origin$con, "
+    origin, "
     SELECT
-      'G' || sg.id AS species_group_local_id,
-      'S' || sgs.species_id AS species_local_id
+      sg.id AS external_id,
+      sgs.species_id AS species_id
     FROM species_group AS sg
     INNER JOIN species_speciesgrouprelation AS sgs ON sg.id = sgs.group_id
     WHERE REGEXP_REPLACE(sg.name, '.* \\((.*)\\)$', '\\1') = 'ABV'
   ") %>%
+    inner_join(
+      speciesgroup %>%
+        select(speciesgroup_id = .data$id, .data$external_id),
+      by = "external_id"
+    ) %>%
+    inner_join(
+      speciesgroup2 %>%
+        select(species_id = .data$external_id, parent_id = .data$id),
+      by = "species_id"
+    ) %>%
+    transmute(.data$speciesgroup_id, .data$parent_id, species = FALSE) %>%
     bind_rows(
       species %>%
+        select(external_id = .data$id, parent = .data$id) %>%
+        inner_join(
+          speciesgroup2 %>%
+            select(speciesgroup_id = .data$id, .data$external_id),
+          by = "external_id"
+        ) %>%
         transmute(
-          species_group_local_id = .data$local_id,
-          species_local_id = .data$local_id
+          .data$speciesgroup_id, parent_id = as.character(.data$parent),
+          species = TRUE
         )
-    ) -> species_group_species
-  stored <- store_species_group_species(
-    species = species,
-    language = language,
-    source_species = source_species,
-    source_species_species = source_species_species,
-    datafield = datafield,
-    species_group = species_group,
-    species_group_species = species_group_species,
-    conn = result$con
-  )
-
-  rm_data(repo, "species", stage = TRUE)
-  sprintf("
-    SELECT sg.fingerprint
-    FROM species_group AS sg
-    INNER JOIN scheme AS s ON sg.scheme = s.id
-    WHERE s.fingerprint = %s",
-    dbQuoteString(result$con, scheme.id)
-  ) %>%
-    dbGetQuery(conn = result$con) %>%
+    ) %>%
+    mutate(
+      speciesgroup_id = factor(.data$speciesgroup_id),
+      parent_id = factor(.data$parent_id)
+    ) %>%
     write_vc(
-      file = "species/species_group",
-      root = repo,
-      sorting = "fingerprint",
-      stage = TRUE
-    ) -> sg_hash
-  sprintf("
-    SELECT sg.fingerprint AS species_group, sp.fingerprint AS species
-    FROM species_group AS sg
-    INNER JOIN scheme AS s ON sg.scheme = s.id
-    INNER JOIN species_group_species AS sgs on sg.id = sgs.species_group
-    INNER JOIN species AS sp ON sgs.species = sp.id
-    WHERE
-      s.fingerprint = %s AND
-      sgs.destroy IS NULL",
-    dbQuoteString(result$con, scheme.id)
-  ) %>%
-    dbGetQuery(conn = result$con) %>%
+      file = file.path("species", "speciesgroup_species"), root = repo,
+      sorting = c("speciesgroup_id", "parent_id"), stage = TRUE, strict = strict
+    )
+  bind_rows(speciesgroup, speciesgroup2) %>%
     write_vc(
-      file = "species/species_group_species",
-      root = repo,
-      sorting = c("species_group", "species"),
-      stage = TRUE
-    ) -> sgs_hash
- prune_meta(repo, "species", stage = TRUE)
+      file = file.path("species", "speciesgroup"), root = repo, sorting = "id",
+      stage = TRUE, strict = strict
+    )
 
-  list(
-    species = stored$species %>%
-      select("nbn_key", "fingerprint"),
-    hash = c(sg_hash, sgs_hash)
-  )
+  prune_meta(root = repo, path = "species", stage = TRUE)
+
+  return(invisible(NULL))
 }

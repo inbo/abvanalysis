@@ -4,26 +4,44 @@
 \alias{prepare_dataset}
 \title{Prepare all datasets}
 \usage{
-prepare_dataset(result, origin, repo, scheme.id, end.date = Sys.time(),
-  verbose = TRUE, push = FALSE, ...)
+prepare_dataset(
+  origin,
+  repo,
+  end_date = Sys.time(),
+  min_year = 2,
+  min_observation = 100,
+  verbose = TRUE,
+  push = FALSE,
+  strict = TRUE,
+  ...
+)
 }
 \arguments{
-\item{result}{An open ODBC connection to the results database}
+\item{origin}{`DBI` connection to the source database}
 
-\item{origin}{`dbplyr::src_dbi` connection to the source database}
+\item{repo}{a [git2rdata::repository()] object}
 
-\item{repo}{a \code{\link[git2rdata]{repository}} object}
+\item{end_date}{the latest date to import.
+Default to now.}
 
-\item{scheme.id}{the fingerprint of the scheme}
+\item{min_year}{The minimal number of different years in a square.
+Ignore squares with observations from fewer years.
+Defaults to `2`.}
 
-\item{end.date}{the latest date to import. Default to now.}
+\item{min_observation}{The minimal number of observations for a species.
+Defaults to `100`.}
 
 \item{verbose}{display the progress}
 
-\item{push}{push the changes to the repository. Defaults to `FALSE`.}
+\item{push}{push the changes to the repository.
+Defaults to `FALSE`.}
 
-\item{...}{arguments passed to \code{\link[git2rdata]{commit}} and
-\code{\link[git2rdata]{push}}.}
+\item{strict}{What to do when the metadata changes. \code{strict = FALSE}
+overwrites the data and the metadata with a warning listing the changes,
+\code{strict = TRUE} returns an error and leaves the data and metadata as is.
+Defaults to \code{TRUE}.}
+
+\item{...}{arguments passed to [git2rdata::commit()] and [git2rdata::push()].}
 }
 \description{
 Prepare all datasets and store the version into a git repository

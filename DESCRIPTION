@@ -18,6 +18,7 @@ LazyData: true
 Imports:
     assertthat,
     DBI,
+    digest,
     dplyr,
     git2rdata (>= 0.2.0),
     methods,

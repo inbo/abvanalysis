@@ -4,18 +4,20 @@
 \alias{prepare_dataset_location}
 \title{import and store location metadata}
 \usage{
-prepare_dataset_location(origin, result, repo, scheme.id, end.date)
+prepare_dataset_location(origin, repo, end_date, strict = TRUE)
 }
 \arguments{
-\item{origin}{`dbplyr::src_dbi` connection to the source database}
+\item{origin}{`DBI` connection to the source database}
 
-\item{result}{An open ODBC connection to the results database}
+\item{repo}{a [git2rdata::repository()] object}
 
-\item{repo}{a \code{\link[git2rdata]{repository}} object}
+\item{end_date}{the latest date to import.
+Default to now.}
 
-\item{scheme.id}{the fingerprint of the scheme}
-
-\item{end.date}{the latest date to import. Default to now.}
+\item{strict}{What to do when the metadata changes. \code{strict = FALSE}
+overwrites the data and the metadata with a warning listing the changes,
+\code{strict = TRUE} returns an error and leaves the data and metadata as is.
+Defaults to \code{TRUE}.}
 }
 \description{
 import and store location metadata
