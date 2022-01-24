@@ -4,8 +4,13 @@
 \alias{get_linear_lincomb}
 \title{Calculate the matrix for linear combinations of strata}
 \usage{
-get_linear_lincomb(dataset, time.var, stratum.var = "stratum",
-  stratum_weights, formula)
+get_linear_lincomb(
+  dataset,
+  time.var,
+  stratum.var = "stratum",
+  stratum_weights,
+  formula
+)
 }
 \arguments{
 \item{dataset}{the raw dataset}

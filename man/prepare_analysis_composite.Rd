@@ -4,8 +4,16 @@
 \alias{prepare_analysis_composite}
 \title{Prepare the analysis files for the composite indices}
 \usage{
-prepare_analysis_composite(frequency, type, species_group, location_group,
-  models, base, project, overwrite = FALSE)
+prepare_analysis_composite(
+  frequency,
+  type,
+  species_group,
+  location_group,
+  models,
+  base,
+  project,
+  overwrite = FALSE
+)
 }
 \arguments{
 \item{frequency}{a indicator of the frequency of the analysis}

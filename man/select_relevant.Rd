@@ -4,9 +4,16 @@
 \alias{select_relevant}
 \title{Select the relevant observation of a species}
 \usage{
-select_relevant(observation, species, datafield, repo,
-  min.observation = 100, min.stratum = 3, min.cycle = 2,
-  proportion = 0.15)
+select_relevant(
+  observation,
+  species,
+  datafield,
+  repo,
+  min.observation = 100,
+  min.stratum = 3,
+  min.cycle = 2,
+  proportion = 0.15
+)
 }
 \arguments{
 \item{observation}{The dataframe with the visits and location group.}
@@ -16,7 +23,7 @@ select_relevant(observation, species, datafield, repo,
 \item{datafield}{A named vector with the datafield id for `"sample"` and
 `"observation"`.}
 
-\item{repo}{a \code{\link[git2rdata]{repository}} object}
+\item{repo}{a [git2rdata::repository()] object}
 
 \item{min.observation}{The required minimum number of occassion where the
 present was observed.

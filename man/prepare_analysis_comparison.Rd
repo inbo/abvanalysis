@@ -4,8 +4,15 @@
 \alias{prepare_analysis_comparison}
 \title{Prepare comparison among models}
 \usage{
-prepare_analysis_comparison(frequency, species_group, location_group,
-  models, base, project, overwrite = FALSE)
+prepare_analysis_comparison(
+  frequency,
+  species_group,
+  location_group,
+  models,
+  base,
+  project,
+  overwrite = FALSE
+)
 }
 \arguments{
 \item{frequency}{a indicator of the frequency of the analysis}

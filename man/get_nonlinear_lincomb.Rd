@@ -4,8 +4,13 @@
 \alias{get_nonlinear_lincomb}
 \title{Calculate the matrix for linear combinations of strata}
 \usage{
-get_nonlinear_lincomb(dataset, stratum_weights, time.var, label.var,
-  stratum.var = "stratum")
+get_nonlinear_lincomb(
+  dataset,
+  stratum_weights,
+  time.var,
+  label.var,
+  stratum.var = "stratum"
+)
 }
 \arguments{
 \item{dataset}{the raw dataset}

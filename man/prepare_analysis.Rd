@@ -4,14 +4,23 @@
 \alias{prepare_analysis}
 \title{Prepare all datasets and a to do list of models}
 \usage{
-prepare_analysis(repo, base, project, overwrite = FALSE,
-  min.observation = 100, min.stratum = 3, min.cycle = 2,
-  proportion = 0.15, docker = "inbobmk/rn2k:0.6",
+prepare_analysis(
+  repo,
+  base,
+  project,
+  overwrite = FALSE,
+  min.observation = 100,
+  min.stratum = 3,
+  min.cycle = 2,
+  proportion = 0.15,
+  docker = "inbobmk/rn2k:0.6",
   dependencies = c("inbo/n2khelper@v0.4.3", "inbo/n2kanalysis@v0.2.9",
-  "inbo/n2kupdate@v0.1.1"), volume)
+    "inbo/n2kupdate@v0.1.1"),
+  volume
+)
 }
 \arguments{
-\item{repo}{a \code{\link[git2rdata]{repository}} object}
+\item{repo}{a [git2rdata::repository()] object}
 
 \item{base}{The base location to store the model.}
 
