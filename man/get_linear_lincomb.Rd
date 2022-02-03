@@ -6,18 +6,14 @@
 \usage{
 get_linear_lincomb(
   dataset,
-  time.var,
-  stratum.var = "stratum",
+  time_var,
+  stratum_var = "stratum",
   stratum_weights,
   formula
 )
 }
 \arguments{
 \item{dataset}{the raw dataset}
-
-\item{time.var}{the name of the time variable}
-
-\item{stratum.var}{the name of the stratum variable}
 
 \item{stratum_weights}{a dataframe with stratum weights}
 

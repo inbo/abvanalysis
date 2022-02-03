@@ -7,11 +7,10 @@
 select_relevant(
   observation,
   species,
-  datafield,
   repo,
-  min.observation = 100,
-  min.stratum = 3,
-  min.cycle = 2,
+  min_observation = 100,
+  min_stratum = 3,
+  min_cycle = 2,
   proportion = 0.15
 )
 }
@@ -20,22 +19,14 @@ select_relevant(
 
 \item{species}{The fingerprint of the species.}
 
-\item{datafield}{A named vector with the datafield id for `"sample"` and
-`"observation"`.}
-
 \item{repo}{a [git2rdata::repository()] object}
 
-\item{min.observation}{The required minimum number of occassion where the
-present was observed.
+\item{min_observation}{The minimal number of observations for a species.
 Defaults to `100`.}
 
-\item{min.stratum}{The required minimum number of relevant locations per
+\item{min_stratum}{The required minimum number of relevant locations per
 stratum.
 Defaults to `3`.}
-
-\item{min.cycle}{The required minimum number of cycles in which the species
-was present at a location.
-Defaults to `2`.}
 
 \item{proportion}{Minimum proportion of the least important period.
 Defaults to `0.15`.}

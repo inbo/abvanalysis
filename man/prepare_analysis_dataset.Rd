@@ -5,26 +5,35 @@
 \title{Create the analysis dataset based on the available raw data}
 \usage{
 prepare_analysis_dataset(
-  species_group,
-  location_group,
-  metadata,
+  scheme_id,
+  species_group_id,
+  species,
+  location_group_id,
+  seed = 20070315,
   observation,
   repo,
   base,
   project,
   overwrite = FALSE,
-  min.observation = 100,
-  min.stratum = 3,
-  min.cycle = 2,
-  proportion = 0.15
+  min_observation = 100,
+  min_stratum = 3,
+  min_cycle = 2,
+  proportion = 0.15,
+  verbose = TRUE,
+  family
 )
 }
 \arguments{
-\item{species_group}{the species_group ID}
+\item{scheme_id}{A single integer holding the id of the scheme.}
 
-\item{location_group}{the location_group ID}
+\item{species_group_id}{the species_group ID}
 
-\item{metadata}{a dataframe with the metadata of a single import}
+\item{species}{The fingerprint of the species.}
+
+\item{location_group_id}{the location_group ID}
+
+\item{seed}{A single integer used as a seed for all calculations.
+A random seed will be inserted when missing.}
 
 \item{observation}{The dataframe with the visits and location group.}
 
@@ -37,24 +46,21 @@ prepare_analysis_dataset(
 \item{overwrite}{Should an existing object be overwritten?
 Defaults to TRUE.}
 
-\item{min.observation}{The required minimum number of occassion where the
-present was observed.
+\item{min_observation}{The minimal number of observations for a species.
 Defaults to `100`.}
 
-\item{min.stratum}{The required minimum number of relevant locations per
+\item{min_stratum}{The required minimum number of relevant locations per
 stratum.
 Defaults to `3`.}
 
-\item{min.cycle}{The required minimum number of cycles in which the species
-was present at a location.
-Defaults to `2`.}
-
 \item{proportion}{Minimum proportion of the least important period.
 Defaults to `0.15`.}
+
+\item{verbose}{display the progress}
 }
 \value{
 A data.frame with the species id number of rows in the analysis
-   dataset, number of precenses in the analysis datset and SHA-1 of the
+   dataset, number of presences in the analysis dataset and SHA-1 of the
    analysis dataset or NULL if not enough data.
 }
 \description{

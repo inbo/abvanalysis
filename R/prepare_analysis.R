@@ -4,344 +4,172 @@
 #' @inheritParams n2kanalysis::store_model
 #' @param docker The docker image to use during model fit.
 #' @param dependencies A vector of R packages as understood by the `repo`
-#' argument of \code{\link[remotes]{install_github}}.
+#' argument of [remotes::install_github()].
 #' @param volume The argument passed to the '-v' of docker.
 #' Only used when `base` is a local file system.
 #' @export
-#' @importFrom git2rdata read_vc
-#' @importFrom dplyr %>% semi_join filter inner_join rename add_count ungroup anti_join
-#' @importFrom tidyr complete
-#' @importFrom n2kanalysis n2k_manifest store_manifest store_manifest_yaml
+#' @importFrom digest sha1
+#' @importFrom dplyr %>% anti_join arrange bind_rows distinct filter inner_join
+#' left_join mutate pull select transmute
+#' @importFrom git2rdata verify_vc
+#' @importFrom n2kanalysis display get_file_fingerprint n2k_manifest
+#' store_manifest_yaml
+#' @importFrom purrr map map_chr pmap_dfr
+#' @importFrom rlang .data
+#' @importFrom tidyr complete nest replace_na unnest
 prepare_analysis <- function(
-  repo, base, project, overwrite = FALSE,
-  min.observation = 100, min.stratum = 3, min.cycle = 2, proportion = 0.15,
-  docker = "inbobmk/rn2k:0.6", dependencies = c(
+  repo, base, project, overwrite = FALSE, seed = 20070315, verbose = TRUE,
+  min_observation = 100, min_stratum = 3, min_cycle = 2, proportion = 0.15,
+  scheme_id = "ABV", volume,
+  docker = "inbobmk/rn2k:0.7", dependencies = c(
     "inbo/n2khelper@v0.4.3", "inbo/n2kanalysis@v0.2.9",
     "inbo/n2kupdate@v0.1.1"
-  ),
-  volume
-){
-  message("Read data from repository")
-  flush.console()
+  )
+) {
+  display(verbose, "Read data from repository")
 
-  raw_metadata <- read_vc(file = "metadata/metadata", root = repo)
-  if (nrow(raw_metadata) == 0) {
-    warning("Nothing to do")
-    return(invisible(NULL))
-  }
-  assert_that(
-    has_name(raw_metadata, "file_fingerprint"),
-    msg = "no 'file_fingerprint' in data 'metadata/metadata'"
+  raw_visit <- verify_vc(
+    file = file.path("observation", "visit"), root = repo,
+    variables = c("id", "year", "period", "point_id", "datafield_id")
   )
-  assert_that(
-    has_name(raw_metadata, "scheme"),
-    msg = "no 'scheme' in data 'metadata/metadata'"
+  raw_point <- verify_vc(
+    file = file.path("location", "point"), root = repo,
+    variables = c("id", "description", "square_id")
   )
-  assert_that(
-    has_name(raw_metadata, "result_datasource"),
-    msg = "no 'result_datasource' in data 'metadata/metadata'"
+  raw_square <- verify_vc(
+    file = file.path("location", "square"), root = repo,
+    variables = c("id", "description", "stratum_id")
   )
-  assert_that(
-    has_name(raw_metadata, "species_group"),
-    msg = "no 'species_group' in data 'metadata/metadata'"
+  raw_stratum <- verify_vc(
+    file = file.path("location", "stratum"), root = repo,
+    variables = c("id", "description", "n")
   )
-  assert_that(
-    has_name(raw_metadata, "location_group"),
-    msg = "no 'location_group in data 'metadata/metadata'"
+  raw_speciesgroup <- verify_vc(
+    file = file.path("species", "speciesgroup"), root = repo,
+    variables = c("id", "description")
   )
-  assert_that(
-    has_name(raw_metadata, "first_imported_year"),
-    msg = "no 'first_imported_year' in data 'metadata/metadata'"
+  raw_speciesgroup_species <- verify_vc(
+    file = file.path("species", "speciesgroup_species"), root = repo,
+    variables = c("speciesgroup_id", "parent_id", "species")
   )
-  assert_that(
-    has_name(raw_metadata, "last_imported_year"),
-    msg = "no 'last_imported_year' in data 'metadata/metadata'"
-  )
-  assert_that(
-    has_name(raw_metadata, "seed"),
-    msg = "no 'seed' in data 'metadata/metadata'"
-  )
-  assert_that(
-    has_name(raw_metadata, "analysis_date"),
-    msg = "no 'analysis_date' in data 'metadata/metadata'"
+  raw_distribution <- verify_vc(
+    file = file.path("distribution", "distribution"), root = repo,
+    variables = c("species_id", "family")
   )
 
-  raw_l <- read_vc(file = "location/location", root = repo)
-  assert_that(
-    has_name(raw_l, "location"),
-    msg = "no 'location' in data 'location/location'"
-  )
-  assert_that(
-    has_name(raw_l, "parent"),
-    msg = "no 'parent' in data 'location/location'"
-  )
+  display(verbose, "Data wrangling")
 
-  locationgrouplocation <- read_vc(
-    file = "location/location_group_location", root = repo
-  )
-  assert_that(
-    has_name(locationgrouplocation, "location_group"),
-    msg = "no 'location_group' in data 'location/location_group_location'"
-  )
-  assert_that(
-    has_name(locationgrouplocation, "location"),
-    msg = "no 'location' in data 'location/location_group_location'"
-  )
-
-  strata <- read_vc(file = "location/strata", root = repo)
-  assert_that(
-    has_name(strata, "fingerprint"),
-    msg = "no 'fingerprint' in data 'location/strata'"
-  )
-  assert_that(
-    has_name(strata, "n"),
-    msg = "no 'n' in data 'location/strata'"
-  )
-
-  raw_visit <- read_vc(file = "observation/visit", root = repo)
-  assert_that(
-    has_name(raw_visit, "sample_id"),
-    msg = "no 'sample_id' in data 'observation/visit'"
-  )
-  assert_that(
-    has_name(raw_visit, "location"),
-    msg = "no 'location' in data 'observation/visit'"
-  )
-  assert_that(
-    has_name(raw_visit, "sublocation"),
-    msg = "no 'sublocation' in data 'observation/visit'"
-  )
-  assert_that(
-    has_name(raw_visit, "year"),
-    msg = "no 'year' in data 'observation/visit'"
-  )
-  assert_that(
-    has_name(raw_visit, "period"),
-    msg = "no 'period' in data 'observation/visit'"
-  )
-
-  raw_sgs <- read_vc(file = "species/species_group_species", root = repo)
-  assert_that(
-    has_name(raw_sgs, "species_group"),
-    msg = "no 'species_group' in data 'species/species_group_species'"
-  )
-  assert_that(
-    has_name(raw_sgs, "species"),
-    msg = "no 'species' in data 'species/species_group_species'"
-  )
-
-  raw_distribution <- read_vc(file = "distribution/distribution", root = repo)
-  assert_that(
-    has_name(raw_distribution, "species_group"),
-    msg = "no 'species_group' in data 'distribution/distribution'"
-  )
-  assert_that(
-    has_name(raw_distribution, "family"),
-    msg = "no 'family' in data 'distribution/distribution'"
-  )
-
-
-  message("Data wrangling")
-  flush.console()
-
-  raw_l %>%
-    semi_join(
-      raw_l %>%
-        filter(.data$parent == ""),
-      by = c("parent" = "location")
-    ) %>%
-    group_by(.data$parent) %>%
-    add_count() %>%
-    ungroup() %>%
-    rename(stratum = "parent", n_sample = "n") %>%
-    inner_join(
-      strata %>%
-        rename(n_stratum = "n"),
-      by = c("stratum" = "fingerprint")
-    ) %>%
-    inner_join(
-      raw_l %>%
-        rename(sublocation = "location"),
-      by = c("location" = "parent")
-    ) %>%
-    inner_join(raw_visit, by = c("location", "sublocation")) -> observation
-
-  message("Prepare analysis per species")
-  flush.console()
-  raw_metadata %>%
-    inner_join(raw_sgs, by = "species_group") -> base_analysis
-  raw_distribution %>%
-    mutate(family = as.character(.data$family)) %>%
-    complete(
-      species_group = base_analysis$species_group,
-      fill = list(family = "poisson")
-    ) %>%
-    inner_join(x = base_analysis, by = "species_group") -> base_analysis
-  base_analysis %>%
-    group_by(.data$species_group, .data$location_group) %>%
-    arrange(.data$location_group, .data$species_group) %>%
-    nest(
-      metadata = c(
-        "scheme", "result_datasource", "file_fingerprint",
-        "first_imported_year", "last_imported_year", "analysis_date", "seed",
-        "sample_df", "observation_df", "autocomplete_df", "species", "family"
-      )
-    ) -> base_nested
-  base_nested$stored <- lapply(
-    seq_along(base_nested$species_group),
-    function(i) {
-      prepare_analysis_dataset(
-        species_group = base_nested$species_group[i],
-        location_group = base_nested$location_group[i],
-        metadata = base_nested$metadata[[i]],
-        observation = observation,
-        repo = repo,
-        base = base,
-        project = project,
-        overwrite = overwrite,
-        min.observation = min.observation,
-        min.stratum = min.stratum,
-        min.cycle = min.cycle,
-        proportion = proportion
-      )
-    }
-  )
-  base_nested %>%
-    select(-"metadata") %>%
-    unnest(cols = "stored") %>%
-    inner_join(
-      base_analysis %>%
-        select(
-          "species_group", "location_group", "scheme", "result_datasource",
-          "seed", "first_imported_year", "last_imported_year", "analysis_date"
-        ),
-      by = c("species_group", "location_group")
-    ) -> base_analysis
-
-  message("Prepare model comparison")
-  flush.console()
-  base_analysis %>%
-    nest(
-      data = c(
-        "type", "fingerprint", "status", "status_fingerprint", "scheme", "seed",
-        "result_datasource", "first_imported_year", "last_imported_year",
-        "analysis_date"
-      )
-    ) %>%
-    mutate(
-      stored = pmap(
-        list(
-          frequency = .data$frequency,
-          species_group = .data$species_group,
-          location_group = .data$location_group,
-          models = .data$data
-        ),
-        prepare_analysis_comparison,
-        base = base,
-        project = project,
-        overwrite = overwrite
-      )
-    ) -> comparison
-
-  message("\nPrepare Composite indices")
-  flush.console()
-  raw_sgs %>%
-    anti_join(raw_metadata, by = "species_group") %>%
-    inner_join(
-      raw_sgs %>%
-        rename(parent = "species_group"),
-      by = "species"
-    ) %>%
-    select(-"species") -> composite_sg
-  composite_sg %>%
-    inner_join(base_analysis, by = c("parent" = "species_group")) %>%
-    nest(
-      data = c("fingerprint", "status", "status_fingerprint", "scheme", "seed",
-      "result_datasource", "first_imported_year", "last_imported_year",
-      "analysis_date", "parent", "analysis")
-    ) %>%
-    mutate(
-      stored = pmap(
-        list(
-          frequency = .data$frequency,
-          type = .data$type,
-          species_group = .data$species_group,
-          location_group = .data$location_group,
-          models = .data$data
-        ),
-        prepare_analysis_composite,
-        base = base,
-        project = project,
-        overwrite = overwrite
-      )
-    ) -> composite
-
-  message("Prepare manifests")
-  flush.console()
-  comparison %>%
+  raw_square %>%
     transmute(
-      .data$frequency,
-      Fingerprint = map_chr(.data$stored, "fingerprint"),
-      Parent = map(.data$data, select, Parent = "fingerprint")
+      square_id = .data$id, .data$stratum_id, square = factor(.data$description)
     ) %>%
-    unnest(cols = "Parent") -> meta_comparison
-  meta_comparison %>%
-    select(-"Fingerprint", Fingerprint = "Parent") %>%
-    bind_rows(meta_comparison) %>%
-    nest(data = c("Fingerprint", "Parent")) %>%
-    mutate(
-      manifest = map(.data$data, n2k_manifest)
-    ) -> manifest_comparison
+    inner_join(
+      raw_stratum %>%
+        transmute(
+          stratum_id = .data$id, stratum = factor(.data$description),
+          .data$n
+        ),
+      by = "stratum_id"
+    ) %>%
+    inner_join(
+      raw_point %>%
+        transmute(
+          point_id = .data$id, point = factor(.data$description),
+          .data$square_id
+        ),
+      by = "square_id"
+    ) %>%
+    inner_join(raw_visit, by = "point_id") %>%
+    select(
+      -.data$square_id, -.data$stratum_id, -.data$point_id, sample_id = .data$id
+    ) -> observation
+  raw_speciesgroup_species %>%
+    filter(.data$species) %>%
+    left_join(raw_distribution, by = c("parent_id" = "species_id")) %>%
+    inner_join(raw_speciesgroup, by = c("speciesgroup_id" = "id")) %>%
+    transmute(
+      species_group_id = .data$speciesgroup_id,
+      species = sprintf("%05i", .data$external_id),
+      family = as.character(.data$family) %>%
+        replace_na("poisson"),
+    ) %>%
+    arrange(.data$species_group_id) -> speciesgroup
+
+  display(verbose, "Prepare analysis per species")
+
+  pmap_dfr(
+    as.list(speciesgroup), prepare_analysis_dataset, scheme_id = scheme_id,
+    location_group_id = "Vlaanderen", seed = seed, observation = observation,
+    repo = repo, base = base, project = project, overwrite = overwrite,
+    min_observation = min_observation, min_stratum = min_stratum,
+    min_cycle = min_cycle, proportion = proportion, verbose = verbose
+  ) -> base_analysis
+
+  display(verbose, "Prepare model composite")
+
+  base_analysis %>%
+    inner_join(raw_speciesgroup_species, by = "parent_id") %>%
+    select(
+      -.data$parent_id, -.data$species, species_group_id = .data$speciesgroup_id
+    ) %>%
+    mutate(species_group_id = as.character(.data$species_group_id)) %>%
+    nest(
+      models = c(
+        .data$fingerprint, .data$status_fingerprint, .data$status,
+        .data$result_datasource, .data$first_imported_year,
+        .data$last_imported_year, .data$analysis_date
+      )
+    ) %>%
+    arrange(.data$species_group_id, .data$frequency, .data$type) -> composite
+  pmap_dfr(
+    as.list(composite), prepare_analysis_composite, scheme_id = scheme_id,
+    location_group_id = "Vlaanderen", seed = seed, verbose = verbose,
+    base = base, project = project, overwrite = overwrite
+  ) %>%
+    bind_cols(composite) -> composite
+
+  display(verbose, "Prepare manifests")
+
   composite %>%
     transmute(
-      .data$location_group,
-      .data$species_group,
-      .data$frequency,
-      .data$type,
-      Fingerprint = map_chr(.data$stored, "fingerprint"),
-      data = map(.data$data, select, Parent = "fingerprint")
+      location_group = "Vlaanderen", species_group = .data$species_group_id,
+      .data$frequency, .data$type, .data$fingerprint,
+      data = map(.data$models, select, parent = "fingerprint")
     ) %>%
     unnest(cols = "data") -> meta_composite
   meta_composite %>%
-    select(-"Fingerprint", Fingerprint = "Parent") %>%
+    select(-.data$fingerprint, fingerprint = "parent") %>%
     bind_rows(meta_composite) %>%
-    nest(data = c("Fingerprint", "Parent")) %>%
-    mutate(
-      manifest = map(.data$data, n2k_manifest)
-    ) -> manifest_composite
-  c(manifest_comparison$manifest, manifest_composite$manifest) %>%
+    nest(data = c("fingerprint", "parent")) %>%
+    mutate(manifest = map(.data$data, n2k_manifest)) -> manifest_composite
+
+  base_analysis %>%
+    anti_join(meta_composite, by = c("fingerprint" = "parent")) %>%
+    transmute(.data$parent_id, .data$fingerprint, parent = NA_character_) %>%
+    nest(data = c("fingerprint", "parent")) %>%
+    pull(.data$data) %>%
+    map(n2k_manifest) %>%
+    c(manifest_composite$manifest) %>%
     map(
-      store_manifest_yaml,
-      base = base, project = project, docker = docker,
+      store_manifest_yaml, base = base, project = project, docker = docker,
       dependencies = dependencies
     ) -> stored
-  manifest_comparison %>%
-    ungroup() %>%
-    transmute(
-      manifest = map(.data$manifest, slot, "Manifest")
-    ) %>%
-    bind_rows(
-      manifest_composite %>%
-        transmute(
-          manifest = map(.data$manifest, slot, "Manifest")
-        )
-    ) %>%
-    unnest(cols = .data$manifest) %>%
-    mutate(parent = !is.na(.data$Parent)) %>%
-    distinct(.data$Fingerprint, .data$parent) %>%
-    arrange(.data$parent, .data$Fingerprint) %>%
-    pull(.data$Fingerprint) -> models
 
-  c(manifest_comparison$manifest, manifest_composite$manifest) %>%
-    map(get_file_fingerprint) -> manifests
+  manifest_composite %>%
+    transmute(manifest = map(.data$manifest, slot, "Manifest")) %>%
+    unnest(cols = .data$manifest) %>%
+    mutate(parent = !is.na(.data$parent)) %>%
+    distinct(.data$fingerprint, .data$parent) %>%
+    arrange(.data$parent, .data$fingerprint) %>%
+    pull(.data$fingerprint) -> models
+
+  manifests <- map_chr(manifest_composite$manifest, get_file_fingerprint)
 
   args <- ", dependencies = FALSE, upgrade = \\\"never\\\", keep_source = FALSE"
-  docker_hash <- digest::sha1(manifests)
+  docker_hash <- sha1(manifests)
   sprintf(
-    "Rscript -e 'remotes::install_github(\\\"%s\\\"%s)'",
-    dependencies, args
+    "Rscript -e 'remotes::install_github(\\\"%s\\\"%s)'", dependencies, args
   ) -> deps
-
   sprintf(
     "#!/bin/bash
 echo \"FROM %s

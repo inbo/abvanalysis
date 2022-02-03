@@ -1,52 +1,100 @@
 #' Calculate the matrix for linear combinations of strata
 #' @param dataset the raw dataset
 #' @param stratum_weights a dataframe with stratum weights
-#' @param time.var the name of the time variable
-#' @param stratum.var the name of the stratum variable
-#' @param label.var an optional variable used to label the time variable, `time.var` will be used when missing
 #' @export
-#' @importFrom assertthat assert_that is.string has_name
-#' @importFrom dplyr %>%
+#' @importFrom assertthat assert_that has_name is.string
+#' @importFrom dplyr %>% arrange distinct filter inner_join mutate row_number select transmute
+#' @importFrom purrr map
+#' @importFrom rlang .data !!
+#' @importFrom stats setNames
+#' @importFrom tidyr  expand_grid pivot_longer pivot_wider
 get_nonlinear_lincomb <- function(
-  dataset,
-  stratum_weights,
-  time.var,
-  label.var,
-  stratum.var = "stratum"
-){
-  assert_that(is.string(time.var))
-  assert_that(is.string(stratum.var))
-  if (missing(label.var)) {
-    label.var <- time.var
-  } else {
-    assert_that(is.string(label.var))
-  }
+    dataset, stratum_weights, time_var, label_var, stratum_var
+) {
+  assert_that(is.string(time_var), is.string(stratum_var), is.string(label_var))
   assert_that(
-    inherits(dataset, "data.frame"),
-    has_name(dataset, time.var),
-    has_name(dataset, label.var)
+    inherits(dataset, "data.frame"), has_name(dataset, time_var),
+    has_name(dataset, label_var), has_name(dataset, stratum_var)
   )
   assert_that(
     inherits(stratum_weights, "data.frame"),
-    has_name(stratum_weights, "weight"),
-    has_name(stratum_weights, stratum.var)
+    has_name(stratum_weights, "weight"), has_name(stratum_weights, stratum_var)
   )
+  start <- min(dataset[[label_var]])
+  end <- max(dataset[[label_var]])
+  seq(start, end, by = ifelse(time_var == "cycle", 3, 1)) %>%
+    length() -> n_total
 
-  min(dataset[[time.var]]):max(dataset[[time.var]]) %>%
-    length() %>%
-    diag() %>%
-    outer(stratum_weights$weight) %>%
-    apply(3, as.data.frame) %>%
-    unlist(recursive = FALSE) %>%
-    do.call(what = cbind) -> lc
-  rownames(lc) <- min(dataset[[label.var]]):max(dataset[[label.var]])
-  colnames(lc) <- outer(
-    min(dataset[[time.var]]):max(dataset[[time.var]]) %>%
-    sprintf(fmt = "%2$s%1$s:", time.var),
-    stratum_weights[[stratum.var]] %>%
-      sprintf(fmt = "stratum%s"),
-    FUN = "paste0"
+  dataset %>%
+    arrange(!!stratum_var, !!time_var, !!label_var) %>%
+    inner_join(stratum_weights, by = stratum_var) %>%
+    arrange(!!stratum_var, !!time_var) %>%
+    mutate(
+      id = row_number() %>%
+        sprintf(fmt = "%04i")
+    ) -> base_weights
+  base_weights %>%
+    pivot_wider(
+      id_cols = label_var, names_from = .data$id, values_from = .data$weight,
+      values_fill = 0
+    ) -> year_effect
+  dataset %>%
+    select(!!time_var, label = !!label_var) %>%
+    distinct() %>%
+    arrange(!!time_var) -> time_steps
+  strata <- sort(unique(dataset[[stratum_var]]))
+  expand_grid(
+    from = time_steps[[time_var]], to = time_steps[[time_var]],
+    stratum = strata, to_s = strata
   ) %>%
-  as.vector()
-  return(lc)
+    filter(.data$from < .data$to, .data$stratum == .data$to_s) %>%
+    select(-.data$to_s) %>%
+    inner_join(time_steps, by = c(from = time_var)) %>%
+    mutate(rowname = paste0("index_", .data$label, "_")) %>%
+    select(-.data$label) %>%
+    inner_join(time_steps, by = c(to = time_var)) %>%
+    mutate(rowname = paste0(.data$rowname, .data$label)) %>%
+    select(-.data$label) %>%
+    pivot_longer(
+      c("from", "to"), names_to = "direction", values_to = time_var
+    ) %>%
+    inner_join(stratum_weights, by = stratum_var) %>%
+    transmute(
+      id = interaction(.data[[time_var]], .data[[stratum_var]]) %>%
+        as.integer() %>%
+        sprintf(fmt = "%04i"),
+      .data$rowname,
+      weight = ifelse(.data$direction == "to", 1, -1) * .data$weight
+    ) %>%
+    arrange(.data$id, .data$rowname) %>%
+    pivot_wider(
+      names_from = .data$id, values_from = .data$weight, values_fill = 0
+    ) -> indices
+  rbind(
+    moving_trend(
+      n_total = n_total, start = start,
+      n_window = ifelse(time_var == "cycle", 2, 6)
+    ),
+    moving_trend(
+      n_total = n_total, start = start,
+      n_window = ifelse(time_var == "cycle", 4, 12)
+    ),
+    moving_trend(n_total = n_total, n_window = n_total, start = start)
+  ) %>%
+    map(.x = stratum_weights$weight, .f = `*`) %>%
+    do.call(what = "cbind") -> trend_coef
+  select(year_effect, -.data$label) %>%
+    bind_rows(select(indices, -.data$rowname)) %>%
+    as.matrix() %>%
+    `row.names<-`(
+      c(sprintf("estimate_%i", year_effect$label), indices$rowname)
+    ) %>%
+    rbind(trend_coef) %>%
+    list() %>%
+    setNames(time_var) %>%
+    c(list(
+      `(Intercept)` = c(
+        rep(1, nrow(year_effect)), rep(0, nrow(indices) + nrow(trend_coef))
+      )
+    ))
 }

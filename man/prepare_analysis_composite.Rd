@@ -7,31 +7,37 @@
 prepare_analysis_composite(
   frequency,
   type,
-  species_group,
-  location_group,
+  species_group_id,
+  location_group_id,
   models,
   base,
   project,
-  overwrite = FALSE
+  scheme_id = "ABV",
+  seed = 20070315,
+  overwrite = FALSE,
+  verbose = TRUE
 )
 }
 \arguments{
-\item{frequency}{a indicator of the frequency of the analysis}
-
 \item{type}{the model type}
 
-\item{species_group}{the species_group ID}
+\item{species_group_id}{the species_group ID}
 
-\item{location_group}{the location_group ID}
-
-\item{models}{a data.frame with the metadata of the models}
+\item{location_group_id}{the location_group ID}
 
 \item{base}{The base location to store the model.}
 
 \item{project}{Will be a relative path within the base location.}
 
+\item{scheme_id}{A single integer holding the id of the scheme.}
+
+\item{seed}{A single integer used as a seed for all calculations.
+A random seed will be inserted when missing.}
+
 \item{overwrite}{Should an existing object be overwritten?
 Defaults to TRUE.}
+
+\item{verbose}{display the progress}
 }
 \description{
 Prepare the analysis files for the composite indices

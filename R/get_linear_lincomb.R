@@ -2,59 +2,49 @@
 #' @inheritParams get_nonlinear_lincomb
 #' @param formula the formula for the trend component
 #' @export
-#' @importFrom assertthat assert_that is.string has_name
-#' @importFrom dplyr %>% select distinct inner_join bind_cols rename mutate bind_rows group_by summarise_all funs
+#' @importFrom assertthat assert_that has_name is.string
+#' @importFrom dplyr %>% across bind_cols bind_rows distinct group_by inner_join
+#' mutate rename select summarise
 #' @importFrom rlang !! :=
 #' @importFrom stats model.matrix
 get_linear_lincomb <- function(
-  dataset,
-  time.var,
-  stratum.var = "stratum",
-  stratum_weights,
-  formula
+  dataset, time_var, stratum_var = "stratum", stratum_weights, formula
 ){
-  assert_that(is.string(time.var))
-  assert_that(is.string(stratum.var))
+  assert_that(is.string(time_var), is.string(stratum_var))
   assert_that(
-    inherits(dataset, "data.frame"),
-    has_name(dataset, time.var),
-    has_name(dataset, stratum.var)
+    inherits(dataset, "data.frame"), has_name(dataset, time_var),
+    has_name(dataset, stratum_var)
   )
   assert_that(
     inherits(stratum_weights, "data.frame"),
-    has_name(stratum_weights, "weight"),
-    has_name(stratum_weights, stratum.var)
+    has_name(stratum_weights, "weight"), has_name(stratum_weights, stratum_var)
   )
 
   dataset %>%
-    select(stratum.var, time.var) %>%
+    select(!!stratum_var, !!time_var) %>%
     distinct() %>%
-    inner_join(stratum_weights, by = stratum.var) -> all.weight
-  model.matrix(object = formula, all.weight) -> mm
-  (as.data.frame(mm) * all.weight$weight) %>%
-    bind_cols(
-      all.weight[, time.var, drop = FALSE]
-    ) %>%
-    rename(ID = time.var) %>%
-    mutate(ID = sprintf("%02i", .data$ID)) %>%
+    inner_join(stratum_weights, by = stratum_var) -> all_weight
+  model.matrix(object = formula, all_weight) -> mm
+  (as.data.frame(mm) * all_weight$weight) %>%
+    mutate(ID = sprintf("%02i", all_weight[[time_var]])) %>%
     group_by(.data$ID) %>%
-    summarise_all(.funs = funs(sum)) -> mm
+    summarise(across(.fns = sum)) -> mm
   stratum_weights %>%
-    mutate(!!time.var := 1) -> trend.weight
-  mm.trend <- model.matrix(object = formula, trend.weight)
-  mm.trend <- as.data.frame(mm.trend) * trend.weight$weight
-  mm.trend[, -grep(":", colnames(mm.trend))] <- 0
-  mm.trend %>%
-    summarise_all(.funs = funs(sum)) %>%
+    mutate(!!time_var := 1) -> trend_weight
+  mm_trend <- model.matrix(object = formula, trend_weight)
+  mm_trend <- as.data.frame(mm_trend) * trend_weight$weight
+  mm_trend[, -grep(":", colnames(mm_trend))] <- 0
+  if (has_name(mm_trend, "(Intercept)")) {
+    mm_trend$`(Intercept)` <- 0
+  }
+  mm_trend %>%
+    summarise(across(.fns = sum)) %>%
     mutate(ID = "Trend") %>%
     bind_rows(mm) -> weights
+  w_names <- weights$ID
   weights %>%
     select(-"ID") %>%
-    as.list() %>%
-    lapply(
-      function(x){
-        names(x) <- weights$ID
-        x
-      }
-    )
+    as.list() -> weights
+  names(weights[[1]]) <- w_names
+  weights
 }

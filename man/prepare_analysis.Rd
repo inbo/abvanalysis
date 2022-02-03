@@ -9,14 +9,17 @@ prepare_analysis(
   base,
   project,
   overwrite = FALSE,
-  min.observation = 100,
-  min.stratum = 3,
-  min.cycle = 2,
+  seed = 20070315,
+  verbose = TRUE,
+  min_observation = 100,
+  min_stratum = 3,
+  min_cycle = 2,
   proportion = 0.15,
-  docker = "inbobmk/rn2k:0.6",
+  scheme_id = "ABV",
+  volume,
+  docker = "inbobmk/rn2k:0.7",
   dependencies = c("inbo/n2khelper@v0.4.3", "inbo/n2kanalysis@v0.2.9",
-    "inbo/n2kupdate@v0.1.1"),
-  volume
+    "inbo/n2kupdate@v0.1.1")
 )
 }
 \arguments{
@@ -29,28 +32,25 @@ prepare_analysis(
 \item{overwrite}{Should an existing object be overwritten?
 Defaults to TRUE.}
 
-\item{min.observation}{The required minimum number of occassion where the
-present was observed.
+\item{verbose}{display the progress}
+
+\item{min_observation}{The minimal number of observations for a species.
 Defaults to `100`.}
 
-\item{min.stratum}{The required minimum number of relevant locations per
+\item{min_stratum}{The required minimum number of relevant locations per
 stratum.
 Defaults to `3`.}
-
-\item{min.cycle}{The required minimum number of cycles in which the species
-was present at a location.
-Defaults to `2`.}
 
 \item{proportion}{Minimum proportion of the least important period.
 Defaults to `0.15`.}
 
+\item{volume}{The argument passed to the '-v' of docker.
+Only used when `base` is a local file system.}
+
 \item{docker}{The docker image to use during model fit.}
 
 \item{dependencies}{A vector of R packages as understood by the `repo`
-argument of \code{\link[remotes]{install_github}}.}
-
-\item{volume}{The argument passed to the '-v' of docker.
-Only used when `base` is a local file system.}
+argument of [remotes::install_github()].}
 }
 \description{
 Prepare all datasets and a to do list of models

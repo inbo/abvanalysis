@@ -11,28 +11,27 @@
 #' @importFrom rlang .data
 #' @importFrom tibble rownames_to_column
 prepare_analysis_composite <- function(
-  frequency, type, species_group, location_group, models,
-  base, project, overwrite = FALSE
+  frequency, type, species_group_id, location_group_id, models, base, project,
+  scheme_id = "ABV", seed = 20070315, overwrite = FALSE, verbose = TRUE
 ){
-  assert_that(is.string(frequency))
-  assert_that(is.string(type))
-  assert_that(is.string(species_group))
-  assert_that(is.string(location_group))
   assert_that(
-    inherits(models, "data.frame"),
-    has_name(models, "fingerprint"),
-    has_name(models, "status_fingerprint"),
-    has_name(models, "status"),
-    has_name(models, "seed"),
-    has_name(models, "scheme"),
-    has_name(models, "first_imported_year"),
-    has_name(models, "last_imported_year"),
-    has_name(models, "analysis_date")
+    is.string(frequency), is.string(type), is.string(species_group_id),
+    is.string(location_group_id)
   )
-  message(location_group, " ", species_group, " ", frequency, " ", type)
-  flush.console()
+  assert_that(
+    inherits(models, "data.frame"), has_name(models, "fingerprint"),
+    has_name(models, "status_fingerprint"), has_name(models, "status"),
+    has_name(models, "first_imported_year"),
+    has_name(models, "last_imported_year"), has_name(models, "analysis_date")
+  )
+  display(
+    verbose = verbose,
+    message = c(
+      location_group_id, " ", species_group_id, " ", frequency, " ", type
+    )
+  )
 
-  extractor <- function(model){
+  extractor <- function(model) {
     stopifnot(require(tibble, quietly = TRUE))
     stopifnot(require(dplyr, quietly = TRUE))
     stopifnot(require(INLA, quietly = TRUE))
@@ -48,24 +47,19 @@ prepare_analysis_composite <- function(
   }
 
   n2k_composite(
-    result.datasource.id = models$result_datasource[1],
-    parent.status = models %>%
+    result_datasource_id = models$result_datasource[1],
+    parent_status = models %>%
       select(
-        ParentAnalysis = "fingerprint",
-        ParentStatusFingerprint = "status_fingerprint",
-        ParentStatus = "status"
+        parent_analysis = "fingerprint", parent_status = "status",
+        parentstatus_fingerprint = "status_fingerprint"
       ),
-    seed = models$seed[1],
-    scheme.id = models$scheme[1],
-    species.group.id = species_group,
-    location.group.id = location_group,
-    first.imported.year = models$first_imported_year[1],
-    last.imported.year = models$last_imported_year[1],
-    model.type = paste("composite index:", frequency, type),
-    formula = paste("~", frequency),
-    extractor = extractor,
-    analysis.date = max(models$analysis_date),
-    status = "waiting"
+    seed = seed, scheme_id = scheme_id, species_group_id = species_group_id,
+    location_group_id = location_group_id,
+    first_imported_year = models$first_imported_year[1],
+    last_imported_year = models$last_imported_year[1],
+    model_type = paste("composite index:", frequency, type),
+    formula = paste("~", frequency), extractor = extractor,
+    analysis_date = max(models$analysis_date), status = "waiting"
   ) %>%
     storage(base = base, project = project, overwrite = overwrite)
 }
