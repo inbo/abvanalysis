@@ -27,7 +27,7 @@ species %>%
       )
     ),
     trend = factor(
-      trend, 
+      trend,
       levels = c("L", "L?", "NL")
     )
   ) -> trend_type
@@ -38,16 +38,16 @@ species %>%
     indeling = ifelse(
       lcl > 0,
       ifelse(
-        lcl > threshold, 
-        "++", 
+        lcl > threshold,
+        "++",
         ifelse(ucl < threshold, "+0", "+")
       ),
       ifelse(
         ucl < 0,
         ifelse(
-          ucl < -threshold, 
-          "--", 
-          ifelse(lcl >- threshold, "-0", "-")
+          ucl < -threshold,
+          "--",
+          ifelse(lcl > -threshold, "-0", "-")
         ),
         ifelse(
           ucl < threshold,
@@ -96,7 +96,7 @@ expand.grid(
 ) %>%
   mutate(
     wijziging = exp(log(1 + trend) * jaar) - 1,
-    trend = sprintf("%i%%/jaar", 100 * trend)
+    trend = sprintf("%i%%%sjaar", 100 * trend, "/")
   ) %>%
   ggplot(aes(x = jaar, y = wijziging, colour = trend)) +
   geom_hline(yintercept = 0, linetype = 2) +
@@ -140,7 +140,7 @@ tribble(
   mutate(
     y = (ymin + ymax) / 2,
     interpretatie = factor(
-      interpretatie, 
+      interpretatie,
       levels = c("++", "+", "+≈", "≈", "-≈", "-", "--", "?+", "?", "?-")
     ),
     ruw = factor(ruw, levels = c("-", "≈", "+", "?"))
@@ -183,14 +183,14 @@ expand.grid(
       )
     ),
     interpretatie = factor(
-      interpretatie, 
+      interpretatie,
       levels = levels(interpretatie_grenzen$interpretatie)
     ),
     group = interaction(se, x, interpretatie)
   ) %>%
   inner_join(
     interpretatie_grenzen %>%
-      select(interpretatie, y, ruw), 
+      select(interpretatie, y, ruw),
     by = "interpretatie"
   ) -> tweezijdig
 groenen <- colorRampPalette(c(inbo.groen, "white"))(5)
@@ -199,31 +199,34 @@ roodgrijs <- colorRampPalette(c(inbo.grijs, inbo.rood))(4)
 groengrijs <- colorRampPalette(c(inbo.grijs, inbo.groen))(4)
 ggplot(tweezijdig, aes(ymin = ondergrens, ymax = bovengrens)) +
   geom_rect(
-    data = interpretatie_grenzen, 
+    data = interpretatie_grenzen,
     aes(xmin = ymin, xmax = ymax, fill = interpretatie)
   ) +
   geom_vline(
-    xintercept = c(1.5, 2.5, 3.5, 5.5), 
-    linetype = 4, 
+    xintercept = c(1.5, 2.5, 3.5, 5.5),
+    linetype = 4,
     size = 0.5,
     colour = vl.black
   ) +
   geom_hline(
-    yintercept = c(0, -0.05, 0.05), 
-    linetype = c(2, 3, 3), 
+    yintercept = c(0, -0.05, 0.05),
+    linetype = c(2, 3, 3),
     size = 0.5,
     colour = inbo.hoofd
   ) +
   geom_errorbar(
-    aes(x = y, group = group), 
+    aes(x = y, group = group),
     position = position_dodge(width = 1)) +
   geom_point(
-    aes(y = x, x = y, group = group), 
+    aes(y = x, x = y, group = group),
     position = position_dodge(width = 1)
   ) +
   scale_x_continuous(
-    breaks = c(1, 2, 3, 4.5, 6), 
-    labels = c("nauwkeurige\ntrend", "onnauwkeurige\ntrend", "stabiele\ntrend", "mogelijke\ntrend", "onzekere\ntrend")
+    breaks = c(1, 2, 3, 4.5, 6),
+    labels = c(
+      "nauwkeurige\ntrend", "onnauwkeurige\ntrend", "stabiele\ntrend",
+      "mogelijke\ntrend", "onzekere\ntrend"
+    )
   ) +
   scale_y_continuous(
     "wijziging",
@@ -234,7 +237,7 @@ ggplot(tweezijdig, aes(ymin = ondergrens, ymax = bovengrens)) +
     "indeling",
     values = c(
       "--" = roden[1],
-      "-" = roden[2], 
+      "-" = roden[2],
       "-≈" = roden[3],
       "≈" = inbo.lichtgrijs,
       "+≈" = groenen[3],
@@ -377,7 +380,10 @@ trends %>%
   arrange(median) %>%
   select(soort, wijziging, trend) %>%
   kable(format = "markdown")
-cat("Table: Soorten met een beperkte afname op basis van data geaggregeerd per driejarige cyclus.")
+cat(paste(
+  "Table: Soorten met een beperkte afname op basis van data geaggregeerd per",
+  "driejarige cyclus."
+))
 ```
 
 ```{r trend-cyclus-sterke-afname, results = "asis"}

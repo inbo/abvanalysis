@@ -13,8 +13,8 @@ if (interactive()) {
 composite_indices %>%
   filter(fingerprint == id, nonlinear) %>%
   transmute(
-    parameter, 
-    index = exp(mean), 
+    parameter,
+    index = exp(mean),
     se = (ucl - mean) / qnorm(0.975),
     analysis,
     status,
@@ -46,7 +46,7 @@ deze_index %>%
 ```{r {{id}}-vlaanderen-cyclus, fig.cap = paste0("Vlaamse samengestelde indices voor ", soort_naam, " op basis van data geaggregeerd per driejaarlijkse cyclus."), fig.height = 50 / 25.4}
 if (nrow(index_vlaanderen_cyclus)) {
 ggplot(
-  index_vlaanderen_cyclus, 
+  index_vlaanderen_cyclus,
   aes(x = cyclus, y = index, link_sd = se, group = analysis)
 ) +
   geom_hline(yintercept = 1, linetype = 3) +
@@ -72,7 +72,7 @@ deze_index %>%
 ```{r {{id}}-vlaanderen-jaar, fig.cap = paste0("Vlaamse samengestelde indices voor ", soort_naam, " op basis van jaarlijkse data."), fig.height = 50 / 25.4}
 if (nrow(index_vlaanderen_jaar)) {
 ggplot(
-  index_vlaanderen_jaar, 
+  index_vlaanderen_jaar,
   aes(x = jaar, y = index, link_sd = se, group = analysis)
 ) +
   geom_hline(yintercept = 1, linetype = 3) +

@@ -38,7 +38,7 @@ index_vlaanderen_jaar %>%
 
 ```{r {{id}}-vlaanderen-jaar, fig.cap = paste0("Vlaamse indices voor ", soort_naam, " op basis van jaarlijkse data. De trend is ", index_vlaanderen_jaar$trend[1], "."), fig.height = 50 / 25.4}
 ggplot(
-  index_vlaanderen_jaar, 
+  index_vlaanderen_jaar,
   aes(x = jaar, y = index, ymin = lcl, ymax = ucl, group = analysis)
 ) +
   geom_hline(yintercept = 1, linetype = 3) +
@@ -55,13 +55,13 @@ ggplot(
   ) +
   scale_y_continuous(labels = percent) +
   scale_fill_discrete(
-    "Model", 
-    breaks = c(FALSE, TRUE), 
+    "Model",
+    breaks = c(FALSE, TRUE),
     labels = c("log lineair", "niet lineair")
   ) +
   scale_colour_discrete(
-    "Model", 
-    breaks = c(FALSE, TRUE), 
+    "Model",
+    breaks = c(FALSE, TRUE),
     labels = c("log lineair", "niet lineair")
   ) +
   theme(
@@ -102,7 +102,7 @@ index_vlaanderen_cyclus %>%
 
 ```{r {{id}}-vlaanderen-cyclus, fig.cap = paste0("Vlaamse indices voor ", soort_naam, " op basis van data geaggregeerd per driejaarlijkse cyclus. De trend is ", index_vlaanderen_cyclus$trend[1], "."), fig.height = 50 / 25.4}
 ggplot(
-  index_vlaanderen_cyclus, 
+  index_vlaanderen_cyclus,
   aes(x = cyclus, y = index, ymin = lcl, ymax = ucl, group = analysis)
 ) +
   geom_hline(yintercept = 1, linetype = 3) +
@@ -119,13 +119,13 @@ ggplot(
   ) +
   scale_y_continuous(labels = percent) +
   scale_fill_discrete(
-    "Model", 
-    breaks = c(FALSE, TRUE), 
+    "Model",
+    breaks = c(FALSE, TRUE),
     labels = c("log lineair", "niet lineair")
   ) +
   scale_colour_discrete(
-    "Model", 
-    breaks = c(FALSE, TRUE), 
+    "Model",
+    breaks = c(FALSE, TRUE),
     labels = c("log lineair", "niet lineair")
   ) +
   theme(

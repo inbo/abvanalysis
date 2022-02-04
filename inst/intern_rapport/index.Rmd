@@ -1,10 +1,10 @@
 ---
 title: "Indices van de Algemene Broedvogelsmonitoring Vlaanderen (ABV)"
-author: 
-  - 
+author:
+  -
     name: "Thierry Onkelinx"
     email: "thierry.onkelinx@inbo.be"
-  - 
+  -
     name: "Glenn Vermeersch"
     email: "glenn.vermeersch@inbo.be"
 reportnr: "Hier komt de DOI van het rapport"
@@ -32,7 +32,7 @@ params:
 ```{r setup, results ='hide', echo = FALSE, message = FALSE, cache = FALSE, purl = FALSE, warning=FALSE}
 library(knitr)
 opts_chunk$set(
-  echo = FALSE, 
+  echo = FALSE,
   eval = TRUE,
   cache = FALSE,
   dpi = 300,
@@ -64,7 +64,10 @@ if (!interactive() && opts_knit$get("rmarkdown.pandoc.to") == "latex") {
   )
 }
 index_breaks <- function(x) {
-  z <- 1 - c(9/10, 4/5, 3/4, 2/3, 1/2, 1/3, 1/4, 1/5, 1/10, 1/20, 1/50, 1/100, 1/200, 0)
+  z <- 1 - c(
+    9 / 10, 4 / 5, 3 / 4, 2 / 3, 1 / 2, 1 / 3, 1 / 4, 1 / 5, 1 / 10, 1 / 20,
+    1 / 50, 1 / 100, 1 / 200, 0
+  )
   z <- log(sort(z))
   z <- z[which(z >= min(-abs(x)))[1] + -1:2]
   c(z, 0, -z)
@@ -88,7 +91,7 @@ if (file.exists("results.rds")) {
   raw_results <- readRDS("results.rds")
 } else {
   raw_results <- aws.s3::s3readRDS(
-    "abv/results/results.rds", 
+    file.path("abv", "results", "results.rds", fsep = "/"),
     bucket = "n2kmonitoring"
   )
   saveRDS(raw_results, "results.rds")

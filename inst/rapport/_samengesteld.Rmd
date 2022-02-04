@@ -21,7 +21,7 @@ deze_index %>%
   geom_line() +
   geom_blank(
     data = data.frame(
-      jaar = 2007, 
+      jaar = 2007,
       mean = grenzen,
       lcl = grenzen,
       ucl = grenzen,
@@ -48,7 +48,7 @@ deze_index %>%
   geom_line() +
   geom_blank(
     data = data.frame(
-      cyclus = "2007-2009", 
+      cyclus = "2007-2009",
       mean = grenzen,
       lcl = grenzen,
       ucl = grenzen,
@@ -67,8 +67,8 @@ deze_index %>%
   arrange(cycle) %>%
   transmute(
     model = ifelse(
-      cycle, 
-      "driejaarlijks niet-linear", 
+      cycle,
+      "driejaarlijks niet-linear",
       "jaarlijkse niet-linear"
     ),
     analyses = gsub("^([[:xdigit:]]{20})", "\\1 ", analysis),

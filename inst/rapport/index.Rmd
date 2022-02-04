@@ -34,7 +34,7 @@ params:
 ```{r results ='hide', echo = FALSE, message = FALSE, cache = FALSE, purl = FALSE}
 library(knitr)
 opts_chunk$set(
-  echo = FALSE, 
+  echo = FALSE,
   eval = TRUE,
   cache = FALSE,
   dpi = 300,
@@ -79,7 +79,9 @@ tbl(conn, "scheme") %>%
   ) %>%
   select(fingerprint, species_group = description) %>%
   collect() -> species_group
-aws <- aws.s3::get_bucket("n2kmonitoring", "abv/manifest", max = Inf)
+aws <- aws.s3::get_bucket(
+  "n2kmonitoring", file.path("abv", "manifest", fsep = "/"), max = Inf
+)
 map_chr(aws, "Key") %>%
   basename() %>%
   map(n2kanalysis::read_manifest, base = aws, project = "abv") -> manifests
@@ -96,14 +98,14 @@ tibble(
   slice(1) %>%
   select(analysis = Fingerprint, timestamp) -> recent
 raw_results <- aws.s3::s3readRDS(
-    "abv/results/results.rds", 
+    file.path("abv", "results", "results.rds", fsep = "/"),
     bucket = "n2kmonitoring"
   )
 map_dfr(raw_results, "result") %>%
   filter(stratum == "Vlaanderen") %>%
   select(-stratum) %>%
   inner_join(recent, by = "analysis") %>%
-  inner_join(x = species_group, by = c("fingerprint" = "species_group")) -> 
+  inner_join(x = species_group, by = c("fingerprint" = "species_group")) ->
   parameters
 parameters %>%
   distinct(fingerprint, model_type, analysis, timestamp) %>%
@@ -148,14 +150,14 @@ strata_description %>%
   transmute(analysis, stratum, jaar = cyear + 2006, hokken = n_location) ->
   design
 git2rdata::read_vc(
-  "location/location", 
-  root = git2r::repository("~/n2k/abv")
+  file.path("location", "location"),
+  root = git2r::repository(file.path("~", "n2k", "abv"))
 ) %>%
   inner_join(strata_description, by = c("parent" = "fingerprint")) %>%
   inner_join(
     git2rdata::read_vc(
-      "observation/visit", 
-      root = git2r::repository("~/n2k/abv")
+      file.path("observation", "visit"), 
+      root = git2r::repository(file.path("~", "n2k", "abv"))
     ),
     by = "location"
   ) %>%

@@ -77,7 +77,12 @@ visits %>%
   count(year, period, location) %>%
   count(jaar = year, periode = period, n) %>%
   spread(n, nn) %>%
-  kable(caption = "Aantal hokken per jaar en per periode (rijen) en per aantal bezochte punten (kolommen)")
+  kable(
+    caption = paste(
+      "Aantal hokken per jaar en per periode (rijen) en per aantal bezochte",
+      "punten (kolommen)"
+    )
+  )
 ```
 
 ## Herbezoek van hokken
@@ -128,7 +133,7 @@ visits %>%
   geom_ribbon(aes(ymin = lcl, ymax = ucl), alpha = 0.2) +
   geom_line() +
   scale_x_continuous(breaks = pretty_breaks(n = 6)) +
-  scale_y_continuous("aantal jaar sinds vorige bezoek") + 
+  scale_y_continuous("aantal jaar sinds vorige bezoek") +
   theme(
     axis.title.x = element_blank()
   )
