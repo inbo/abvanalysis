@@ -55,8 +55,14 @@ select_relevant <- function(
   if (sum(rawdata$count > 0) < min_observation) {
     return(NULL)
   }
+  # require at least one observation per point
+  rawdata %>%
+    filter(.data$count > 0) %>%
+    distinct(.data$point) %>%
+    semi_join(x = rawdata, by = "point") -> rawdata
+
   # require observation during at least min_cycle different cycles for each
-  # location
+  # square
   rawdata %>%
     filter(.data$count > 0) %>%
     distinct(.data$square, .data$cycle) %>%
