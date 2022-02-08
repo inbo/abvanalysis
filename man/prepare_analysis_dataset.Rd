@@ -24,16 +24,11 @@ prepare_analysis_dataset(
 )
 }
 \arguments{
-\item{scheme_id}{A single integer holding the id of the scheme.}
-
 \item{species_group_id}{the species_group ID}
 
 \item{species}{The fingerprint of the species.}
 
 \item{location_group_id}{the location_group ID}
-
-\item{seed}{A single integer used as a seed for all calculations.
-A random seed will be inserted when missing.}
 
 \item{observation}{The dataframe with the visits and location group.}
 

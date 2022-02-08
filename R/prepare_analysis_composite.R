@@ -1,6 +1,5 @@
 #' Prepare the analysis files for the composite indices
 #' @inheritParams prepare_analysis_dataset
-#' @inheritParams prepare_analysis_comparison
 #' @inheritParams prepare_dataset
 #' @inheritParams n2kanalysis::store_model
 #' @param type the model type
@@ -36,14 +35,14 @@ prepare_analysis_composite <- function(
     stopifnot(require(dplyr, quietly = TRUE))
     stopifnot(require(INLA, quietly = TRUE))
     parameter <- model$summary.lincomb.derived %>%
-      rownames_to_column("Value") %>%
-      select("Value", Estimate = "mean", Variance = "sd") %>%
+      rownames_to_column("value") %>%
+      select("value", estimate = "mean", variance = "sd") %>%
       mutate(
-        Variance = .data$Variance ^ 2,
-        Number = suppressWarnings(as.integer(.data$Value))
+        variance = .data$variance ^ 2,
+        number = suppressWarnings(as.integer(.data$value))
       ) %>%
-      arrange(.data$Number, .data$Value) %>%
-      select(-"Number")
+      arrange(.data$number, .data$value) %>%
+      select(-"number")
   }
 
   n2k_composite(

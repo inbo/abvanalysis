@@ -24,7 +24,7 @@
 prepare_dataset <- function(
   origin, repo, end_date = Sys.time(), min_year = 2, min_observation = 100,
   verbose = TRUE, push = FALSE, strict = TRUE, ...
-){
+) {
   assert_that(
     inherits(end_date, "POSIXct"), length(end_date) == 1, noNA(end_date)
   )

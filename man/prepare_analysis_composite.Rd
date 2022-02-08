@@ -29,11 +29,6 @@ prepare_analysis_composite(
 
 \item{project}{Will be a relative path within the base location.}
 
-\item{scheme_id}{A single integer holding the id of the scheme.}
-
-\item{seed}{A single integer used as a seed for all calculations.
-A random seed will be inserted when missing.}
-
 \item{overwrite}{Should an existing object be overwritten?
 Defaults to TRUE.}
 

@@ -9,7 +9,6 @@
 #' @inheritParams prepare_dataset
 #' @inheritParams select_relevant
 #' @inheritParams n2kanalysis::store_model
-#' @inheritParams n2kanalysis::n2k_inla_comparison
 #' @param species_group_id the species_group ID
 #' @param location_group_id the location_group ID
 #' @export

@@ -23,16 +23,13 @@ Imports:
     git2rdata (>= 0.2.0),
     methods,
     n2kanalysis (>= 0.2.9),
-    n2khelper (>= 0.4.3),
-    n2kupdate (>= 0.1.1),
     purrr,
     rlang,
     tibble,
     tidyr
 Remotes:
   inbo/n2kanalysis,
-  inbo/n2khelper,
-  inbo/n2kupdate
+  inbo/n2khelper
 RoxygenNote: 7.1.2
 Encoding: UTF-8
 URL: https://github.com/inbo/abvanalysis

@@ -182,46 +182,47 @@ rm Dockerfile",
   if (inherits(base, "s3_bucket")) {
     sprintf(
       "echo \"model %i of %i\"
-  docker run %s --name=%s rn2k:%s ./fit_model_aws.sh -b %s -p %s -m %s
-  date
-  docker stop --time 14400 %s
-  date",
+docker run %s --name=%s rn2k:%s ./fit_model_aws.sh -b %s -p %s -m %s
+date
+docker stop --time 14400 %s
+date",
       seq_along(models), length(models), "--rm -d --env-file ./env.list",
-      models, docker_hash, attr(base, "Name"), project,
-      models, models
+      models, docker_hash, attr(base, "Name"), project, models, models
     ) -> model_scripts
 
     sprintf(
       "echo \"manifest %i of %i\"
-  docker run %s --name=%s rn2k:%s ./fit_model_aws.sh -b %s -p %s -m %s
-  date
-  docker stop --time 14400 %s
-  date",
+docker run %s --name=%s rn2k:%s ./fit_model_aws.sh -b %s -p %s -m %s
+date
+docker stop --time 14400 %s
+date",
       seq_along(manifests), length(manifests), "--rm -d --env-file ./env.list",
       manifests, docker_hash, attr(base, "Name"), project,
       paste0(manifests, ".manifest"), manifests
     ) -> manifest_scripts
   } else {
+    base <- normalizePath(base, winslash = "/")
+    if (missing(volume)) {
+      volume <- paste(base, base, "rw", sep = ":")
+    }
     sprintf(
       "echo \"model %i of %i\"
-  docker run %s --name=%s -v %s rn2k:%s ./fit_model_file.sh -b %s -p %s -m %s
-  date
-  docker stop --time 14400 %s
-  date",
-      seq_along(models), length(models), "--rm -d",
-      models, volume, docker_hash, base, project,
-      models, models
+docker run %s --name=%s -v %s rn2k:%s ./fit_model_file.sh -b %s -p %s -m %s
+date
+docker stop --time 14400 %s
+date",
+      seq_along(models), length(models), "--rm -d", models, volume, docker_hash,
+      base, project, models, models
     ) -> model_scripts
 
     sprintf(
       "echo \"manifest %i of %i\"
-  docker run %s --name=%s -v %s rn2k:%s ./fit_model_file.sh -b %s -p %s -m %s
-  date
-  docker stop --time 14400 %s
-  date",
-      seq_along(manifests), length(manifests), "--rm -d",
-      manifests, volume, docker_hash, base, project,
-      paste0(manifests, ".manifest"), manifests
+docker run %s --name=%s -v %s rn2k:%s ./fit_model_file.sh -b %s -p %s -m %s
+date
+docker stop --time 14400 %s
+date",
+      seq_along(manifests), length(manifests), "--rm -d", manifests, volume,
+      docker_hash, base, project, paste0(manifests, ".manifest"), manifests
     ) -> manifest_scripts
   }
 
