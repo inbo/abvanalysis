@@ -10,7 +10,7 @@
 #' @importFrom purrr map2 map_int
 #' @importFrom rlang .data
 prepare_dataset_observation <- function(
-  origin, repo, end_date, min_year = 2, min_observation = 100, strict = TRUE
+  origin, repo, end_date, min_observation = 100, strict = TRUE
 ) {
   rm_data(root = repo, path = "observation", stage = TRUE)
 
@@ -47,13 +47,6 @@ prepare_dataset_observation <- function(
         repo = repo, table_name = "fieldwork_sample", field_name = "id"
       )
     ) -> observations
-  observations %>%
-    distinct(.data$square_id, .data$year) %>%
-    count(.data$square_id) %>%
-    filter(.data$n >= min_year) %>%
-    count(.data$square_id) %>%
-    semi_join(x = observations, by = "square_id") %>%
-    select(-.data$square_id) -> observations
   write_vc(
     observations, file = "observation/visit", root = repo, stage = TRUE,
     sorting = c("year", "period", "point_id", "id"),
