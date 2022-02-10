@@ -25,6 +25,7 @@ Imports:
     n2kanalysis (>= 0.2.9),
     purrr,
     rlang,
+    stringr,
     tibble,
     tidyr
 Remotes:
