@@ -26,7 +26,7 @@ get_linear_lincomb <- function(
     inner_join(stratum_weights, by = stratum_var) -> all_weight
   model.matrix(object = formula, all_weight) -> mm
   (as.data.frame(mm) * all_weight$weight) %>%
-    mutate(ID = sprintf("%02i", all_weight[[time_var]])) %>%
+    mutate(ID = sprintf("linear_estimate_%02i", all_weight[[time_var]])) %>%
     group_by(.data$ID) %>%
     summarise(across(.fns = sum)) -> mm
   stratum_weights %>%
@@ -39,7 +39,7 @@ get_linear_lincomb <- function(
   }
   mm_trend %>%
     summarise(across(.fns = sum)) %>%
-    mutate(ID = "Trend") %>%
+    mutate(ID = "linear_trend") %>%
     bind_rows(mm) -> weights
   w_names <- weights$ID
   weights %>%

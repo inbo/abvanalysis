@@ -4,11 +4,6 @@
 #' @param origin `DBI` connection to the source database
 #' @param end_date the latest date to import.
 #' Default to now.
-#' @param min_year The minimal number of different years in a square.
-#' Ignore squares with observations from fewer years.
-#' Defaults to `2`.
-#' @param min_observation The minimal number of observations for a species.
-#' Defaults to `100`.
 #' @param verbose display the progress
 #' @param repo a [git2rdata::repository()] object
 #' @param push push the changes to the repository.
@@ -22,8 +17,8 @@
 #' @importFrom utils flush.console
 #' @importFrom rlang .data
 prepare_dataset <- function(
-  origin, repo, end_date = Sys.time(), min_year = 2, min_observation = 100,
-  verbose = TRUE, push = FALSE, strict = TRUE, ...
+  origin, repo, end_date = Sys.time(), verbose = TRUE, push = FALSE,
+  strict = TRUE, ...
 ) {
   assert_that(
     inherits(end_date, "POSIXct"), length(end_date) == 1, noNA(end_date)
@@ -43,8 +38,7 @@ prepare_dataset <- function(
 
   display(verbose, "Importing observations")
   prepare_dataset_observation(
-    origin = origin, repo = repo, end_date = end_date, strict = strict,
-    min_year = min_year, min_observation = min_observation
+    origin = origin, repo = repo, end_date = end_date, strict = strict
   )
 
   if (length(git2rdata::status(repo)$staged) == 0) {

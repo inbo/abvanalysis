@@ -8,7 +8,6 @@ prepare_dataset_observation(
   origin,
   repo,
   end_date,
-  min_year = 2,
   min_observation = 100,
   strict = TRUE
 )
@@ -20,13 +19,6 @@ prepare_dataset_observation(
 
 \item{end_date}{the latest date to import.
 Default to now.}
-
-\item{min_year}{The minimal number of different years in a square.
-Ignore squares with observations from fewer years.
-Defaults to `2`.}
-
-\item{min_observation}{The minimal number of observations for a species.
-Defaults to `100`.}
 
 \item{strict}{What to do when the metadata changes. \code{strict = FALSE}
 overwrites the data and the metadata with a warning listing the changes,

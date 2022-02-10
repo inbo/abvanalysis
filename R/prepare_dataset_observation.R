@@ -17,8 +17,7 @@ prepare_dataset_observation <- function(
   # visits
   sprintf("
     SELECT
-      fs.id, fv.location_id AS square_id,
-      fs.location_id AS point_id,
+      fs.id, fs.location_id AS point_id,
       EXTRACT(YEAR FROM fv.start_date) AS year,
       CASE
         WHEN fv.start_date <

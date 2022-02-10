@@ -8,8 +8,6 @@ prepare_dataset(
   origin,
   repo,
   end_date = Sys.time(),
-  min_year = 2,
-  min_observation = 100,
   verbose = TRUE,
   push = FALSE,
   strict = TRUE,
@@ -23,13 +21,6 @@ prepare_dataset(
 
 \item{end_date}{the latest date to import.
 Default to now.}
-
-\item{min_year}{The minimal number of different years in a square.
-Ignore squares with observations from fewer years.
-Defaults to `2`.}
-
-\item{min_observation}{The minimal number of observations for a species.
-Defaults to `100`.}
 
 \item{verbose}{display the progress}
 

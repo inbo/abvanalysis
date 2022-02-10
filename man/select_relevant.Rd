@@ -21,9 +21,6 @@ select_relevant(
 
 \item{repo}{a [git2rdata::repository()] object}
 
-\item{min_observation}{The minimal number of observations for a species.
-Defaults to `100`.}
-
 \item{min_stratum}{The required minimum number of relevant locations per
 stratum.
 Defaults to `3`.}

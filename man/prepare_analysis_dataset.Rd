@@ -41,9 +41,6 @@ prepare_analysis_dataset(
 \item{overwrite}{Should an existing object be overwritten?
 Defaults to TRUE.}
 
-\item{min_observation}{The minimal number of observations for a species.
-Defaults to `100`.}
-
 \item{min_stratum}{The required minimum number of relevant locations per
 stratum.
 Defaults to `3`.}
