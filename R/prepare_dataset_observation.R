@@ -1,6 +1,5 @@
 #' Read the observations and save them to git and the results database
 #' @inheritParams prepare_dataset
-#' @param species a data.frame with the NBN key and fingerprint for each species
 #' @export
 #' @importFrom git2rdata rm_data write_vc prune_meta
 #' @importFrom DBI dbQuoteString dbGetQuery

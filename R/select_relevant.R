@@ -9,6 +9,10 @@
 #' @param min_stratum The required minimum number of relevant locations per
 #' stratum.
 #' Defaults to `3`.
+#' @param min_cycle Minimum number of cycles in which a species must be found
+#' at a square.
+#' Square with sightings from fewer cycles will be ignored.
+#' Defaults to `2`.
 #' @param proportion Minimum proportion of the least important period.
 #' Defaults to `0.15`.
 #' @inheritParams prepare_dataset
@@ -18,7 +22,7 @@
 #' semi_join
 #' @importFrom git2rdata is_git2rdata read_vc
 #' @importFrom rlang .data
-#' @importFrom stats glm coef poisson
+#' @importFrom stats glm coef poisson relevel
 #' @importFrom tidyr replace_na
 select_relevant <- function(
   observation, species, repo, min_observation = 100, min_stratum = 3,

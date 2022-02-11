@@ -1,6 +1,9 @@
 #' Calculate the matrix for linear combinations of strata
-#' @param dataset the raw dataset
-#' @param stratum_weights a dataframe with stratum weights
+#' @param dataset the raw dataset.
+#' @param stratum_weights a dataframe with stratum weights.
+#' @param time_var variable indicating the time.
+#' @param label_var variable containing the label for every `time_var`.
+#' @param stratum_var variable containing the stratum information.
 #' @export
 #' @importFrom assertthat assert_that has_name is.string
 #' @importFrom dplyr %>% arrange distinct filter inner_join mutate row_number select transmute

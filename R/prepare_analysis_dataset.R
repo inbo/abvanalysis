@@ -1,21 +1,24 @@
 #' Create the analysis dataset based on the available raw data
 #'
-#' This analysis fits an unweighted model but adds the stratum effect. The
+#' This analysis fits an unweighed model but adds the stratum effect. The
 #'    indices per year of the different strata are combined with a linear
 #'    combination into a single index per year.
 #' @return A data.frame with the species id number of rows in the analysis
 #'    dataset, number of presences in the analysis dataset and SHA-1 of the
 #'    analysis dataset or NULL if not enough data.
 #' @inheritParams prepare_dataset
+#' @inheritParams prepare_analysis
 #' @inheritParams select_relevant
 #' @inheritParams n2kanalysis::store_model
 #' @param species_group_id the species_group ID
 #' @param location_group_id the location_group ID
+#' @param family The statistical distribution to use for this species.
 #' @export
 #' @importFrom dplyr %>% bind_rows count distinct slice_max
 #' @importFrom git2rdata read_vc recent_commit
 #' @importFrom n2kanalysis display n2k_inla
 #' @importFrom rlang .data
+#' @importFrom stats as.formula
 #' @importFrom tidyr replace_na
 prepare_analysis_dataset <- function(
   scheme_id, species_group_id, species, location_group_id, seed = 20070315,

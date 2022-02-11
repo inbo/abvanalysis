@@ -20,12 +20,14 @@ prepare_dataset_observation(
 \item{end_date}{the latest date to import.
 Default to now.}
 
+\item{min_observation}{The minimum number of observations for taking a
+species into account.
+Defaults to `100`.}
+
 \item{strict}{What to do when the metadata changes. \code{strict = FALSE}
 overwrites the data and the metadata with a warning listing the changes,
 \code{strict = TRUE} returns an error and leaves the data and metadata as is.
 Defaults to \code{TRUE}.}
-
-\item{species}{a data.frame with the NBN key and fingerprint for each species}
 }
 \description{
 Read the observations and save them to git and the results database

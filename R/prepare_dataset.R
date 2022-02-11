@@ -8,6 +8,9 @@
 #' @param repo a [git2rdata::repository()] object
 #' @param push push the changes to the repository.
 #' Defaults to `FALSE`.
+#' @param min_observation The minimum number of observations for taking a
+#' species into account.
+#' Defaults to `100`.
 #' @param ... arguments passed to [git2rdata::commit()] and [git2rdata::push()].
 #' @inheritParams git2rdata::write_vc
 #' @export
@@ -18,7 +21,7 @@
 #' @importFrom rlang .data
 prepare_dataset <- function(
   origin, repo, end_date = Sys.time(), verbose = TRUE, push = FALSE,
-  strict = TRUE, ...
+  strict = TRUE, min_observation = 100, ...
 ) {
   assert_that(
     inherits(end_date, "POSIXct"), length(end_date) == 1, noNA(end_date)

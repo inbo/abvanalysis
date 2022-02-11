@@ -13,9 +13,15 @@ get_nonlinear_lincomb(
 )
 }
 \arguments{
-\item{dataset}{the raw dataset}
+\item{dataset}{the raw dataset.}
 
-\item{stratum_weights}{a dataframe with stratum weights}
+\item{stratum_weights}{a dataframe with stratum weights.}
+
+\item{time_var}{variable indicating the time.}
+
+\item{label_var}{variable containing the label for every `time_var`.}
+
+\item{stratum_var}{variable containing the stratum information.}
 }
 \description{
 Calculate the matrix for linear combinations of strata

@@ -2,7 +2,9 @@
 #' @inheritParams prepare_analysis_dataset
 #' @inheritParams prepare_dataset
 #' @inheritParams n2kanalysis::store_model
+#' @param frequency frequency of the analysis (year or cycle)
 #' @param type the model type
+#' @param models a dataframe with the parent models.
 #' @export
 #' @importFrom assertthat assert_that is.string has_name
 #' @importFrom n2kanalysis n2k_composite
@@ -31,18 +33,17 @@ prepare_analysis_composite <- function(
   )
 
   extractor <- function(model) {
-    stopifnot(require(tibble, quietly = TRUE))
-    stopifnot(require(dplyr, quietly = TRUE))
-    stopifnot(require(INLA, quietly = TRUE))
-    parameter <- model$summary.lincomb.derived %>%
-      rownames_to_column("value") %>%
-      select("value", estimate = "mean", variance = "sd") %>%
-      mutate(
+    stopifnot(requireNamespace("tibble", quietly = TRUE))
+    stopifnot(requireNamespace("dplyr", quietly = TRUE))
+    model$summary.lincomb.derived %>%
+      tibble::rownames_to_column("value") %>%
+      dplyr::select("value", estimate = "mean", variance = "sd") %>%
+      dplyr::mutate(
         variance = .data$variance ^ 2,
         number = suppressWarnings(as.integer(.data$value))
       ) %>%
-      arrange(.data$number, .data$value) %>%
-      select(-"number")
+      dplyr::arrange(.data$number, .data$value) %>%
+      dplyr::select(-"number")
   }
 
   n2k_composite(

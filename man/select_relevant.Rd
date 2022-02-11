@@ -21,9 +21,18 @@ select_relevant(
 
 \item{repo}{a [git2rdata::repository()] object}
 
+\item{min_observation}{The minimum number of observations for taking a
+species into account.
+Defaults to `100`.}
+
 \item{min_stratum}{The required minimum number of relevant locations per
 stratum.
 Defaults to `3`.}
+
+\item{min_cycle}{Minimum number of cycles in which a species must be found
+at a square.
+Square with sightings from fewer cycles will be ignored.
+Defaults to `2`.}
 
 \item{proportion}{Minimum proportion of the least important period.
 Defaults to `0.15`.}

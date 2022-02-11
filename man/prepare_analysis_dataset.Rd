@@ -24,11 +24,16 @@ prepare_analysis_dataset(
 )
 }
 \arguments{
+\item{scheme_id}{a string with the scheme id.}
+
 \item{species_group_id}{the species_group ID}
 
 \item{species}{The fingerprint of the species.}
 
 \item{location_group_id}{the location_group ID}
+
+\item{seed}{The seed for the analysis.
+Defaults to `20070315`.}
 
 \item{observation}{The dataframe with the visits and location group.}
 
@@ -41,14 +46,25 @@ prepare_analysis_dataset(
 \item{overwrite}{Should an existing object be overwritten?
 Defaults to TRUE.}
 
+\item{min_observation}{The minimum number of observations for taking a
+species into account.
+Defaults to `100`.}
+
 \item{min_stratum}{The required minimum number of relevant locations per
 stratum.
 Defaults to `3`.}
+
+\item{min_cycle}{Minimum number of cycles in which a species must be found
+at a square.
+Square with sightings from fewer cycles will be ignored.
+Defaults to `2`.}
 
 \item{proportion}{Minimum proportion of the least important period.
 Defaults to `0.15`.}
 
 \item{verbose}{display the progress}
+
+\item{family}{The statistical distribution to use for this species.}
 }
 \value{
 A data.frame with the species id number of rows in the analysis
@@ -56,7 +72,7 @@ A data.frame with the species id number of rows in the analysis
    analysis dataset or NULL if not enough data.
 }
 \description{
-This analysis fits an unweighted model but adds the stratum effect. The
+This analysis fits an unweighed model but adds the stratum effect. The
    indices per year of the different strata are combined with a linear
    combination into a single index per year.
 }

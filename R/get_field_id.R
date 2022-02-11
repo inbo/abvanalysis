@@ -1,4 +1,5 @@
 #' Retrieve the id for a field in a table
+#' @inheritParams prepare_dataset
 #' @param table_name The name of the table.
 #' @param field_name The name of the field.
 #' @export

@@ -7,6 +7,8 @@
 get_field_id(repo, table_name, field_name)
 }
 \arguments{
+\item{repo}{a [git2rdata::repository()] object}
+
 \item{table_name}{The name of the table.}
 
 \item{field_name}{The name of the field.}

@@ -19,15 +19,24 @@ prepare_analysis_composite(
 )
 }
 \arguments{
+\item{frequency}{frequency of the analysis (year or cycle)}
+
 \item{type}{the model type}
 
 \item{species_group_id}{the species_group ID}
 
 \item{location_group_id}{the location_group ID}
 
+\item{models}{a dataframe with the parent models.}
+
 \item{base}{The base location to store the model.}
 
 \item{project}{Will be a relative path within the base location.}
+
+\item{scheme_id}{a string with the scheme id.}
+
+\item{seed}{The seed for the analysis.
+Defaults to `20070315`.}
 
 \item{overwrite}{Should an existing object be overwritten?
 Defaults to TRUE.}

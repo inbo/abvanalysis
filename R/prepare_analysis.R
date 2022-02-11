@@ -2,6 +2,9 @@
 #' @inheritParams prepare_dataset
 #' @inheritParams select_relevant
 #' @inheritParams n2kanalysis::store_model
+#' @param scheme_id a string with the scheme id.
+#' @param seed The seed for the analysis.
+#' Defaults to `20070315`.
 #' @param docker The docker image to use during model fit.
 #' @param dependencies A vector of R packages as understood by the `repo`
 #' argument of [remotes::install_github()].
@@ -12,6 +15,7 @@
 #' @importFrom dplyr %>% anti_join arrange bind_rows distinct filter inner_join
 #' left_join mutate pull select transmute
 #' @importFrom git2rdata verify_vc
+#' @importFrom methods slot
 #' @importFrom n2kanalysis display get_file_fingerprint n2k_manifest
 #' store_manifest_yaml
 #' @importFrom purrr map map_chr pmap_dfr

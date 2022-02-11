@@ -11,6 +11,7 @@ prepare_dataset(
   verbose = TRUE,
   push = FALSE,
   strict = TRUE,
+  min_observation = 100,
   ...
 )
 }
@@ -31,6 +32,10 @@ Defaults to `FALSE`.}
 overwrites the data and the metadata with a warning listing the changes,
 \code{strict = TRUE} returns an error and leaves the data and metadata as is.
 Defaults to \code{TRUE}.}
+
+\item{min_observation}{The minimum number of observations for taking a
+species into account.
+Defaults to `100`.}
 
 \item{...}{arguments passed to [git2rdata::commit()] and [git2rdata::push()].}
 }

@@ -13,9 +13,13 @@ get_linear_lincomb(
 )
 }
 \arguments{
-\item{dataset}{the raw dataset}
+\item{dataset}{the raw dataset.}
 
-\item{stratum_weights}{a dataframe with stratum weights}
+\item{time_var}{variable indicating the time.}
+
+\item{stratum_var}{variable containing the stratum information.}
+
+\item{stratum_weights}{a dataframe with stratum weights.}
 
 \item{formula}{the formula for the trend component}
 }
