@@ -6,6 +6,9 @@
 ^_builds$
 ^_projects$
 ^_steps$
+^inst/intern_rapport$
+^inst/rapport$
+^inst/website$
 ^inst/*rds$
 ^inst/*css$
 ^inst/*figure$
