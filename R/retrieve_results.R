@@ -15,14 +15,19 @@
 retrieve_results <- function(
     base, project, source_repo, target_repo, verbose = TRUE, strict = TRUE
 ) {
-  if (file_test("-f", file.path(base, project, "results.rds"))) {
-    file.path(base, paste(project, "results.rds", sep = "_")) %>%
-      readRDS() -> results
+  target_rds <- file.path(base, paste(project, "results.rds", sep = "_"))
+  if (file_test("-f", target_rds)) {
+    results <- readRDS(target_rds)
   } else {
     results <- get_result(file.path(base, project), verbose = verbose)
-    file.path(base, paste(project, "results.rds", sep = "_")) %>%
-      saveRDS(object = results)
+    saveRDS(results, target_rds)
   }
+
+  read_vc(file.path("location", "stratum"), root = source_repo) %>%
+    write_vc(
+      file = file.path("inst", "results", "stratum"), root = target_repo,
+      sorting = "description", strict = strict
+    )
 
   # overview of the effort
   read_vc(file.path("observation", "visit"), root = source_repo) %>%
@@ -69,11 +74,28 @@ retrieve_results <- function(
         factor(),
       .data$status_fingerprint, status = factor(.data$status)
     ) %>%
+    left_join(
+      results@Parameter %>%
+        filter(.data$description == "WAIC") %>%
+        semi_join(
+          x = results@ParameterEstimate, by = c("parameter" = "fingerprint")
+        ) %>%
+        select(.data$analysis, waic = .data$estimate),
+      by = "analysis"
+    ) %>%
     write_vc(
       file = file.path("inst", "results", "meta"), root = target_repo,
       sorting = "analysis", strict = strict
     )
-  # differences among year / cycle
+  results@AnalysisRelation %>%
+    mutate(
+      analysis = factor(.data$analysis), parent = factor(.data$parent_analysis)
+    ) %>%
+    write_vc(
+      file = file.path("inst", "results", "parent"), root = target_repo,
+      sorting = c("analysis", "parent"), strict = strict
+    )
+  # differences among year or cycle
   results@Contrast %>%
     filter(str_detect(.data$description, "^index")) %>%
     mutate(
@@ -83,6 +105,12 @@ retrieve_results <- function(
         as.integer()
     ) %>%
     inner_join(results@ContrastEstimate, by = c("fingerprint" = "contrast")) %>%
+    mutate(
+      s = (.data$upper_confidence_limit - .data$lower_confidence_limit) /
+        (2 * qnorm(0.975)),
+      lower_confidence_limit = qnorm(0.05, mean = .data$estimate, sd = .data$s),
+      upper_confidence_limit = qnorm(0.95, mean = .data$estimate, sd = .data$s)
+    ) %>%
     transmute(
       analysis = factor(.data$analysis), .data$reference, .data$alternative,
       estimate = round(.data$estimate, 4),
@@ -93,7 +121,7 @@ retrieve_results <- function(
       file = file.path("inst", "results", "index"), root = target_repo,
       sorting = c("analysis", "reference", "alternative"), strict = strict
     )
-  # estimated average count per year / cycle
+  # estimated average count per year or cycle
   results@Contrast %>%
     filter(str_detect(.data$description, "^estimate")) %>%
     mutate(
@@ -101,6 +129,12 @@ retrieve_results <- function(
         as.integer()
     ) %>%
     inner_join(results@ContrastEstimate, by = c("fingerprint" = "contrast")) %>%
+    mutate(
+      s = (.data$upper_confidence_limit - .data$lower_confidence_limit) /
+        (2 * qnorm(0.975)),
+      lower_confidence_limit = qnorm(0.05, mean = .data$estimate, sd = .data$s),
+      upper_confidence_limit = qnorm(0.95, mean = .data$estimate, sd = .data$s)
+    ) %>%
     transmute(
       analysis = factor(.data$analysis), .data$year,
       estimate = round(.data$estimate, 4),
@@ -121,6 +155,12 @@ retrieve_results <- function(
         as.integer()
     ) %>%
     inner_join(results@ContrastEstimate, by = c("fingerprint" = "contrast")) %>%
+    mutate(
+      s = (.data$upper_confidence_limit - .data$lower_confidence_limit) /
+        (2 * qnorm(0.975)),
+      lower_confidence_limit = qnorm(0.05, mean = .data$estimate, sd = .data$s),
+      upper_confidence_limit = qnorm(0.95, mean = .data$estimate, sd = .data$s)
+    ) %>%
     transmute(
       analysis = factor(.data$analysis), .data$midpoint, .data$window,
       estimate = round(.data$estimate, 4),
@@ -135,6 +175,12 @@ retrieve_results <- function(
   results@Contrast %>%
     filter(str_detect(.data$description, "^linear_trend")) %>%
     inner_join(results@ContrastEstimate, by = c("fingerprint" = "contrast")) %>%
+    mutate(
+      s = (.data$upper_confidence_limit - .data$lower_confidence_limit) /
+        (2 * qnorm(0.975)),
+      lower_confidence_limit = qnorm(0.05, mean = .data$estimate, sd = .data$s),
+      upper_confidence_limit = qnorm(0.95, mean = .data$estimate, sd = .data$s)
+    ) %>%
     transmute(
       analysis = factor(.data$analysis), estimate = round(.data$estimate, 4),
       lower_confidence_limit = round(.data$lower_confidence_limit, 4),
@@ -152,6 +198,12 @@ retrieve_results <- function(
         as.integer()
     ) %>%
     inner_join(results@ContrastEstimate, by = c("fingerprint" = "contrast")) %>%
+    mutate(
+      s = (.data$upper_confidence_limit - .data$lower_confidence_limit) /
+        (2 * qnorm(0.975)),
+      lower_confidence_limit = qnorm(0.05, mean = .data$estimate, sd = .data$s),
+      upper_confidence_limit = qnorm(0.95, mean = .data$estimate, sd = .data$s)
+    ) %>%
     transmute(
       analysis = factor(.data$analysis), .data$year,
       estimate = round(.data$estimate, 4),
@@ -172,7 +224,15 @@ retrieve_results <- function(
       alternative = str_replace(.data$description, "index_.*_(.*)", "\\1") %>%
         as.integer()
     ) %>%
-    inner_join(results@ParameterEstimate, by = c("fingerprint" = "parameter")) %>%
+    inner_join(
+      results@ParameterEstimate, by = c("fingerprint" = "parameter")
+    ) %>%
+    mutate(
+      s = (.data$upper_confidence_limit - .data$lower_confidence_limit) /
+        (2 * qnorm(0.975)),
+      lower_confidence_limit = qnorm(0.05, mean = .data$estimate, sd = .data$s),
+      upper_confidence_limit = qnorm(0.95, mean = .data$estimate, sd = .data$s)
+    ) %>%
     transmute(
       analysis = factor(.data$analysis), .data$reference, .data$alternative,
       estimate = round(.data$estimate, 4),
@@ -195,6 +255,12 @@ retrieve_results <- function(
     inner_join(
       results@ParameterEstimate, by = c("fingerprint" = "parameter")
     ) %>%
+    mutate(
+      s = (.data$upper_confidence_limit - .data$lower_confidence_limit) /
+        (2 * qnorm(0.975)),
+      lower_confidence_limit = qnorm(0.05, mean = .data$estimate, sd = .data$s),
+      upper_confidence_limit = qnorm(0.95, mean = .data$estimate, sd = .data$s)
+    ) %>%
     transmute(
       .data$analysis, .data$midpoint, .data$window,
       estimate = round(.data$estimate, 4),
@@ -206,6 +272,40 @@ retrieve_results <- function(
       root = target_repo, sorting = c("analysis", "window", "midpoint"),
       strict = strict
     )
-
+  # stratum weights
+  read_relevant(base = base, project = project, verbose = verbose) %>%
+    write_vc(
+      file = file.path("inst", "results", "stratum_weight"),
+      root = target_repo, sorting = c("analysis", "stratum"), strict = strict
+    )
   return(invisible(NULL))
+}
+
+#' @importFrom dplyr %>% count group_by mutate n summarise
+#' @importFrom n2kanalysis display get_data get_file_fingerprint
+#' @importFrom purrr map_dfr
+#' @importFrom rlang .data
+#' @importFrom stringr str_subset
+read_relevant <- function(base, project, verbose = TRUE) {
+  file.path(base, project) %>%
+    list.files(pattern = "rds$", recursive = TRUE, full.names = TRUE) %>%
+    str_subset("converged") -> todo
+  map_dfr(todo, verbose = verbose, function(i, verbose) {
+    display(verbose, i)
+    x <- readRDS(i)
+    if (!inherits(x, "n2kInla")) {
+      return(NULL)
+    }
+    if (!grepl("year:stratum", x@AnalysisMetadata$model_type)) {
+      return(NULL)
+    }
+    get_data(x) %>%
+      count(.data$stratum, .data$weight, .data$square, name = "visits") %>%
+      group_by(.data$stratum, .data$weight) %>%
+      summarise(
+        relevant = n(), visits = sum(.data$visits), .groups = "drop"
+      ) %>%
+      mutate(analysis = get_file_fingerprint(x))
+  }) %>%
+    mutate(analysis = factor(.data$analysis))
 }
