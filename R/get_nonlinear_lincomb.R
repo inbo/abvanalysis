@@ -8,7 +8,7 @@
 #' @importFrom assertthat assert_that has_name is.string
 #' @importFrom dplyr %>% arrange distinct filter inner_join mutate row_number select transmute
 #' @importFrom purrr map
-#' @importFrom rlang .data !!
+#' @importFrom rlang .data
 #' @importFrom stats setNames
 #' @importFrom tidyr  expand_grid pivot_longer pivot_wider
 get_nonlinear_lincomb <- function(
@@ -29,9 +29,8 @@ get_nonlinear_lincomb <- function(
     length() -> n_total
 
   dataset %>%
-    arrange(!!stratum_var, !!time_var, !!label_var) %>%
     inner_join(stratum_weights, by = stratum_var) %>%
-    arrange(!!stratum_var, !!time_var) %>%
+    arrange(.data[[stratum_var]], .data[[time_var]]) %>%
     mutate(
       id = row_number() %>%
         sprintf(fmt = "%04i")
@@ -42,9 +41,9 @@ get_nonlinear_lincomb <- function(
       values_fill = 0
     ) -> year_effect
   dataset %>%
-    select(!!time_var, label = !!label_var) %>%
+    select(c(time_var, label_var)) %>%
     distinct() %>%
-    arrange(!!time_var) -> time_steps
+    arrange(.data[[time_var]]) -> time_steps
   strata <- sort(unique(dataset[[stratum_var]]))
   expand_grid(
     from = time_steps[[time_var]], to = time_steps[[time_var]],

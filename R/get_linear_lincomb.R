@@ -5,7 +5,7 @@
 #' @importFrom assertthat assert_that has_name is.string
 #' @importFrom dplyr %>% across bind_cols bind_rows distinct group_by inner_join
 #' mutate rename select summarise
-#' @importFrom rlang !! :=
+#' @importFrom rlang :=
 #' @importFrom stats model.matrix
 get_linear_lincomb <- function(
   dataset, time_var, stratum_var = "stratum", stratum_weights, formula
@@ -21,7 +21,7 @@ get_linear_lincomb <- function(
   )
 
   dataset %>%
-    select(!!stratum_var, !!time_var) %>%
+    select(c(stratum_var, time_var)) %>%
     distinct() %>%
     inner_join(stratum_weights, by = stratum_var) -> all_weight
   model.matrix(object = formula, all_weight) -> mm
@@ -30,7 +30,7 @@ get_linear_lincomb <- function(
     group_by(.data$ID) %>%
     summarise(across(.fns = sum)) -> mm
   stratum_weights %>%
-    mutate(!!time_var := 1) -> trend_weight
+    mutate("{time_var}" := 1) -> trend_weight
   mm_trend <- model.matrix(object = formula, trend_weight)
   mm_trend <- as.data.frame(mm_trend) * trend_weight$weight
   mm_trend[, -grep(":", colnames(mm_trend))] <- 0
