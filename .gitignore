@@ -11,6 +11,4 @@ _bookdown_files
 css
 *.log
 figure
-*.tsv
-*.yml
 *.tex
