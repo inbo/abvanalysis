@@ -274,7 +274,7 @@ prepare_analysis_dataset <- function(
     ) %>%
     bind_cols(
       bind_rows(
-        year_lin_fingerprint, cycle_lin_fingerprint, year_nl_fingerprint,
+        year_lin_fingerprint, year_nl_fingerprint, cycle_lin_fingerprint,
         cycle_nl_fingerprint
       )
     )

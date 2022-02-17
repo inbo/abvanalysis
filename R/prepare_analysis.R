@@ -26,8 +26,7 @@ prepare_analysis <- function(
   min_observation = 100, min_stratum = 3, min_cycle = 2, proportion = 0.15,
   scheme_id = "ABV", volume,
   docker = "inbobmk/rn2k:0.7", dependencies = c(
-    "inbo/n2khelper@v0.4.3", "inbo/n2kanalysis@v0.2.9",
-    "inbo/n2kupdate@v0.1.1"
+    "inbo/n2khelper@v0.4.3", "inbo/n2kanalysis@v0.2.9"
   )
 ) {
   display(verbose, "Read data from repository")

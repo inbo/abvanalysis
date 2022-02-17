@@ -216,16 +216,24 @@ retrieve_results <- function(
     )
 
   # composite index
-  results@Parameter %>%
-    filter(str_detect(.data$description, "^index")) %>%
-    mutate(
-      reference = str_replace(.data$description, "index_(.*)_.*", "\\1") %>%
-        as.integer(),
-      alternative = str_replace(.data$description, "index_.*_(.*)", "\\1") %>%
-        as.integer()
+  results@AnalysisMetadata %>%
+    filter(str_detect(model_type, "composite")) %>%
+    semi_join(
+      x = results@ParameterEstimate,
+      by = c("analysis" = "file_fingerprint")
     ) %>%
     inner_join(
-      results@ParameterEstimate, by = c("fingerprint" = "parameter")
+      results@Parameter %>%
+        filter(str_detect(.data$description, "^index")) %>%
+        mutate(
+          reference = str_replace(.data$description, "index_(.*)_.*", "\\1") %>%
+            as.integer(),
+          alternative = str_replace(
+            .data$description, "index_.*_(.*)", "\\1"
+          ) %>%
+            as.integer()
+        ),
+      by = c("parameter" = "fingerprint")
     ) %>%
     mutate(
       s = (.data$upper_confidence_limit - .data$lower_confidence_limit) /
@@ -254,6 +262,11 @@ retrieve_results <- function(
     ) %>%
     inner_join(
       results@ParameterEstimate, by = c("fingerprint" = "parameter")
+    ) %>%
+    semi_join(
+      results@AnalysisMetadata %>%
+        filter(str_detect(model_type, "composite")),
+      by = c("analysis" = "file_fingerprint")
     ) %>%
     mutate(
       s = (.data$upper_confidence_limit - .data$lower_confidence_limit) /
@@ -300,12 +313,41 @@ read_relevant <- function(base, project, verbose = TRUE) {
       return(NULL)
     }
     get_data(x) %>%
-      count(.data$stratum, .data$weight, .data$square, name = "visits") %>%
-      group_by(.data$stratum, .data$weight) %>%
-      summarise(
-        relevant = n(), visits = sum(.data$visits), .groups = "drop"
+      mutate(tmp = sprintf("%s_%0.5f", .data$stratum, .data$weight)) %>%
+      count(
+        .data$tmp, .data$square, .data$point, name = "visits"
       ) %>%
-      mutate(analysis = get_file_fingerprint(x))
+      group_by(.data$tmp, .data$square) %>%
+      summarise(
+        points = n(), visits = sum(.data$visits), .groups = "drop"
+      ) %>%
+      group_by(.data$tmp, .data$points) %>%
+      summarise(
+        squares = n(), visits = sum(.data$visits), .groups = "drop"
+      ) -> tmp
+    tmp %>%
+      select(-.data$visits) %>%
+      complete(
+        .data$tmp, points = 1:6, fill = list(squares = 0)
+      ) %>%
+      mutate(points = sprintf("points_%i", .data$points)) %>%
+      pivot_wider(names_from = "points", values_from = "squares") %>%
+      inner_join(
+        tmp %>%
+          group_by(.data$tmp) %>%
+          summarise(
+            relevant = sum(.data$squares), visits = sum(.data$visits),
+            .groups = "drop"
+          ),
+        by = "tmp"
+      ) %>%
+      mutate(
+        analysis = get_file_fingerprint(x),
+        stratum = str_remove(.data$tmp, "_.*"),
+        weight = str_remove(.data$tmp, ".*_") %>%
+          as.numeric()
+      ) %>%
+      select(-.data$tmp)
   }) %>%
     mutate(analysis = factor(.data$analysis))
 }
