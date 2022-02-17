@@ -1,2 +1,5 @@
-
-`r if (knitr::is_html_output()) {'# Bibliografie {-}'}`
+```{r references, results = "asis", echo = FALSE}
+# insert the references at this position
+# set appendix = FALSE, when the report has no appendix
+INBOmd::references(appendix = FALSE)
+```

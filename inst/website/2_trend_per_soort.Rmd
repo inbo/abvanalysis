@@ -1,277 +1,76 @@
 # (PART) Resultaten per soort {-}
 
 ```{r relevante_soort}
-resultaten$meta %>%
-  filter(!composite, nonlinear) %>%
-  semi_join(resultaten$voorspelling, by = "analysis") %>%
-  count(species_group, hash) %>%
-  filter(n >= 2) %>%
-  arrange(species_group) -> relevant
-```
-
-```{r soort-set}
-resultaten$voorspelling %>%
-  filter(str_detect(parameter, "ratio")) %>%
-  extract(
-    parameter, c("naar", "referentie"), "([0-9]{4}).*/([0-9]{4})", 
-    convert = TRUE
-  ) -> wijziging
-wijziging %>%
-  mutate_at(vars(starts_with("lcl")), function(x) {1 / x}) %>%
-  mutate_at(vars(starts_with("ucl")), function(x) {1 / x}) %>%
-  rename(
-    naar = referentie, referentie = naar,
-    lcl90 = ucl90, lcl60 = ucl60, lcl30 = ucl30,
-    ucl90 = lcl90, ucl60 = lcl60, ucl30 = lcl30
-  ) %>%
-  mutate(
-    median = 1 / median,
-    log_mean = -log_mean
-  ) %>%
-  bind_rows(wijziging) %>%
-  inner_join(
-    resultaten$meta %>%
-      select(analysis, hash, cycle),
-    by = "analysis"
-  ) %>%
-  mutate(
-    schatting = median,
-    klasse = classification(log(lcl90), log(ucl90), log(0.75)),
-    wijziging = sprintf(
-      "%s: %s t.o.v. %s (%s)", 
-       ifelse(
-        cycle, 
-        paste(naar, naar + 2, sep = "-"),
-        naar
-      ),
-      format_ci(
-        median - 1, lcl = lcl90 - 1, ucl = ucl90 - 1, 
-        percent = TRUE, sign = TRUE
-      ),
-       ifelse(
-        cycle, 
-        paste(referentie, referentie + 2, sep = "-"),
-        referentie
-      ),
-      klasse
-    )
-  ) -> wijziging
-resultaten$voorspelling %>%
-  filter(str_detect(parameter, "ratio", TRUE)) %>%
-  inner_join(
-    resultaten$meta %>%
-      select(analysis, hash, cycle),
-    by = "analysis"
-  ) %>%
-  mutate(
-    parameter = str_remove(parameter, "-[0-9]*") %>%
-      as.integer(),
-    hover = format_ci(log_mean, log_sd, link = "log") %>%
-      sprintf(
-        fmt = "%2$s: %1$s", 
-        ifelse(
-          cycle,
-          sprintf("%i-%i", parameter, parameter + 2),
-          parameter
-        )
-      )
-  ) -> aantal
-resultaten$meta %>%
-  filter(!composite) %>%
-  select(hash, waic, nonlinear, cycle) %>%
-  semi_join(relevant, by = "hash") %>%
-  mutate(
-    nonlinear = factor(
-      nonlinear, 
-      levels = c(FALSE, TRUE),
-      labels = c("lineair", "niet_lineair")
-    )
-  ) %>%
-  pivot_wider(values_from = waic, names_from = nonlinear) %>%
-  mutate(
-    interpretatie = ifelse(
-      lineair < niet_lineair,
-      "lineair",
-      ifelse(
-        niet_lineair + 2 < lineair,
-        "niet-lineair",
-        "mogelijk niet-lineair"
-      )
-    )
-  ) %>%
-  inner_join(
-    resultaten$lc %>%
-      filter(parameter == "Trend") %>%
-      inner_join(
-        resultaten$meta %>%
-          select(hash, analysis, duration, species_group, cycle),
-        by = "analysis"
-      ),
-    by = c("hash", "cycle")
-  ) %>%
-  arrange(hash) %>%
-  mutate(
-    lcl = qnorm(0.05, mean, sd),
-    ucl = qnorm(0.95, mean, sd),
-    mean = ifelse(cycle, 1/3, 1) * mean,
-    lcl = ifelse(cycle, 1/3, 1) * lcl,
-    ucl = ifelse(cycle, 1/3, 1) * ucl,
-    klasse = classification(
-      lcl = (duration - 1) * lcl, 
-      ucl = (duration - 1) * ucl, 
-      threshold = log(0.75)
-    ),
-  ) -> export_lineair
-export_lineair %>%
-  arrange(klasse, desc(mean)) %>% 
-  transmute(
-    hash, 
-    soort = tolower(species_group) %>%
-      str_replace_all(" ", "-") %>%
-      str_remove_all("'") %>%
-      sprintf(fmt = "[%2$s](#soort-%1$s)", species_group), 
-    frequentie = factor(
-      cycle, levels = c(TRUE, FALSE), labels = c("driejaarlijks", "jaarlijks")
-    ),
-    klasse, interpretatie,
-    jaarlijks = format_ci(
-      exp(mean) - 1, 
-      lcl = exp(lcl) - 1, 
-      ucl = exp(ucl) - 1, 
-      percent = TRUE,
-      sign = TRUE
-    ),
-    looptijd = format_ci(
-      exp(mean * (duration - 1)) - 1, 
-      lcl = exp(lcl * (duration - 1)) - 1, 
-      ucl = exp(ucl * (duration - 1)) - 1, 
-      percent = TRUE,
-      sign = TRUE
-    ),
-    tekst = factor(
-      klasse,
-      levels = levels(klasse),
-      c(
-        "een sterke toename met", "een toename met", "een matige toename met", 
-        "een stabiele trend van", "een matige afname met", "een afname met", 
-        "een sterke afname met", "een mogelijke toename met", 
-        "een mogelijk afname met", "een onduidelijke trend van"
-      )
-    ) %>%
-      as.character()
-  ) -> lineair
-resultaten$strata %>%
-  inner_join(
-    x = resultaten$meta %>%
-      filter(!cycle) %>%
-      select(hash, analysis),
-    by = "analysis"
-  ) %>%
-  mutate(
-    stratum = str_remove(stratum, "^stratum")
-  ) %>%
-  inner_join(
-    resultaten$inspanning %>%
-      mutate(
-        stratum = recode(stratum, "<c3><a9><c3><a9>n stratum" = "één stratum")
-      ), 
-    by = c("stratum", "analysis")
-  ) %>%
-  mutate(
-    stratum = recode(
-      stratum, 
-      "één stratum" = "e3979aa4d3d2aed3182a54cfe076ab7506970165"
-    )
-  ) %>%
-  inner_join(x = strata, by = c("fingerprint" = "stratum")) %>%
-  transmute(
-    hash,
-    stratum = description,
-    gewicht,
-    aanwezig = totaal * hokken / onderzocht,
-    relevant = hokken,
-    onderzocht,
-    totaal,
-    bezoeken
-  ) %>%
-  arrange(hash, desc(gewicht)) -> stratum_gewicht
+meta %>%
+  filter(!.data$composite, .data$status == "converged") %>%
+  distinct(.data$hash, .data$speciesgroup) -> relevant
 ```
 
 ```{r bewaar-soorten, eval = output_format == "html"}
-resultaten$meta %>%
-  distinct(hash, soort = species_group) %>%
-  inner_join(stratum_gewicht, by = "hash") %>%
-  select(-hash) %>%
-  mutate(
-    gewicht = round(gewicht, 3),
-    aanwezig = round(aanwezig, 1)
-  ) %>%
-  write_vc(
-    file = "stratumgewicht", root = output_dir, optimize = FALSE,
-    sorting = c("soort", "stratum")
-  )
-export_lineair %>%
+estimate %>%
+  inner_join(meta, by = "analysis") %>%
   transmute(
-    soort = species_group,
-    frequentie = factor(
-      cycle, levels = c(TRUE, FALSE), labels = c("driejaarlijks", "jaarlijks")
+    soort = factor(.data$speciesgroup),
+    frequentie = factor(ifelse(.data$cycle, "driejaarlijks", "jaarlijks")),
+    jaar = .data$year,
+    schatting = round(exp(.data$estimate), 3),
+    lcl = round(exp(.data$lower_confidence_limit), 3),
+    ucl = round(exp(.data$upper_confidence_limit), 3),
+    tekst = format_ci(
+      .data$estimate, lcl = .data$lower_confidence_limit,
+      ucl = .data$upper_confidence_limit, link = "log"
     ),
-    jaarlijks = format_ci(
-      exp(mean) - 1, 
-      lcl = exp(lcl) - 1, 
-      ucl = exp(ucl) - 1, 
-      percent = TRUE,
-      sign = TRUE
-    ),
-    looptijd = format_ci(
-      exp(mean * (duration - 1)) - 1, 
-      lcl = exp(lcl * (duration - 1)) - 1, 
-      ucl = exp(ucl * (duration - 1)) - 1, 
-      percent = TRUE,
-      sign = TRUE
-    ),
-    klasse, verloop = interpretatie, analyse = analysis
+    .data$analysis, status = .data$status_fingerprint
   ) %>%
-  inner_join(
-    resultaten$meta %>%
-      distinct(analysis, status),
-    by = c("analyse" = "analysis")
+  arrange(.data$lcl) %>%
+  write_vc(
+    file = "aantallen", root = output_dir, optimize = FALSE,
+    sorting = c("soort", "frequentie", "jaar"), strict = strict
+  )
+linear_trend %>%
+  inner_join(meta, by = c("hash", "analysis", "cycle")) %>%
+  transmute(
+    soort = factor(.data$speciesgroup),
+    frequentie = factor(ifelse(.data$cycle, "driejaarlijks", "jaarlijks")),
+    schatting = round(exp(.data$estimate), 3),
+    lcl = round(exp(.data$lcl), 3),
+    ucl = round(exp(.data$ucl), 3),
+    .data$jaarlijks, .data$looptijd, .data$klasse,
+    verloop = .data$interpretatie, .data$analysis,
+    status = .data$status_fingerprint
   ) %>%
   write_vc(
     file = "lineaire_trend", root = output_dir, optimize = FALSE,
-    sorting = c("klasse", "soort", "frequentie")
+    sorting = c("soort", "frequentie"), strict = strict
   )
-resultaten$meta %>%
-  select(soort = species_group, analysis, status) %>%
-  inner_join(aantal, by = "analysis") %>%
+index %>%
+  inner_join(meta, by = "analysis") %>%
   transmute(
-    soort,
-    frequentie = factor(
-      cycle, levels = c(TRUE, FALSE), labels = c("driejaarlijks", "jaarlijks")
-    ),
-    jaar = parameter, schatting = round(median, 2), lcl90 = round(lcl90, 2),
-    ucl90 = round(ucl90, 2), lcl60 = round(lcl60, 2), ucl60 = round(ucl60, 2),
-    lcl30 = round(lcl30, 2), ucl30 = round(ucl30, 2), analyse = analysis, status
+    soort = factor(.data$speciesgroup),
+    frequentie = factor(ifelse(.data$cycle, "driejaarlijks", "jaarlijks")),
+    .data$referentie, naar = .data$periode,
+    schatting = round(exp(.data$estimate), 3),
+    lcl = round(exp(.data$lcl), 3),
+    ucl = round(exp(.data$ucl), 3),
+    klasse = .data$klasse, .data$interpretatie, .data$wijziging,
+    .data$analysis, status = .data$status_fingerprint
   ) %>%
   write_vc(
-    file = "aantallen", root = output_dir, optimize = FALSE,
-    sorting = c("soort", "frequentie", "jaar")
-  )
-resultaten$meta %>%
-  select(soort = species_group, analysis, status) %>%
-  inner_join(wijziging, by = "analysis") %>%
-  transmute(
-    soort,
-    frequentie = factor(
-      cycle, levels = c(TRUE, FALSE), labels = c("driejaarlijks", "jaarlijks")
-    ), wijziging,
-    referentie, naar, schatting = round(median, 3), lcl90 = round(lcl90, 3),
-    ucl90 = round(ucl90, 3), lcl60 = round(lcl60, 3), ucl60 = round(ucl60, 3),
-    lcl30 = round(lcl30, 3), ucl30 = round(ucl30, 3), analyse = analysis, status
-  ) %>%
-  write_vc(
-    file = "index", root = output_dir, optimize = FALSE,
+    file = "index", root = output_dir, optimize = FALSE, strict = strict,
     sorting = c("soort", "frequentie", "referentie", "naar")
+  )
+stratum %>%
+  inner_join(meta, by = "analysis") %>%
+  transmute(
+    soort = factor(.data$speciesgroup),
+    frequentie = factor(ifelse(.data$cycle, "driejaarlijks", "jaarlijks")),
+    .data$stratum, gewicht = round(.data$gewicht, 3),
+    aanwezig = round(.data$aanwezig, 1), .data$relevant, .data$onderzocht,
+    .data$totaal, .data$bezoeken
+  ) %>%
+  write_vc(
+    file = "stratum_gewicht", root = output_dir, optimize = FALSE,
+    sorting = c("soort", "frequentie", "stratum"), strict = strict
   )
 ```
 
@@ -291,11 +90,18 @@ We raden aan om hiervan gebruikt te maken bij de interpretie van niet-lineaire t
 (ref:driejaarlijkse-trends) Gemiddelde wijziging in veronderstelling van een lineaire trend gebaseerd op driejaarlijkse gegevens. `++`: sterke toename, `+`: toename, `+~`: matige toename, `~`: stabiel, `~-`: matige afname, `-`: afname, `--`: sterke afname, `?+`: mogelijke toename, `?-`: mogelijke afname, `?`: onduidelijke trend. Referentie: 0%, ondergrens: -25% over de looptijd, bovengrens: +33% over de looptijd.
 
 ```{r driejaarlijkse-trends, results = "asis"}
-lineair %>%
-  filter(frequentie == "driejaarlijks") %>%
+linear_trend %>%
+  filter(.data$cycle) %>%
+  inner_join(meta, by = c("hash", "analysis", "cycle")) %>%
+  arrange(.data$klasse, desc(.data$estimate)) %>%
   transmute(
-    soort, klasse = format(klasse, type = "markdown"), interpretatie, 
-    `jaarlijkse wijziging` = jaarlijks, `wijziging over de looptijd` = looptijd
+    soort = tolower(.data$speciesgroup) %>% 
+      str_replace_all(" ", "-") %>%
+      str_remove_all("'") %>%
+      sprintf(fmt = "[%2$s](#soort-%1$s)", .data$speciesgroup),
+    klasse = format(.data$klasse, type = "markdown"), .data$interpretatie,
+    `jaarlijse wijziging` = .data$jaarlijks,
+    `wijziging over de looptijd` = .data$looptijd
   ) %>%
   kable(
     caption = "(ref:driejaarlijkse-trends)", format = "pandoc", escape = FALSE
@@ -305,11 +111,18 @@ lineair %>%
 (ref:jaarlijkse-trends) Gemiddelde wijziging in veronderstelling van een lineaire trend gebaseerd op jaarlijkse gegevens. `++`: sterke toename, `+`: toename, `+~`: matige toename, `~`: stabiel, `~-`: matige afname, `-`: afname, `--`: sterke afname, `?+`: mogelijke toename, `?-`: mogelijke afname, `?`: onduidelijke trend. Referentie: 0%, ondergrens: -25% over de looptijd, bovengrens: +33% over de looptijd.
 
 ```{r jaarlijkse-trends, results = "asis"}
-lineair %>%
-  filter(frequentie == "jaarlijks") %>%
+linear_trend %>%
+  filter(!.data$cycle) %>%
+  inner_join(meta, by = c("hash", "analysis", "cycle")) %>%
+  arrange(.data$klasse, desc(.data$estimate)) %>%
   transmute(
-    soort, klasse = format(klasse, type = "markdown"), interpretatie, 
-    `jaarlijkse wijziging` = jaarlijks, `wijziging over de looptijd` = looptijd
+    soort = tolower(.data$speciesgroup) %>% 
+      str_replace_all(" ", "-") %>%
+      str_remove_all("'") %>%
+      sprintf(fmt = "[%2$s](#soort-%1$s)", .data$speciesgroup),
+    klasse = format(.data$klasse, type = "markdown"), .data$interpretatie,
+    `jaarlijse wijziging` = .data$jaarlijks,
+    `wijziging over de looptijd` = .data$looptijd
   ) %>%
   kable(
     caption = "(ref:jaarlijkse-trends)", format = "pandoc", escape = FALSE
@@ -317,11 +130,11 @@ lineair %>%
 ```
 
 ```{r indices, results='asis', cache = FALSE, eval = TRUE}
-resultaten$meta %>%
-  filter(!composite) %>%
-  arrange(species_group) %>%
-  distinct(hash) %>%
-  pull(hash) %>%
+meta %>%
+  filter(!.data$composite, .data$status == "converged") %>%
+  arrange(.data$speciesgroup) %>%
+  distinct(.data$hash) %>%
+  pull(.data$hash) %>%
   sapply(
     function(id) {
       knit_expand("_soort.Rmd", id = id)

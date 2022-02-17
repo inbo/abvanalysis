@@ -10,12 +10,12 @@ De UTM 1x1 hokken vormen de basis waaruit de steekproef getrokken is.
 Bij de start van het meetnet hebben we de hokken opgedeeld in een aantal strata.
 De regels zijn gebaseerd op het oppervlakteaandeel van een bepaald landgebruik op basis van de Biologische Waarderingkaart [@BWK].
 
-1. Landbouw: minstens 80% landbouw. `r strata$totaal[strata$description == "Landbouw"]` hokken.
-1. Urbaan: minstens 80% urbaan. `r strata$totaal[strata$description == "Urbaan"]` hokken.
-1. Bos: minstens 80% bos. `r strata$totaal[strata$description == "Bos"]` hokken.
-1. Suburbaan: minstens 80% suburbaan. `r strata$totaal[strata$description == "Suburbaan"]` hokken.
-1. Heide en duin: minstens 20% heide of duin. `r strata$totaal[strata$description == "Heide en duin"]` hokken.
-1. Moeras en water: minstens 20% moeras en water. `r strata$totaal[strata$description == "Moeras en water"]` hokken.
+1. Landbouw: minstens 80% landbouw. `r strata$n[strata$description == "Landbouw"]` hokken.
+1. Urbaan: minstens 80% urbaan. `r strata$n[strata$description == "Urbaan"]` hokken.
+1. Bos: minstens 80% bos. `r strata$n[strata$description == "Bos"]` hokken.
+1. Suburbaan: minstens 80% suburbaan. `r strata$n[strata$description == "Suburbaan"]` hokken.
+1. Heide en duin: minstens 20% heide of duin. `r strata$n[strata$description == "Heide en duin"]` hokken.
+1. Moeras en water: minstens 20% moeras en water. `r strata$n[strata$description == "Moeras en water"]` hokken.
 
 Uit deze set trekken we een aselecte, gestratificeerde steekproef van 1200 hokken waarbij zeldzamere habitats overbemonsterd worden.
 We streven er naar om jaarlijks 300 hokken te bemonsteren in een driejarige rotatie.
@@ -34,42 +34,32 @@ Voor sommige hokken is de inspanning variabel, soms frequenter dan om de drie ja
 Sommige hokken werden slechts in een of twee jaar onderzocht (fig. \@ref(fig:inspanning-hist)).
 Voor het onderscheid tussen mogelijk bruikbaar en voorlopig niet bruikbaar verwijzen we naar §\@ref(s:relevant).
 
-```{r inspanning, fig.cap = "Overzicht van de effectieve monitoringsinspanning. Elk punt is een hok dat onderzocht is in een bepaald jaar. De horizontale lijnen verbinden het eerste en meest recente bezoek aan eenzelfde hok."}
-readRDS("../inspanning.rds") %>%
-  inner_join(
-    x = strata %>%
-      select(fingerprint, stratum = description), 
-    by = c("fingerprint" = "stratum")
-  ) %>%
-  select(-fingerprint) -> inspanning
-inspanning %>%
-  arrange(year) %>%
-  group_by(location) %>%
+```{r inspanning, fig.cap = "Overzicht van de effectieve monitoringsinspanning. Elk punt is een hok dat onderzocht is in een bepaald jaar. De horizontale lijnen verbinden het eerste en meest recente bezoek aan eenzelfde hok.", fig.height = 10}
+effort %>%
+  arrange(.data$year) %>%
+  group_by(.data$location) %>%
   transmute(
-    year,
-    end = max(year),
-    year2 = lead(year),
-    year3 = lead(year2),
-    year4 = lead(year3),
-    year5 = lead(year4),
-    year6 = lead(year5),
-    year7 = lead(year6)
+    .data$year, end = max(.data$year), year2 = lead(.data$year),
+    year3 = lead(.data$year2), year4 = lead(.data$year3),
+    year5 = lead(.data$year4), year6 = lead(.data$year5),
+    year7 = lead(.data$year6)
   ) %>%
   slice(1) %>%
   ungroup() %>%
-  arrange(year, end, year2, year3, year4, year5, year6, year7) %>%
+  arrange(
+    .data$year, .data$end, .data$year2, .data$year3, .data$year4, .data$year5,
+    .data$year6, .data$year7
+  ) %>%
   rowid_to_column("hok") %>%
   transmute(
-    location, 
-    hok = factor(hok), 
-    bruikbaar = ((year - 2007) %/% 3) < ((end - 2007) %/% 3),
+    .data$location, hok = factor(.data$hok),
+    bruikbaar = ((.data$year - 2007) %/% 3) < ((end - 2007) %/% 3),
     bruikbaar = factor(
-      bruikbaar, 
-      levels = c(TRUE, FALSE), 
+      .data$bruikbaar, levels = c(TRUE, FALSE),
       labels = c("mogelijk", "voorlopig\nniet")
     )
   ) %>%
-  inner_join(inspanning, by = "location") -> inspanning
+  inner_join(effort, by = "location") -> inspanning
 ggplot(inspanning, aes(x = year, y = hok, group = hok, colour = bruikbaar)) +
   geom_line(alpha = 0.2) +
   geom_point(alpha = 0.5, size = ifelse(output_format == "html", 4, 1)) +
@@ -104,15 +94,12 @@ De waarnemer documenteert deze wijziging zodat we in de toekomst steeds op dezel
 
 ```{r patroon, fig.cap = "Standaardlocatie van meetpunten binnen een km hok.", fig.width = 2, fig.height = 2}
 expand.grid(
-  x = seq(1/4, by = 1/2, length = 2),
-  y = seq(1/6, by = 1/3, length = 3)
+  x = seq(1 / 4, by = 1 / 2, length = 2),
+  y = seq(1 / 6, by = 1 / 3, length = 3)
 ) %>%
   ggplot(aes(x = x, y = y)) +
   geom_rect(
-    data = tribble(
-      ~x, ~y, ~xend, ~yend,
-      0, 0, 1, 1
-    ),
+    data = tribble(~x, ~y, ~xend, ~yend, 0, 0, 1, 1),
     aes(xmin = x, ymin = y, xmax = xend, ymax = yend),
     fill = NA, colour = inbo_steun_blauw
   ) +
@@ -145,10 +132,11 @@ Daarom is het noodzakelijk om de locaties die niet relevant zijn voor een soort 
 In Vlaanderen is de situatie niet zo zwart-wit als bij het voorbeeld met het afgelegen eiland.
 Daarom hebben nood aan een set regels die we toepassen op de beschikbare gegevens.
 
-1. We beschouwen een hok als relevant voor een soort wanneer we deze soort tijdens minstens twee verschillende driejarige cycli waarnemen. 
+1. We beschouwen een hok als relevant voor een soort wanneer we deze soort tijdens minstens twee verschillende driejarige cycli waarnemen.
 Op deze manier sluiten we hokken uit waar de soort nooit of slechts toevallig waargenomen is.
 Hokken die slechts binnen één driejarige cyclus onderzocht zijn, kunnen we hierdoor voorlopig niet gebruiken.
 Figuur \@ref(fig:potentieel) geeft een overzicht van het aantal hokken die gedurende minstens twee cycli onderzocht zijn.
+1. Binnen een hok is een meetpunt pas relevant wanneer we de soort er minstens eenmaal waarnemen.
 1. Een stratum is relevant voor een soort wanneer het minstens drie relevante hokken bevat.
 1. Op basis van de overblijvende gegevens berekenen we het (meetkundig[^geometrisch]) gemiddelde van de aantallen in elk van de drie perioden.
 De periode met het hoogste gemiddelde gebruiken we als referentieperiode.
@@ -380,8 +368,8 @@ Dit laat ons toe om makkelijk het betrouwbaarheidsinterval te berekenen aan de h
 
 1. Bij onafhankelijke variabelen geldt dat de variantie van hun som gelijk is aan de som van de varianties. $\sigma^2_{\sum X_i} = \sum \sigma^2_{X_i}$
 1. De variantie van het product van een variabele en een constante is gelijk aan de variantie van de variabele vermenigvuldigd met die constante. $\sigma^2_{aX} = a \sigma^2_X$
-1. Het model veronderstelt dat de individuele modelparameters een Gaussiaanse verdeling volgen. 
-Hierdoor volgen de paarsgewijze verschillen tussen de jaren en hun gemiddelde (telkens in de log-schaal) een Gausiaanse verdeling. 
+1. Het model veronderstelt dat de individuele modelparameters een Gaussiaanse verdeling volgen.
+Hierdoor volgen de paarsgewijze verschillen tussen de jaren en hun gemiddelde (telkens in de log-schaal) een Gausiaanse verdeling.
 Aangezien we zowel het gemiddeld als de variantie van deze verdeling kennen, kunnen we hieruit de gewenste kwantielen voor de betrouwbaarheidsintervallen berekenen (nog steeds in de log-schaal).
 1. De log-transformatie is een monotoon stijgende functie aangezien $\log(x)$ steeds groter wordt wanneer $x$ groter wordt.
 Een kenmerk van een monotoon stijgende transformatie is dat ze de volgorde behouden: het 5% kleinste element zal ook na de transformatie het 5% kleinste element zijn.
@@ -447,49 +435,30 @@ tribble(
   "sterke afname",     "`--`", "$l < L$",
   "mogelijke toename", "`?+`", "$L < l < R$ en $B < b$",
   "mogelijke afname",  "`?-`", "$l < L$ en $R < b < B$",
-  "onduidelijk",       "`?`",  "$l < L$ en $B < b$" 
+  "onduidelijk",       "`?`",  "$l < L$ en $B < b$"
 ) %>%
-  kable(caption = "(ref:regels)", format = "pandoc", escape = FALSE, align = "lcc")
+  kable(
+    caption = "(ref:regels)", format = "pandoc", escape = FALSE, align = "lcc"
+  )
 ```
 
 (ref:trendklasse) Voorbeeld van de tien mogelijke interpretaties van een effect door het 90% interval te vergelijken met een referentie, ondergrens en bovengrens.
 
 ```{r trendklasse, fig.cap = "(ref:trendklasse)"}
-tribble(
-  ~x, ~y,
-  "stabiel", 0,
-  "toename", 1,
-  "afname", -1,
-  "sterke toename", 1.5,
-  "sterke afname", -1.5,
-  "matige toename",  0.5,
-  "matige afname", -0.5,
-  "mogelijke toename", 0.5,
-  "mogelijke afname", -0.5,
-  "onduidelijk", 0
-) %>%
-  mutate(
-    s = c(rep(0.25, 7), 0.5, 0.5, 1),
-    lcl = qnorm(0.05, y, s),
-    ucl = qnorm(0.95, y, s),
-    klasse = classification(lcl, ucl, 1)
-  ) %>%
-  arrange(klasse) %>%
-  mutate(
-    x = factor(x, levels = rev(x))
-  ) %>%
-  ggplot(aes(x = x, y = y, ymin = lcl, ymax = ucl, link_sd = s)) +
+ggplot(effect, aes(x = x_int, y = y, ymin = lcl, ymax = ucl, link_sd = s)) +
   geom_hline(yintercept = 0, linetype = 2) +
   geom_hline(yintercept = c(-1, 1), linetype = 3) +
-  stat_fan(geom = "rect", aes(fill = klasse), show.legend = FALSE) +
-  geom_point(size = 6) +
-  geom_text(
-    aes(label = klasse),
-    hjust = 0.5, vjust = 0.5, colour = "white"
+  geom_rect(
+    aes(xmin = x_int - 0.4, xmax = x_int + 0.4, fill = klasse),
+    show.legend = FALSE
   ) +
+  geom_point(size = 6, colour = inbo_hoofd) +
+  geom_text(
+    aes(label = klasse), hjust = 0.5, vjust = 0.5, colour = "white"
+  ) +
+  scale_x_continuous(breaks = effect$x_int, labels = effect$x) +
   scale_y_continuous(
-    "effect", 
-    breaks = c(-1, 0, 1), 
+    "effect", breaks = c(-1, 0, 1),
     labels = c("ondergrens", "referentie", "bovengrens")
   ) +
   scale_fill_manual(values = kleurgradient) +

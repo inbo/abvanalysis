@@ -1,129 +1,40 @@
 # (PART) Indicatoren {-}
 
-```{r composite-set}
-resultaten$index %>%
-  filter(str_detect(parameter, "change")) %>%
-  extract(
-    col = parameter, 
-    into = c("naar", "referentie"), 
-    regex = "([0-9]{4}).* - ([0-9]{4})", 
-    convert = TRUE
-  ) -> wijziging
-wijziging %>%
-  rename(
-    naar = referentie, referentie = naar
-  ) %>%
-  mutate(
-    log_mean = -log_mean
-  ) %>%
-  bind_rows(wijziging) %>%
-  inner_join(
-    resultaten$meta %>%
-      transmute(
-        analysis, hash, cycle, 
-        frequentie = factor(
-          cycle, 
-          levels = c(TRUE, FALSE), 
-          labels = c("driejaarlijks", "jaarlijks")
-        )
-      ),
-    by = "analysis"
-  ) -> wijziging
-resultaten$relation %>%
-  inner_join(
-    resultaten$meta %>%
-      filter(!cycle, nonlinear) %>%
-      select(analysis, hash),
-    by = "analysis"
-  ) %>%
-  inner_join(
-    resultaten$meta %>%
-      filter(!cycle, nonlinear) %>%
-      select(analysis, species_group, species_hash = hash),
-    by = c("parent" = "analysis")
-  ) %>%
-  select(hash, soort = species_group, soort_hash = species_hash) -> 
-  composite_soort
-```
-
 ```{r bewaar-indicatoren, eval = output_format == "html"}
-resultaten$meta %>%
-  inner_join(composite_soort, by = "hash") %>%
-  distinct(indicator = species_group, soort) %>%
-  group_by(indicator) %>%
-  mutate(
-    ondergrens = round(exp(log(0.75) / sqrt(n())), 3),
-    bovengrens = round(exp(-log(0.75) / sqrt(n())), 3),
-    threshold = log(0.75) / sqrt(n())
+soortenlijst %>%
+  transmute(
+    .data$soort, indicator = .data$speciesgroup,
+    ondergrens = round(exp(.data$drempel), 3),
+    bovengrens = round(exp(-.data$drempel), 3)
   ) %>%
-  ungroup() -> tmp
-tmp %>%
-  select(-threshold) %>%
   write_vc(
-    file = "samengesteld_soorten", root = output_dir,
+    file = "samengesteld_soorten", root = output_dir, strict = strict,
     sorting = c("indicator", "soort"), optimize = FALSE
   ) -> samensteld_groep_vc
-resultaten$meta %>%
-  select(analysis, indicator = species_group, status) %>%
-  inner_join(wijziging, by = "analysis") %>%
-  inner_join(
-    tmp %>%
-      distinct(indicator, threshold),
-    by = "indicator"
-  ) %>%
-  mutate(
-    klasse = pmap(
-      list(m = log_mean, s = log_sd, th = threshold),
-      function(m, s, th) {
-        classification(
-          lcl = qnorm(0.05, m, s), ucl = qnorm(0.95, m, s), threshold = th
-        )
-      }
-    )
-  ) %>%
-  unnest(klasse) %>%
+composite_index %>%
+  inner_join(meta, by = "analysis") %>%
   transmute(
-    indicator, frequentie, referentie, naar, klasse,
-    schatting = round(exp(log_mean), 3),
-    lcl90 = round(exp(qnorm(0.05, log_mean, log_sd)), 3),
-    ucl90 = round(exp(qnorm(0.95, log_mean, log_sd)), 3),
-    lcl60 = round(exp(qnorm(0.1, log_mean, log_sd)), 3),
-    ucl60 = round(exp(qnorm(0.8, log_mean, log_sd)), 3),
-    lcl30 = round(exp(qnorm(0.35, log_mean, log_sd)), 3),
-    ucl30 = round(exp(qnorm(0.65, log_mean, log_sd)), 3),
-    wijziging = sprintf(
-      "%s: %s t.o.v. %s (%s)", 
-       ifelse(
-        frequentie == "driejaarlijks", 
-        paste(naar, naar + 2, sep = "-"),
-        naar
-      ),
-      format_ci(
-        schatting - 1, lcl = lcl90 - 1, ucl = ucl90 - 1, 
-        percent = TRUE, sign = TRUE
-      ),
-       ifelse(
-        frequentie == "driejaarlijks", 
-        paste(referentie, referentie + 2, sep = "-"),
-        referentie
-      ),
-      klasse
-    ),
-    analyse = analysis, status
+    indicator = factor(.data$speciesgroup),
+    frequentie = factor(ifelse(.data$cycle, "driejaarlijks", "jaarlijks")),
+    .data$referentie, naar = .data$periode,
+    schatting = round(exp(.data$estimate), 3),
+    lcl = round(exp(.data$lcl), 3),
+    ucl = round(exp(.data$ucl), 3),
+    klasse = .data$klasse, .data$interpretatie, .data$wijziging,
+    analyse = .data$analysis, status = .data$status_fingerprint
   ) %>%
   write_vc(
-    file = "samengesteld", root = output_dir, optimize = FALSE,
+    file = "samengesteld", root = output_dir, optimize = FALSE, strict = strict,
     sorting = c("indicator", "frequentie", "referentie", "naar")
   ) -> samengesteld_vc
-rm(tmp)
 ```
 
 ```{r composite-indices, results='asis', cache = FALSE, eval = TRUE}
-resultaten$meta %>%
-  filter(composite) %>%
-  arrange(species_group) %>%
-  distinct(hash) %>%
-  pull(hash) %>%
+meta %>%
+  filter(.data$composite, .data$status == "converged") %>%
+  arrange(.data$speciesgroup) %>%
+  distinct(.data$hash) %>%
+  pull(.data$hash) %>%
   sapply(
     function(id) {
       knit_expand("_samengesteld.Rmd", id = id)

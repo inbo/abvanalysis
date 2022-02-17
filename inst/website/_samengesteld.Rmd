@@ -1,65 +1,40 @@
 ```{r {{id}}-set}
 if (interactive()) {
-  resultaten$meta %>%
-    filter(composite) %>%
+  meta %>%
+    filter(.data$composite, .data$status == "converged") %>%
     sample_n(1) %>%
-    pull(hash) -> id
+    pull(.data$hash) -> id
 } else {
   id <- "{{id}}"
 }
 ```
 
 ```{r {{id}}-basis}
-resultaten$meta %>%
-  filter(hash == id) %>%
+meta %>%
+  filter(.data$hash == id) -> deze_analyse
+deze_analyse %>%
   slice(1) %>%
-  pull(species_group) -> soort_naam
-composite_soort %>%
-  filter(hash == id) %>%
-  arrange(soort) %>%
+  pull(.data$speciesgroup) -> soort_naam
+soortenlijst %>%
+  filter(.data$hash == id) %>%
   mutate(
-    soort = tolower(soort) %>%
+    soort = tolower(.data$soort) %>%
       str_replace_all(" ", "-") %>%
       str_remove_all("'") %>%
-      sprintf(fmt = "[%2$s](#soort-%1$s)", soort)
+      sprintf(fmt = "[%2$s](#soort-%1$s)", .data$soort)
   ) %>%
-  pull(soort) -> deze_soorten
-deze_threshold <- log(0.75) / sqrt(length(deze_soorten))
-wijziging %>%
-  filter(hash == id) %>%
-  mutate(
-    schatting = exp(log_mean),
-    log_lcl90 = qnorm(0.05, log_mean, log_sd),
-    log_ucl90 = qnorm(0.95, log_mean, log_sd),
-    lcl90 = exp(qnorm(0.05, log_mean, log_sd)),
-    ucl90 = exp(qnorm(0.95, log_mean, log_sd)),
-    lcl60 = exp(qnorm(0.2, log_mean, log_sd)),
-    ucl60 = exp(qnorm(0.8, log_mean, log_sd)),
-    lcl30 = exp(qnorm(0.35, log_mean, log_sd)),
-    ucl30 = exp(qnorm(0.65, log_mean, log_sd)),
-    klasse = classification(log_lcl90, log_ucl90, deze_threshold),
-    wijziging = sprintf(
-      "%s: %s t.o.v. %s (%s)", 
-       ifelse(
-        frequentie == "jaarlijks", 
-        naar, 
-        paste(naar, naar + 2, sep = "-")
-      ),
-      format_ci(
-        exp(log_mean) - 1, lcl = exp(log_lcl90) - 1, ucl = exp(log_ucl90) - 1, 
-        percent = TRUE, sign = TRUE
-      ),
-       ifelse(
-        frequentie == "jaarlijks", 
-        referentie, 
-        paste(referentie, referentie + 2, sep = "-")
-      ),
-      klasse
-    )
-  ) -> deze_wijziging
+  arrange(.data$soort) %>%
+  pull(.data$soort) -> deze_soorten
+soortenlijst %>%
+  filter(.data$hash == id) %>%
+  distinct(.data$drempel) %>%
+  pull(.data$drempel) -> deze_threshold
+deze_analyse %>%
+  select(.data$analysis, .data$cycle) %>%
+  inner_join(composite_index, by = "analysis") -> deze_wijziging
 ```
 
-# `r sprintf("%s {#index-%s}", soort_naam, soort_naam)`
+# `r sprintf("%s {#index-%s}", soort_naam, tolower(soort_naam))`
 
 Deze indicator is gebaseerd op volgende soorten: `r paste(deze_soorten, collapse = ", ")`.
 De indicator bestaat uit `r length(deze_soorten)` soorten.
@@ -69,59 +44,46 @@ De aangepaste grenswaarden zijn `r sprintf("%+.1f%%", exp(deze_threshold) * 100 
 
 ```{r {{id}}-wijziging-jaar, fig.cap = "(ref:{{id}}-index)", eval = nrow(deze_wijziging) > 0, warning = FALSE}
 deze_wijziging %>%
-  filter(frequentie == "jaarlijks") %>%
-  mutate(klasse = factor(klasse, levels = c(levels(klasse), "R"))) %>%
-  complete(referentie, naar, fill = list(klasse = "R", schatting = 1)) %>%
-  filter(referentie < max(referentie)) %>%
+  filter(!.data$cycle) %>%
   mutate(
-    periode = naar,
-    naar_0 = naar - 0.5,
-    naar_1 = naar + 0.5,
-    interpretatie = recode(
-      klasse, "++" = "sterke toename", "+" = "toename", "+~" = "matige toename",
-      "~" = "stabiel", "-~" = "matige afname", "-" = "afname",
-      "--" = "sterke afname", "?+" = "mogelijke toename",
-      "?-" = "mogelijke afname", "?" = "onduidelijk", "R" = "referentie"
+    klasse = factor(.data$klasse, levels = c(levels(.data$klasse), "R")),
+    interpretatie = as.character(interpretatie)
+  ) %>%
+  complete(
+    .data$referentie, periode = unique(.data$referentie, .data$periode),
+    fill = list(
+      klasse = "R", estimate = 0, interpretatie = "referentie",
+      wijziging = "n.v.t."
     )
   ) %>%
-  mutate_at(
-    c("schatting", "lcl90", "ucl90", "lcl60", "ucl60", "lcl30", "ucl30"), log
-  ) %>%
   mutate(
-    alpha_punt = ifelse(naar < referentie, 0, 1),
-    alpha_vlak = ifelse(naar < referentie, 0, 0.3),
-    klasse = ifelse(naar < referentie, NA, as.character(klasse))
+    naar_0 = .data$periode - 0.5, naar_1 = .data$periode + 0.5,
+    alpha_punt = ifelse(.data$periode < .data$referentie, 0, 1),
+    alpha_vlak = ifelse(.data$periode < .data$referentie, 0, ribbon_opacity),
+    klasse = ifelse(
+      .data$periode < .data$referentie, NA, as.character(.data$klasse)
+    )
   ) -> jaarlijks
 if (!interactive() && opts_knit$get("rmarkdown.pandoc.to") != "html") {
   jaarlijks %>%
-    filter(referentie == 2007) -> jaarlijks
+    filter(.data$referentie == min(.data$referentie)) -> jaarlijks
 }
 p <- ggplot(
   jaarlijks,
   aes(
-    x = naar, xmin = naar_0, xmax = naar_1, y = schatting, frame = referentie,
-    periode = periode, wijziging = wijziging, interpretatie = interpretatie
+    x = periode, xmin = naar_0, xmax = naar_1, y = estimate,
+    frame = referentie, periode = periode, wijziging = wijziging,
+    interpretatie = interpretatie
   )
 ) +
   geom_hline(yintercept = 0) +
   geom_hline(yintercept = deze_threshold * c(-1, 1), linetype = 2) +
   geom_rect(
-    aes(ymin = lcl90, ymax = ucl90, fill = klasse),
-    alpha = jaarlijks$alpha_vlak, show.legend = FALSE
-  ) +
-  geom_rect(
-    aes(ymin = lcl60, ymax = ucl60, fill = klasse),
-    alpha = jaarlijks$alpha_vlak, show.legend = FALSE
-  ) +
-  geom_rect(
-    aes(ymin = lcl30, ymax = ucl30, fill = klasse),
+    aes(ymin = lcl, ymax = ucl, fill = klasse),
     alpha = jaarlijks$alpha_vlak, show.legend = FALSE
   ) +
   geom_point(size = 6, alpha = jaarlijks$alpha_punt) +
-  geom_text(
-    aes(label = klasse),
-    hjust = 0.5, vjust = 0.5, colour = "white"
-  ) +
+  geom_text(aes(label = klasse), hjust = 0.5, vjust = 0.5, colour = "white") +
   scale_y_continuous(
     "procentuele wijziging t.o.v. referentieperiode", breaks = index_breaks,
     labels = index_labels
@@ -130,8 +92,7 @@ p <- ggplot(
   theme(axis.title.x = element_blank())
 if (interactive() || opts_knit$get("rmarkdown.pandoc.to") == "html") {
   ggplotly(
-    p,
-    tooltip = c("referentie", "periode", "wijziging", "interpretatie")
+    p, tooltip = c("referentie", "periode", "wijziging", "interpretatie")
   ) %>%
     animation_opts(frame = 1000, transition = 0, redraw = TRUE) %>%
     animation_slider(
@@ -159,60 +120,47 @@ if (interactive() || opts_knit$get("rmarkdown.pandoc.to") == "html") {
 
 ```{r {{id}}-wijziging-cyclus, fig.cap = "(ref:{{id}}-index-cyclus)", eval = nrow(deze_wijziging) > 0}
 deze_wijziging %>%
-  filter(frequentie == "driejaarlijks") %>%
-  mutate(klasse = factor(klasse, levels = c(levels(klasse), "R"))) %>%
-  complete(referentie, naar, fill = list(klasse = "R", schatting = 1)) %>%
-  filter(referentie < max(referentie)) %>%
+  filter(.data$cycle) %>%
   mutate(
-    naar_0 = naar - 1.5,
-    naar_1 = naar + 1.5,
-    interpretatie = recode(
-      klasse, "++" = "sterke toename", "+" = "toename", "+~" = "matige toename",
-      "~" = "stabiel", "-~" = "matige afname", "-" = "afname",
-      "--" = "sterke afname", "?+" = "mogelijke toename",
-      "?-" = "mogelijke afname", "?" = "onduidelijk", "R" = "referentie"
+    klasse = factor(.data$klasse, levels = c(levels(.data$klasse), "R")),
+    interpretatie = as.character(.data$interpretatie)
+  ) %>%
+  complete(
+    .data$referentie, periode = unique(.data$referentie, .data$periode),
+    fill = list(
+      klasse = "R", estimate = 0, interpretatie = "referentie",
+      wijziging = "n.v.t."
     )
   ) %>%
-  mutate_at(
-    c("schatting", "lcl90", "ucl90", "lcl60", "ucl60", "lcl30", "ucl30"), log
-  ) %>%
   mutate(
-    alpha_punt = ifelse(naar < referentie, 0, 1),
-    alpha_vlak = ifelse(naar < referentie, 0, 0.3),
-    klasse = ifelse(naar < referentie, " ", as.character(klasse)),
-    wijziging = ifelse(naar == referentie, "n.v.t.", wijziging),
-    referentie = periode_labels(referentie),
-    periode = periode_labels(naar)
+    naar_0 = .data$periode - 1.5, naar_1 = .data$periode + 1.5,
+    alpha_punt = ifelse(.data$periode < .data$referentie, 0, 1),
+    alpha_vlak = ifelse(.data$periode < .data$referentie, 0, ribbon_opacity),
+    klasse = ifelse(
+      .data$periode < .data$referentie, NA, as.character(.data$klasse)
+    ),
+    referentie = periode_labels(.data$referentie),
+    naar = .data$periode, periode = periode_labels(.data$periode)
   ) -> driejaarlijks
 if (!interactive() && opts_knit$get("rmarkdown.pandoc.to") != "html") {
   driejaarlijks %>%
-    filter(referentie == "2007 - 2009") -> driejaarlijks
+    filter(.data$referentie == "2007 - 2009") -> driejaarlijks
 }
 p <- ggplot(
   driejaarlijks,
   aes(
-    x = naar, xmin = naar_0, xmax = naar_1, y = schatting, frame = referentie,
+    x = naar, xmin = naar_0, xmax = naar_1, y = estimate, frame = referentie,
     periode = periode, wijziging = wijziging, interpretatie = interpretatie
   )
 ) +
   geom_hline(yintercept = 0) +
   geom_hline(yintercept = deze_threshold * c(-1, 1), linetype = 2) +
   geom_rect(
-    aes(ymin = lcl90, ymax = ucl90, fill = klasse),
-    alpha = driejaarlijks$alpha_vlak, show.legend = FALSE
-  ) +
-  geom_rect(
-    aes(ymin = lcl60, ymax = ucl60, fill = klasse),
-    alpha = driejaarlijks$alpha_vlak, show.legend = FALSE
-  ) +
-  geom_rect(
-    aes(ymin = lcl30, ymax = ucl30, fill = klasse),
+    aes(ymin = lcl, ymax = ucl, fill = klasse),
     alpha = driejaarlijks$alpha_vlak, show.legend = FALSE
   ) +
   geom_point(size = 6, alpha = driejaarlijks$alpha_punt) +
-  geom_text(
-    aes(label = klasse), hjust = 0.5, vjust = 0.5, colour = "white"
-  ) +
+  geom_text(aes(label = klasse), hjust = 0.5, vjust = 0.5, colour = "white") +
   scale_x_continuous(
     breaks = unique(driejaarlijks$naar), labels = periode_labels
   ) +
@@ -249,13 +197,20 @@ if (interactive() || opts_knit$get("rmarkdown.pandoc.to") == "html") {
 }
 ```
 
-
 (ref:{{id}}-raster3) Paarsgewijze vergelijking tussen driejarige cycli voor `r soort_naam`.
 
 ```{r {{id}}-wijziging-jaar-alles3, fig.cap = "(ref:{{id}}-raster3)", eval = output_format != "html" && nrow(deze_wijziging) > 0}
 deze_wijziging %>%
-  filter(frequentie == "driejaarlijks") %>%
-  ggplot(aes(x = naar, y = referentie, label = klasse)) +
+  filter(.data$cycle) %>%
+  rename(periode = .data$referentie, referentie = .data$periode) %>%
+  mutate(
+    klasse = classification(-.data$ucl, -.data$lcl, threshold = deze_threshold)
+  ) %>%
+  bind_rows(
+    deze_wijziging %>%
+      filter(.data$cycle)
+  ) %>%
+  ggplot(aes(x = periode, y = referentie, label = klasse)) +
   geom_point(aes(colour = klasse), size = 6, show.legend = FALSE) +
   scale_colour_manual(values = kleurgradient) +
   geom_text(
@@ -281,8 +236,16 @@ deze_wijziging %>%
 
 ```{r {{id}}-wijziging-jaar-alles2, fig.cap = "(ref:{{id}}-raster)", eval = output_format != "html" && nrow(deze_wijziging) > 0}
 deze_wijziging %>%
-  filter(frequentie == "jaarlijks") %>%
-  ggplot(aes(x = naar, y = referentie, label = klasse)) +
+  filter(!.data$cycle) %>%
+  rename(periode = .data$referentie, referentie = .data$periode) %>%
+  mutate(
+    klasse = classification(-.data$ucl, -.data$lcl, threshold = deze_threshold)
+  ) %>%
+  bind_rows(
+    deze_wijziging %>%
+      filter(!.data$cycle)
+  ) %>%
+  ggplot(aes(x = periode, y = referentie, label = klasse)) +
   geom_point(aes(colour = klasse), size = 4, show.legend = FALSE) +
   scale_colour_manual(values = kleurgradient) +
   geom_text(
@@ -298,17 +261,16 @@ deze_wijziging %>%
 (ref:{{id}}-hash) Data-hashes van de analyse in het kader van traceerbaarheid (zie §\@ref(s:traceerbaarheid)).
 
 ```{r {{id}}-hash, results = "asis"}
-resultaten$meta %>%
-  filter(hash == id, nonlinear) %>%
-  arrange(cycle) %>%
+deze_analyse %>%
+  arrange(.data$cycle, .data$linear) %>%
   transmute(
     frequentie = factor(
-      cycle, 
-      levels = c(TRUE, FALSE), 
+      .data$cycle, levels = c(TRUE, FALSE),
       labels = c("driejaarlijks", "jaarlijks")
     ),
-    analyse = str_replace(analysis, "(.{20})", "\\1 "), 
-    status = str_replace(status, "(.{20})", "\\1 ")
+    model = ifelse(.data$linear, "lineair", "niet-lineair"),
+    analyse = str_replace(.data$analysis, "(.{20})", "\\1 "), 
+    status = str_replace(.data$status_fingerprint, "(.{20})", "\\1 ")
   ) %>%
-  pandoc.table(caption = "(ref:{{id}}-hash)")
+  pandoc.table(caption = "(\\#tab:{{id}}-hash) (ref:{{id}}-hash)")
 ```

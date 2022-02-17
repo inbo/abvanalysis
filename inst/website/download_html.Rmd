@@ -4,18 +4,18 @@ Deze sectie bevat links naar het nodige cijfermateriaal om de figuren in dit rap
 Om de resultaten zo toegankelijk mogelijk te maken, bieden we ze aan ale [platte tekstbestanden](https://nl.wikipedia.org/wiki/Platte_tekst).
 Elke resultatenset bestaat uit twee bestanden:
 
-- een bestand met `.tsv` extensie.
-  Dit bevat de eigenlijke resultaten als tabgescheiden platte tekstformaat.
+- een bestand met `.csv` extensie.
+  Dit bevat de eigenlijke resultaten als kommagescheiden platte tekstformaat.
   Je kan dit openen met je favoriete rekenbladprogramma.
 - een bestand met `.yml` extentie.
-  Dit platte tekstbestand bevat metadata over de inhoud van de het `.tsv` bestand.
+  Dit platte tekstbestand bevat metadata over de inhoud van het `.csv` bestand.
   Je hebt dit bestand nodig indien de gegevens wilt inlezen met het [`git2rdata`](https://ropensci.github.io/git2rdata) package.
   Daarnaast bevat het een data-hash waarmee je de integriteit van het databestand kan nagaan.
   Daarom raden we aan om dit bestand toch te downloaden, ook al heb je het strict genomen niet nodig.
 
 ### Indicatoren
 
-- **samengestelde indices:** [`samengesteld.tsv`](samengesteld.tsv) en [`samengesteld.yml`](samengesteld.yml).
+- **samengestelde indices:** [`samengesteld.csv`](samengesteld.csv) en [`samengesteld.yml`](samengesteld.yml).
     - `indicator`: naam van de indicator;
     - `frequentie`: index op basis van jaarlijkse of driejaarlijkse gegevens;
     - `referentie`: het referentiejaartal;
@@ -28,14 +28,14 @@ Elke resultatenset bestaat uit twee bestanden:
     - `wijziging`: tekstuele beschrijving van de evolutie;
     - `analyse`: data-hash van de analyse;
     - `status`: data-hash van de status van de analyse
-- **soortenlijst samengestelde indices:** [`samengesteld_soorten.tsv`](samengesteld_soorten.tsv) en [samengesteld_soorten.yml](samengesteld_soorten.yml).
+- **soortenlijst samengestelde indices:** [`samengesteld_soorten.csv`](samengesteld_soorten.csv) en [samengesteld_soorten.yml](samengesteld_soorten.yml).
     - `soort`: naam van de soort;
     - `indicator`: naam van de samengestelde indicator;
     - `ondergrens` en `bovengrens`: grenzen voor de opdelingen van de effecten in klassen (zie §\@ref(s:trendklasse))
 
 ### Individuele soorten
 
-- **gemiddeld aantal op een meetpunt:** [`aantallen.tsv`](aantallen.tsv) en [aantallen.yml](aantallen.yml).
+- **gemiddeld aantal op een meetpunt:** [`aantallen.csv`](aantallen.csv) en [aantallen.yml](aantallen.yml).
     - `soort`: Nederlandse soortnaam;
     - `frequentie`: trend op basis van jaarlijkse of driejaarlijkse gegevens;
     - `jaar`: jaartal of startjaar van de driejaarlijkse periode;
@@ -45,7 +45,7 @@ Elke resultatenset bestaat uit twee bestanden:
     - `lcl30` en `ucl30`: de onder- en bovengrens van het 30% betrouwbaarheidsinterval rond de schatting;
     - `analyse`: data-hash van de analyse;
     - `status`: data-hash van de status van de analyse
-- **lineaire trends:** [`lineaire_trend.tsv`](lineaire_trend.tsv) en [lineaire_trend.yml](lineaire_trend.yml).
+- **lineaire trends:** [`lineaire_trend.csv`](lineaire_trend.csv) en [lineaire_trend.yml](lineaire_trend.yml).
     - `soort`: Nederlandse soortnaam;
     - `frequentie`: trend op basis van jaarlijkse of driejaarlijkse gegevens;
     - `jaarlijks`: gemiddelde jaarlijkse wijziging (zie §\@ref(s:lineairetrend);
@@ -54,7 +54,7 @@ Elke resultatenset bestaat uit twee bestanden:
     - `verloop`: geeft aan of de trend lineair verloopt;
     - `analyse`: data-hash van de analyse;
     - `status`: data-hash van de status van de analyse
-- **indices:** [`index.tsv`](index.tsv) en [`index.yml`](index.yml).
+- **indices:** [`index.csv`](index.csv) en [`index.yml`](index.yml).
     - `soort`: naam van de indicator;
     - `frequentie`: index op basis van jaarlijkse of driejaarlijkse gegevens;
     - `referentie`: het referentiejaartal;
@@ -67,7 +67,7 @@ Elke resultatenset bestaat uit twee bestanden:
     - `wijziging`: tekstuele beschrijving van de evolutie;
     - `analyse`: data-hash van de analyse;
     - `status`: data-hash van de status van de analyse
-- **stratumgewichten:** [`stratum_gewicht.tsv`](stratum_gewicht.tsv) en [stratum_gewicht.yml](stratum_gewicht.yml).
+- **stratumgewichten:** [`stratum_gewicht.csv`](stratum_gewicht.csv) en [stratum_gewicht.yml](stratum_gewicht.yml).
     - `soort`: Nederlandse soortnaam;
     - `stratum`: naam van het stratum;
     - `gewicht`: gewicht van het stratum voor deze soort (zie §\@ref(s:stratumgewicht));
