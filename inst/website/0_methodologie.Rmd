@@ -406,7 +406,7 @@ Om de interpretatie makkelijker te maken, delen we de wijzigingen op in tien kla
 Een effect is significant wanneer de referentie buiten het 90% interval ligt.
 We spreken over een **toename** (**afname**) als het interval volledig boven (onder) de referentie ligt.
 Niet-significante effect is ook informatief wanneer het bijhorende interval voldoende smal is.
-Bijvoorbeeld als het interval volledig tussen een onder- en bovengrens ligt.
+Bijvoorbeeld als het interval volledig tussen de onder- en bovengrens ligt.
 In dat geval kunnen we stellen dat het effect niet-significant en klein is, het immers zeker minder sterk dan de ondergrens en minder sterk dan de bovengrens.
 Dergelijk effect krijgt de naam **stabiel**.
 Heeft het effect een breed interval dat zowel de boven- als ondergrens bevat, spreken we over een **onduidelijk** effect.

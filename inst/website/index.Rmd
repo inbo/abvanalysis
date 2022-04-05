@@ -1,6 +1,6 @@
 ---
 title: "Trends op basis van de Algemene Broedvogelmonitoring Vlaanderen (ABV)"
-subtitle: "Technisch achtergrondrapport voor de periode 2007-2020"
+subtitle: "Technisch achtergrondrapport voor de periode 2007-2021"
 author: 
   - name: "Thierry Onkelinx"
     email: "thierry.onkelinx@inbo.be"
@@ -20,14 +20,18 @@ bibliography: references.bib
 link-citations: TRUE
 site: bookdown::bookdown_site
 year: 2022
+reportnr: 9
+doi: 10.21436/inbor.73009782
+depotnr: D/2022/3241/087
 corresponding: thierry.onkelinx@inbo.be
 cooperation:
   - Natuurpunt Studie vzw
   - Coxiestraat 11, 2800 Mechelen
   - https://www.natuurpunt.be
 cooperation_logo: natuurpunt.png
-cover_photo: to do
-embargo: 2022-05-01
+cover_photo: https://img2.vildaphoto.net/asset/l/68813.jpg
+cover_description: Geelgorzen (_Emberiza citrinella_) op een stuk hout tijden de winter. (© Yves Adams, Vildaphoto)
+embargo: 2022-03-24
 output:
   INBOmd::gitbook: default
   INBOmd::pdf_report: default
