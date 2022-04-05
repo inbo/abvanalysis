@@ -10,6 +10,7 @@
 #' @importFrom git2rdata read_vc write_vc
 #' @importFrom n2kanalysis get_result
 #' @importFrom rlang .data
+#' @importFrom stats qnorm
 #' @importFrom stringr str_detect str_replace
 #' @importFrom utils file_test
 retrieve_results <- function(
