@@ -50,7 +50,7 @@ ABV stands for Algemene Broedvogelmonitoring Vlaanderen: the common breeding bir
     - _Period_: categorical factor models the overall differences among periods. Only relevant in case multiple periods are selected.
     - _Location_: i.i.d. random intercept of grid cell. This models effects of the grid cell not captured by _Stratum_, _Period_ or _Year_.
     - _SubLocation_: i.i.d. random intercept of point within grid cell. This models effects of the point within the grid cell not captured by _Stratum_, _Period_, _Year_ or _Location_.
-- Model fit in [R](http://www.r-project.org) with [INLA](http://www.r-inla.org).
+- Model fit in [R](https://www.R-project.org) with [INLA](https://www.r-inla.org).
 
 ### Trend
 
