@@ -9,8 +9,7 @@ contact:
   family-names: Onkelinx
   given-names: Thierry
 - email: info@inbo.be
-  family-names: Research Institute for Nature and Forest
-  given-names: ~
+  name: Research Institute for Nature and Forest
 title: 'abvanalysis: Analysis of the Common Breeding Bird Survey'
 version: 0.2.2
 abstract: Read in the raw data and prepare analysis datasets.

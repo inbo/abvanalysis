@@ -4,7 +4,7 @@ Version: 0.2.2
 Authors@R: c(
     person("Thierry", "Onkelinx", , "thierry.onkelinx@inbo.be", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0001-8804-4216")),
-    person(, "Research Institute for Nature and Forest", , "info@inbo.be", role = c("cph", "fnd"))
+    person("Research Institute for Nature and Forest", , , "info@inbo.be", role = c("cph", "fnd"))
   )
 Description: Read in the raw data and prepare analysis datasets.
 License: GPL-3
