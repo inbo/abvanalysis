@@ -27,7 +27,7 @@
 select_relevant <- function(
   observation, species, repo, min_observation = 100, min_stratum = 3,
   min_cycle = 2, proportion = 0.15
-){
+) {
   assert_that(
     inherits(observation, "data.frame"), has_name(observation, "sample_id"),
     has_name(observation, "stratum"), has_name(observation, "square"),

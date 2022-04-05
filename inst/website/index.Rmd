@@ -136,7 +136,7 @@ paste(package_list, collapse = "|") %>%
   grep(references) -> start
 end <- grep("^\\}$", references)
 lapply(
-  start, 
+  start,
   function(i) {
     i:head(end[i < end], 1)
   }

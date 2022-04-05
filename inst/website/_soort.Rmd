@@ -27,8 +27,8 @@ linear_trend %>%
 deze_analyse %>%
   slice(1) %>%
   pull(.data$speciesgroup) -> soort_naam
-tolower(soort_naam) %>% 
-  str_replace_all(" ", "-") %>% 
+tolower(soort_naam) %>%
+  str_replace_all(" ", "-") %>%
   str_remove_all("'") %>%
   sprintf(fmt = "# %2$s {#soort-%1$s}", soort_naam) -> titel
 deze_analyse %>%
@@ -81,7 +81,7 @@ bind_rows(
   group_by(.data$year) -> poly_cyclus
 dit_aantal %>%
   filter(.data$cycle) %>%
-  transmute(.data$year, label = sprintf("%i-%i", .data$year, .data$year + 2)) -> 
+  transmute(.data$year, label = sprintf("%i-%i", .data$year, .data$year + 2)) ->
   cyclus_labs
 updatemenus <- list(
   list(
@@ -109,7 +109,7 @@ updatemenus <- list(
   )
 )
 plot_ly(
-  fillcolor = inbo_steun_blauw, opacity = ribbon_opacity, showlegend = FALSE, 
+  fillcolor = inbo_steun_blauw, opacity = ribbon_opacity, showlegend = FALSE,
   hoverinfo = "none"
 ) %>%
   add_ribbons(
@@ -122,7 +122,7 @@ plot_ly(
   ) %>%
   add_lines(
     data = aantal_jaar, x = ~year, y = ~exp(estimate),
-    line = list(color = inbo_steun_blauw, width = 4), 
+    line = list(color = inbo_steun_blauw, width = 4),
     text = ~hover, hoverinfo = "text"
   ) %>%
   add_lines(
@@ -139,7 +139,7 @@ plot_ly(
       pivot_longer(c("start", "mid", "end")) %>%
       mutate(x = .data$year + .data$value) %>%
       group_by(.data$year),
-    x = ~x, y = ~exp(estimate), text = ~hover, hoverinfo = "text", 
+    x = ~x, y = ~exp(estimate), text = ~hover, hoverinfo = "text",
     line = list(color = inbo_steun_blauw, width = 4), visible = FALSE
   ) %>%
   layout(
@@ -154,7 +154,7 @@ plot_ly(
   ) %>%
   config(
     modeBarButtonsToRemove = list(
-      "lasso2d", "select2d", "autoScale2d", "hoverClosestCartesian", 
+      "lasso2d", "select2d", "autoScale2d", "hoverClosestCartesian",
       "hoverCompareCartesian", "toggleSpikelines"
     ),
     displaylogo = FALSE
@@ -381,12 +381,20 @@ deze_wijziging %>%
     hjust = 0.5, vjust = 0.5, colour = "white"
   ) +
   scale_x_continuous(
-    breaks = function(x) {seq(2007, x[2], by = 3)},
-    labels = function(x) {sprintf("%02i-%02i", x, x + 2)}
+    breaks = function(x) {
+      seq(2007, x[2], by = 3)
+    },
+    labels = function(x) {
+      sprintf("%02i-%02i", x, x + 2)
+    }
   ) +
   scale_y_continuous(
-    breaks = function(x) {seq(2007, x[2], by = 3)},
-    labels = function(x) {sprintf("%02i-%02i", x, x + 2)}
+    breaks = function(x) {
+      seq(2007, x[2], by = 3)
+    },
+    labels = function(x) {
+      sprintf("%02i-%02i", x, x + 2)
+    }
   ) +
   coord_fixed() +
   theme(
@@ -443,7 +451,7 @@ deze_analyse %>%
       labels = c("driejaarlijks", "jaarlijks")
     ),
     model = ifelse(.data$linear, "lineair", "niet-lineair"),
-    analyse = str_replace(.data$analysis, "(.{20})", "\\1 "), 
+    analyse = str_replace(.data$analysis, "(.{20})", "\\1 "),
     status = str_replace(.data$status_fingerprint, "(.{20})", "\\1 ")
   ) %>%
   pandoc.table(caption = "(\\#tab:{{id}}-hash) (ref:{{id}}-hash)")

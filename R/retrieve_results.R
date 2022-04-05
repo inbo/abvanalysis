@@ -217,7 +217,7 @@ retrieve_results <- function(
 
   # composite index
   results@AnalysisMetadata %>%
-    filter(str_detect(model_type, "composite")) %>%
+    filter(str_detect(.data$model_type, "composite")) %>%
     semi_join(
       x = results@ParameterEstimate,
       by = c("analysis" = "file_fingerprint")
@@ -265,7 +265,7 @@ retrieve_results <- function(
     ) %>%
     semi_join(
       results@AnalysisMetadata %>%
-        filter(str_detect(model_type, "composite")),
+        filter(str_detect(.data$model_type, "composite")),
       by = c("analysis" = "file_fingerprint")
     ) %>%
     mutate(
@@ -298,7 +298,7 @@ retrieve_results <- function(
 #' @importFrom n2kanalysis display get_data get_file_fingerprint
 #' @importFrom purrr map_dfr
 #' @importFrom rlang .data
-#' @importFrom stringr str_subset
+#' @importFrom stringr str_remove str_subset
 read_relevant <- function(base, project, verbose = TRUE) {
   file.path(base, project) %>%
     list.files(pattern = "rds$", recursive = TRUE, full.names = TRUE) %>%

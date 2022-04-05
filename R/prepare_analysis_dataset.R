@@ -24,7 +24,7 @@ prepare_analysis_dataset <- function(
   scheme_id, species_group_id, species, location_group_id, seed = 20070315,
   observation, repo, base, project, overwrite = FALSE, min_observation = 100,
   min_stratum = 3, min_cycle = 2, proportion = 0.15, verbose = TRUE, family
-){
+) {
   display(verbose, c(location_group_id, " ", species_group_id))
 
   control <- list(control.fixed = list(prec = list(default = 0.2)))

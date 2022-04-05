@@ -95,7 +95,7 @@ linear_trend %>%
   inner_join(meta, by = c("hash", "analysis", "cycle")) %>%
   arrange(.data$klasse, desc(.data$estimate)) %>%
   transmute(
-    soort = tolower(.data$speciesgroup) %>% 
+    soort = tolower(.data$speciesgroup) %>%
       str_replace_all(" ", "-") %>%
       str_remove_all("'") %>%
       sprintf(fmt = "[%2$s](#soort-%1$s)", .data$speciesgroup),
@@ -116,7 +116,7 @@ linear_trend %>%
   inner_join(meta, by = c("hash", "analysis", "cycle")) %>%
   arrange(.data$klasse, desc(.data$estimate)) %>%
   transmute(
-    soort = tolower(.data$speciesgroup) %>% 
+    soort = tolower(.data$speciesgroup) %>%
       str_replace_all(" ", "-") %>%
       str_remove_all("'") %>%
       sprintf(fmt = "[%2$s](#soort-%1$s)", .data$speciesgroup),

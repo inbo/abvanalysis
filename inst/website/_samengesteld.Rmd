@@ -218,12 +218,20 @@ deze_wijziging %>%
     hjust = 0.5, vjust = 0.5, colour = "white"
   ) +
   scale_x_continuous(
-    breaks = function(x) {seq(2007, x[2], by = 3)},
-    labels = function(x) {sprintf("%02i-%02i", x, x + 2)}
+    breaks = function(x) {
+      seq(2007, x[2], by = 3)
+    },
+    labels = function(x) {
+      sprintf("%02i-%02i", x, x + 2)
+    }
   ) +
   scale_y_continuous(
-    breaks = function(x) {seq(2007, x[2], by = 3)},
-    labels = function(x) {sprintf("%02i-%02i", x, x + 2)}
+    breaks = function(x) {
+      seq(2007, x[2], by = 3)
+    },
+    labels = function(x) {
+      sprintf("%02i-%02i", x, x + 2)
+    }
   ) +
   coord_fixed() +
   theme(
@@ -269,7 +277,7 @@ deze_analyse %>%
       labels = c("driejaarlijks", "jaarlijks")
     ),
     model = ifelse(.data$linear, "lineair", "niet-lineair"),
-    analyse = str_replace(.data$analysis, "(.{20})", "\\1 "), 
+    analyse = str_replace(.data$analysis, "(.{20})", "\\1 "),
     status = str_replace(.data$status_fingerprint, "(.{20})", "\\1 ")
   ) %>%
   pandoc.table(caption = "(\\#tab:{{id}}-hash) (ref:{{id}}-hash)")

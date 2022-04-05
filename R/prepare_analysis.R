@@ -156,7 +156,7 @@ prepare_analysis <- function(
     map(
       store_manifest_yaml, base = base, project = project, docker = docker,
       dependencies = dependencies
-    ) -> stored
+    )
 
   manifest_composite %>%
     transmute(manifest = map(.data$manifest, slot, "Manifest")) %>%

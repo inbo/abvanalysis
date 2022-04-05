@@ -20,7 +20,8 @@ Defaults to \code{TRUE}.}
 Defaults to \code{TRUE}.}
 }
 \value{
-a data.frame with the fingerprint, status and status_fingerprint as stored
+a data.frame with the fingerprint, status and status_fingerprint as
+stored
 }
 \description{
 store the n2kModel and retrieve its fingerprints

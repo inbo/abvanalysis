@@ -14,7 +14,7 @@
 prepare_analysis_composite <- function(
   frequency, type, species_group_id, location_group_id, models, base, project,
   scheme_id = "ABV", seed = 20070315, overwrite = FALSE, verbose = TRUE
-){
+) {
   assert_that(
     is.string(frequency), is.string(type), is.string(species_group_id),
     is.string(location_group_id)

@@ -6,7 +6,8 @@
 #' @param stratum_var variable containing the stratum information.
 #' @export
 #' @importFrom assertthat assert_that has_name is.string
-#' @importFrom dplyr %>% arrange distinct filter inner_join mutate row_number select transmute
+#' @importFrom dplyr %>% arrange distinct filter inner_join mutate row_number
+#' select transmute
 #' @importFrom purrr map
 #' @importFrom rlang .data
 #' @importFrom stats setNames

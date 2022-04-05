@@ -9,7 +9,7 @@
 #' @importFrom stats model.matrix
 get_linear_lincomb <- function(
   dataset, time_var, stratum_var = "stratum", stratum_weights, formula
-){
+) {
   assert_that(is.string(time_var), is.string(stratum_var))
   assert_that(
     inherits(dataset, "data.frame"), has_name(dataset, time_var),
@@ -30,7 +30,7 @@ get_linear_lincomb <- function(
     group_by(.data$ID) %>%
     summarise(across(.fns = sum)) -> mm
   stratum_weights %>%
-    mutate("{time_var}" := 1) -> trend_weight
+    mutate("{time_var}" := 1) -> trend_weight # nolint: object_name_linter.
   mm_trend <- model.matrix(object = formula, trend_weight)
   mm_trend <- as.data.frame(mm_trend) * trend_weight$weight
   mm_trend[, -grep(":", colnames(mm_trend))] <- 0
