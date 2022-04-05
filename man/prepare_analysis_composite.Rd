@@ -39,7 +39,7 @@ prepare_analysis_composite(
 Defaults to `20070315`.}
 
 \item{overwrite}{Should an existing object be overwritten?
-Defaults to TRUE.}
+Defaults to \code{TRUE}.}
 
 \item{verbose}{display the progress}
 }

@@ -14,10 +14,10 @@ storage(model, base, project, overwrite = FALSE, validate = FALSE)
 \item{project}{Will be a relative path within the base location.}
 
 \item{overwrite}{Should an existing object be overwritten?
-Defaults to TRUE.}
+Defaults to \code{TRUE}.}
 
 \item{validate}{Check that the object is valid before storing it.
-Defaults to TRUE.}
+Defaults to \code{TRUE}.}
 }
 \value{
 a data.frame with the fingerprint, status and status_fingerprint as stored

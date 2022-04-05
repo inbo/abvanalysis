@@ -29,7 +29,7 @@ prepare_analysis(
 \item{project}{Will be a relative path within the base location.}
 
 \item{overwrite}{Should an existing object be overwritten?
-Defaults to TRUE.}
+Defaults to \code{TRUE}.}
 
 \item{seed}{The seed for the analysis.
 Defaults to `20070315`.}

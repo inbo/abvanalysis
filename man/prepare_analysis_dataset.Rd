@@ -44,7 +44,7 @@ Defaults to `20070315`.}
 \item{project}{Will be a relative path within the base location.}
 
 \item{overwrite}{Should an existing object be overwritten?
-Defaults to TRUE.}
+Defaults to \code{TRUE}.}
 
 \item{min_observation}{The minimum number of observations for taking a
 species into account.
