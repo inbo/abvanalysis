@@ -22,7 +22,7 @@ prepare_analysis(
 )
 }
 \arguments{
-\item{repo}{a [git2rdata::repository()] object}
+\item{repo}{a \code{\link[git2rdata:repository]{git2rdata::repository()}} object}
 
 \item{base}{The base location to store the model.}
 
@@ -32,35 +32,35 @@ prepare_analysis(
 Defaults to \code{TRUE}.}
 
 \item{seed}{The seed for the analysis.
-Defaults to `20070315`.}
+Defaults to \code{20070315}.}
 
 \item{verbose}{display the progress}
 
 \item{min_observation}{The minimum number of observations for taking a
 species into account.
-Defaults to `100`.}
+Defaults to \code{100}.}
 
 \item{min_stratum}{The required minimum number of relevant locations per
 stratum.
-Defaults to `3`.}
+Defaults to \code{3}.}
 
 \item{min_cycle}{Minimum number of cycles in which a species must be found
 at a square.
 Square with sightings from fewer cycles will be ignored.
-Defaults to `2`.}
+Defaults to \code{2}.}
 
 \item{proportion}{Minimum proportion of the least important period.
-Defaults to `0.15`.}
+Defaults to \code{0.15}.}
 
 \item{scheme_id}{a string with the scheme id.}
 
 \item{volume}{The argument passed to the '-v' of docker.
-Only used when `base` is a local file system.}
+Only used when \code{base} is a local file system.}
 
 \item{docker}{The docker image to use during model fit.}
 
-\item{dependencies}{A vector of R packages as understood by the `repo`
-argument of [remotes::install_github()].}
+\item{dependencies}{A vector of R packages as understood by the \code{repo}
+argument of \code{\link[remotes:install_github]{remotes::install_github()}}.}
 }
 \description{
 Prepare all datasets and a to do list of models

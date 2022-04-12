@@ -34,3 +34,4 @@ Additional_repositories: https://inbo.r-universe.dev
 Encoding: UTF-8
 Language: en-GB
 RoxygenNote: 7.1.2
+Roxygen: list(markdown = TRUE)

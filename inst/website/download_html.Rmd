@@ -1,17 +1,17 @@
 ## Downloadbaar cijfermateriaal
 
 Deze sectie bevat links naar het nodige cijfermateriaal om de figuren in dit rapport te maken.
-Om de resultaten zo toegankelijk mogelijk te maken, bieden we ze aan ale [platte tekstbestanden](https://nl.wikipedia.org/wiki/Platte_tekst).
-Elke resultatenset bestaat uit twee bestanden:
+Om de resultaten zo toegankelijk mogelijk te maken, bieden we ze aan als [platte tekstbestanden](https://nl.wikipedia.org/wiki/Platte_tekst).
+Elke dataset bestaat uit twee bestanden:
 
 - een bestand met `.csv` extensie.
   Dit bevat de eigenlijke resultaten als kommagescheiden platte tekstformaat.
   Je kan dit openen met je favoriete rekenbladprogramma.
-- een bestand met `.yml` extentie.
+- een bestand met `.yml` extensie.
   Dit platte tekstbestand bevat metadata over de inhoud van het `.csv` bestand.
   Je hebt dit bestand nodig indien de gegevens wilt inlezen met het [`git2rdata`](https://ropensci.github.io/git2rdata) package.
   Daarnaast bevat het een data-hash waarmee je de integriteit van het databestand kan nagaan.
-  Daarom raden we aan om dit bestand toch te downloaden, ook al heb je het strict genomen niet nodig.
+  Daarom raden we aan om dit bestand toch te downloaden, ook al heb je het strikt genomen niet nodig.
 
 ### Indicatoren
 
@@ -21,31 +21,31 @@ Elke resultatenset bestaat uit twee bestanden:
     - `referentie`: het referentiejaartal;
     - `naar`: het jaartal waarvoor we verhouding het referentiejaar berekenen;
     - `schatting`: de geschatte verhouding van dit jaar t.o.v. het referentiejaar;
-    - `lcl90` en `ucl90`: de onder- en bovengrens van het 90% betrouwbaarheidsinterval rond de schatting;
-    - `lcl60` en `ucl60`: de onder- en bovengrens van het 60% betrouwbaarheidsinterval rond de schatting;
-    - `lcl30` en `ucl30`: de onder- en bovengrens van het 30% betrouwbaarheidsinterval rond de schatting;
+    - `lcl90` en `ucl90`: de ondergrens en bovengrens van het 90% betrouwbaarheidsinterval rond de schatting;
+    - `lcl60` en `ucl60`: de ondergrens en bovengrens van het 60% betrouwbaarheidsinterval rond de schatting;
+    - `lcl30` en `ucl30`: de ondergrens en bovengrens van het 30% betrouwbaarheidsinterval rond de schatting;
     - `klasse`: interpretatie van de wijziging (zie §\@ref(s:trendklasse));
     - `wijziging`: tekstuele beschrijving van de evolutie;
     - `analyse`: data-hash van de analyse;
     - `status`: data-hash van de status van de analyse
-- **soortenlijst samengestelde indices:** [`samengesteld_soorten.csv`](samengesteld_soorten.csv) en [samengesteld_soorten.yml](samengesteld_soorten.yml).
+- **soortenlijst samengestelde indices:** [`samengesteld_soorten.csv`](samengesteld_soorten.csv) en [`samengesteld_soorten.ym`l](samengesteld_soorten.yml).
     - `soort`: naam van de soort;
     - `indicator`: naam van de samengestelde indicator;
     - `ondergrens` en `bovengrens`: grenzen voor de opdelingen van de effecten in klassen (zie §\@ref(s:trendklasse))
 
 ### Individuele soorten
 
-- **gemiddeld aantal op een meetpunt:** [`aantallen.csv`](aantallen.csv) en [aantallen.yml](aantallen.yml).
+- **gemiddeld aantal op een meetpunt:** [`aantallen.csv`](aantallen.csv) en [`aantallen.yml`](aantallen.yml).
     - `soort`: Nederlandse soortnaam;
     - `frequentie`: trend op basis van jaarlijkse of driejaarlijkse gegevens;
     - `jaar`: jaartal of startjaar van de driejaarlijkse periode;
     - `schatting`: schatting van het gemiddeld aantal dieren op een meetpunt;
-    - `lcl90` en `ucl90`: de onder- en bovengrens van het 90% betrouwbaarheidsinterval rond de schatting;
-    - `lcl60` en `ucl60`: de onder- en bovengrens van het 60% betrouwbaarheidsinterval rond de schatting;
-    - `lcl30` en `ucl30`: de onder- en bovengrens van het 30% betrouwbaarheidsinterval rond de schatting;
+    - `lcl90` en `ucl90`: de ondergrens en bovengrens van het 90% betrouwbaarheidsinterval rond de schatting;
+    - `lcl60` en `ucl60`: de ondergrens en bovengrens van het 60% betrouwbaarheidsinterval rond de schatting;
+    - `lcl30` en `ucl30`: de ondergrens en bovengrens van het 30% betrouwbaarheidsinterval rond de schatting;
     - `analyse`: data-hash van de analyse;
     - `status`: data-hash van de status van de analyse
-- **lineaire trends:** [`lineaire_trend.csv`](lineaire_trend.csv) en [lineaire_trend.yml](lineaire_trend.yml).
+- **lineaire trends:** [`lineaire_trend.csv`](lineaire_trend.csv) en [`lineaire_trend.yml`](lineaire_trend.yml).
     - `soort`: Nederlandse soortnaam;
     - `frequentie`: trend op basis van jaarlijkse of driejaarlijkse gegevens;
     - `jaarlijks`: gemiddelde jaarlijkse wijziging (zie §\@ref(s:lineairetrend);
@@ -60,14 +60,14 @@ Elke resultatenset bestaat uit twee bestanden:
     - `referentie`: het referentiejaartal;
     - `naar`: het jaartal waarvoor we verhouding het referentiejaar berekenen;
     - `schatting`: de geschatte verhouding van dit jaar t.o.v. het referentiejaar;
-    - `lcl90` en `ucl90`: de onder- en bovengrens van het 90% betrouwbaarheidsinterval rond de schatting;
-    - `lcl60` en `ucl60`: de onder- en bovengrens van het 60% betrouwbaarheidsinterval rond de schatting;
-    - `lcl30` en `ucl30`: de onder- en bovengrens van het 30% betrouwbaarheidsinterval rond de schatting;
+    - `lcl90` en `ucl90`: de ondergrens en bovengrens van het 90% betrouwbaarheidsinterval rond de schatting;
+    - `lcl60` en `ucl60`: de ondergrens en bovengrens van het 60% betrouwbaarheidsinterval rond de schatting;
+    - `lcl30` en `ucl30`: de ondergrens en bovengrens van het 30% betrouwbaarheidsinterval rond de schatting;
     - `klasse`: interpretatie van de wijziging (zie §\@ref(s:trendklasse));
     - `wijziging`: tekstuele beschrijving van de evolutie;
     - `analyse`: data-hash van de analyse;
     - `status`: data-hash van de status van de analyse
-- **stratumgewichten:** [`stratum_gewicht.csv`](stratum_gewicht.csv) en [stratum_gewicht.yml](stratum_gewicht.yml).
+- **stratumgewichten:** [`stratum_gewicht.csv`](stratum_gewicht.csv) en [`stratum_gewicht.yml`](stratum_gewicht.yml).
     - `soort`: Nederlandse soortnaam;
     - `stratum`: naam van het stratum;
     - `gewicht`: gewicht van het stratum voor deze soort (zie §\@ref(s:stratumgewicht));

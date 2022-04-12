@@ -6,7 +6,7 @@ Hier beschrijven we beknopt het veldwerk, voor de details verwijzen we naar @ABV
 
 ## Steekproef {#s:steekproef}
 
-De UTM 1x1 hokken vormen de basis waaruit de steekproef getrokken is.
+De UTM 1 x 1 km hokken vormen de basis waaruit de steekproef getrokken is.
 Bij de start van het meetnet hebben we de hokken opgedeeld in een aantal strata.
 De regels zijn gebaseerd op het oppervlakteaandeel van een bepaald landgebruik op basis van de Biologische Waarderingkaart [@BWK].
 
@@ -89,7 +89,7 @@ inspanning %>%
 
 De steekproefeenheid bestaat uit een hok van 1 x 1 km.
 Binnen dit hok worden zes punten vastgelegd in een vaste patroon (fig. \@ref(fig:patroon)).
-Indien de punten in de praktijk niet bereikbaar zijn, mag de waarnemer ze verplaatsen naar het dichtsbijzijde bereikbare punt.
+Indien de punten in de praktijk niet bereikbaar zijn, mag de waarnemer ze verplaatsen naar het dichtstbijzijnde bereikbare punt.
 De waarnemer documenteert deze wijziging zodat we in de toekomst steeds op dezelfde punten blijven waarnemen.
 
 ```{r patroon, fig.cap = "Standaardlocatie van meetpunten binnen een km hok.", fig.width = 2, fig.height = 2}
@@ -125,8 +125,8 @@ Om de redenering op te bouwen, beschouwen we een fictieve soort die enkel op een
 Alle vogeltellingen buiten dit eiland zijn uiteraard niet informatief voor wijzigingen in de aantallen van deze fictieve soort.
 Buiten het eiland zullen de getelde aantallen immers per definitie nul zijn.
 Wanneer we deze tellingen toch zouden in rekening brengen, dan zullen ze de globale trend afvlakken.
-De globale trend is min of meer equivalent met een 'gemiddelde' trend over de verschillende locaties.
-Als een locatie steeds nul geeft, dan zijn lokaal de aantallen wiskundig 'stabiel' (geen lokale trend).
+De globale trend is min of meer equivalent met een "gemiddelde" trend over de verschillende locaties.
+Als een locatie steeds nul geeft, dan zijn lokaal de aantallen wiskundig "stabiel" (geen lokale trend).
 Daarom is het noodzakelijk om de locaties die niet relevant zijn voor een soort buiten beschouwing te houden.
 
 In Vlaanderen is de situatie niet zo zwart-wit als bij het voorbeeld met het afgelegen eiland.
@@ -146,7 +146,7 @@ Bijvoorbeeld een trekvogel die pas in de loop van de tweede periode toekomt en w
 1. We passen de regels voor relevante hokken en strata opnieuw toe.
 Het negeren van een of twee irrelevante periodes kan er voor zorgen dat een hok niet langer relevant is.
 
-[^geometrisch]: Het meetkundig gemiddelde of geometrisch gemiddelde van $n$ getallen wordt verkregen door de getallen met elkaar te vermenigvuldigen en vervolgens van het product de $n$-de-machtswortel te nemen. $$m=\left(\prod _{i=1}^{n}a_{i}\right)^{1/n}$$
+[^geometrisch]: Het meetkundig gemiddelde of geometrisch gemiddelde van $n$ getallen wordt verkregen door de getallen met elkaar te vermenigvuldigen en vervolgens van het product de n^de^ machtswortel te nemen. $$m=\left(\prod _{i=1}^{n}a_{i}\right)^{1/n}$$
 
 ```{r potentieel, fig.cap = "Aantal onderzochte hokken per stratum en per jaar waarbij we enkel rekening houden met hokken die in minstens twee verschillende driejarige cycli onderzocht zijn."}
 inspanning %>%
@@ -180,17 +180,17 @@ Ook hokken of strata in de toekomst gekoloniseerd worden, worden dan opgepikt.
 
 Om de trends te berekenen, voorspellen we de waargenomen aantallen aan de hand van een statistisch model.
 $Y_{jpshm}$ is de voorspelling voor jaar $j$, periode $p$, stratum $s$, hok $h$ en meetpunt $m$.
-Veronderstellen dat deze aantallen uit een _zero-inflated negative binomial_^[Een negatief binomiale verdeling met een overmaat aan nullen.] verdeling komen met parameters $\mu_{jpshm}$, $\nu$ en $\pi$.
+Veronderstellen dat deze aantallen uit een `zero-inflated negative binomial`^[Een negatief binomiale verdeling met een overmaat aan nullen.] verdeling komen met parameters $\mu_{jpshm}$, $\nu$ en $\pi$.
 
 $$Y_{jpshm} \sim ZINB(\mu_{jpshm}, \nu, \pi)$$
 
 Laat ons eerst focussen op $\mu_{jpshm}$.
-Deze parameter is via een $\log$ link gerelateerd aan de lineaire predictor $\eta_{jpshm}$.
-Door deze $\log$ link kunnen we de individuele termen van de lineare predictor interpreteren als relatieve effecten.
+Deze parameter is via een $\log$ link gerelateerd aan de `lineaire predictor` $\eta_{jpshm}$.
+Door deze $\log$ link kunnen we de individuele termen van de `lineare predictor` interpreteren als relatieve effecten.
 
 $$\log\mu_{jpshm} = \eta_{jpshm}$$
 
-En nu wordt het interessant want deze lineaire predictor hangt af van vijf termen:
+En nu wordt het interessant want deze `lineaire predictor` hangt af van vijf termen:
 
 - $\beta_s$: het effect van stratum $s$.
 - $\beta_p$: het verschil tussen periode $p$ en de referentieperiode.
@@ -222,34 +222,34 @@ Deze heeft als variantie $\sigma^2 = \mu + \mu^2/\nu$, waarbij de parameter $\nu
 Merk op dat als de overdisperieparameter zeer groot wordt ($\nu = \infty$), dan wordt de term $\mu/\nu = 0$ en bijgevolg reduceert de negatief binomiale verdeling dan tot een Poisson verdeling.
 
 Sommige ecologische gegevens vertonen een "overmaat" aan nullen, dat zijn meer nulwaarnemingen dan de Poisson of negatief binomiale verdeling kan modelleren.
-In dergelijke gevallen kunnen we overschakelen naar de _zero-inflated_ versie van deze verdelingen.
+In dergelijke gevallen kunnen we overschakelen naar de `zero-inflated` versie van deze verdelingen.
 Deze hebben een parameter $\pi$ die een maat is voor de kans op een overmatige nul.
 
 Bij het modelleren zullen we in eerste instantie deze twee parameters instellen op $\nu = \infty$ en $\pi = 0$, m.a.w. geen overdispersie en geen overmaat aan nullen zodat we een Poisson verdeling krijgen.
 Vervolgens gaan we na of er voldoende aanwijzingen zijn voor overdispersie of een overmaat aan nullen.
 In het geval van overdispersie laten we $\nu$ door het model schatten waardoor we overgaan van een Poisson naar een negatief binomiaal.
-In het geval van een overmaat aan nullen laten we $\pi$ door het model schatten waardoor we overgaan van een Poisson naar een _zero-inflated_ Poisson.
+In het geval van een overmaat aan nullen laten we $\pi$ door het model schatten waardoor we overgaan van een Poisson naar een `zero-inflated` Poisson.
 Soms hebben we zowel aanwijzingen voor overdispersie als een overmaat aan nullen.
-In die gevallen kiezen we de negatief binomiaal of _zero-inflated_ Poisson naargelang welke de sterkste aanwijzingen heeft.
+In die gevallen kiezen we de negatief binomiaal of `zero-inflated` Poisson naargelang welke de sterkste aanwijzingen heeft.
 Vervolgens gaan we na of we de andere parameter ook nog een probleem vormt.
-Zo ja, gaan we over naar een _zero-inflated_ negatief binomiaal waarbij het model zowel $\nu$ als $\pi$ zal schatten.
+Zo ja, gaan we over naar een `zero-inflated` negatief binomiaal waarbij het model zowel $\nu$ als $\pi$ zal schatten.
 
 ### Lineaire trends {#s:lineairetrend}
 
 Lineaire trends veronderstellen dat er een constante wijziging is over de volledige looptijd.
 Het model dat we hiervoor gebruiken is nagenoeg identiek aan het niet-lineaire model.
-Het enige verschil zit in de lineaire predictor waar we de first order random walk ($b_{j,s}$) vervangen door een lineaire trend per stratum ($\beta_{s1} j$).
+Het enige verschil zit in de `lineaire predictor` waar we de first order random walk ($b_{j,s}$) vervangen door een lineaire trend per stratum ($\beta_{s1} j$).
 
 $$\eta_{jpshm} = \beta_s + \beta_p + b_h + b_m + \beta_{s1} j$$
 
 Het lineaire model is een vereenvoudiging van het niet-lineaire model.
-We kunnen deze modellen met elkaar vergelijken op basis van het _Wantanabe-Akaike Information Criterion_ (WAIC) [@gelmanUnderstandingPredictiveInformation2014].
-De WAIC waarde daalt bij een betere modelfit en stijgt wanneer het model complexer wordt.
-Als we modellen met elkaar vergelijken op basis van WAIC, zal het model met de laagste WAIC de beste mix zijn tussen een goede modelfit en een zo eenvoudig mogelijk model.
+We kunnen deze modellen met elkaar vergelijken op basis van het `Wantanabe-Akaike Information Criterion` (WAIC) [@gelmanUnderstandingPredictiveInformation2014].
+De WAIC waarde daalt naarmate het model de gegevens beter kan beschrijven en stijgt wanneer het model complexer wordt.
+Als we modellen met elkaar vergelijken op basis van WAIC, zal het model met de laagste WAIC de beste mix zijn tussen een goede beschrijving van de gegevens en een zo eenvoudig mogelijk model.
 We beschouwen de trend als **lineair** wanneer het lineaire model de laagste WAIC heeft.
 Wanneer de WAIC van het niet-lineaire model minder dan 2 eenheden lager is dan deze van het lineaire model, beschouwen de trend als **mogelijk niet-lineair**.
 Pas wanneer de WAIC van het niet-lineaire model duidelijk lager is dan het lineaire model, stellen we dat de trend **niet-lineair** is.
-In dat geval de gebruiker moet de gerapporteerde lineaire trend met de nodige voorzichtheid interpreteren.
+In dat geval de gebruiker moet de gerapporteerde lineaire trend met de nodige voorzichtigheid interpreteren.
 Kijk zeker naar de bijhorende niet-lineaire trend vooraleer de cijfers te interpreteren.
 
 ### Resultaten per driejarige cyclus
@@ -288,21 +288,21 @@ $$\eta_{cpshm} = \beta_s + \beta_p + b_h + b_m + \beta_{s1} c$$
 
 We fitten de statische modellen in R [@R] met het INLA package [@rueINLAFunctionsWhich2009].
 INLA gebruikt een Bayesiaanse benadering om de modellen te fitten.
-Daarom moeten we priors specifiëren voor de (hyper-)parameters.
+Daarom moeten we priors specificeren voor de parameters en hyperparameters.
 
 - $\beta_s$, $\beta_p$ en $\beta_{s1}$ krijgen een Gaussiaanse prior $\mathcal{N}(0, 5)$.
-- $\sigma^2_h$ krijgt een _penalised complexity_  prior [@simpson.rue.ea2017PenalisingModelComponent] zodat $Prob(\sigma_h > 1) = 0.01$.
-- $\sigma^2_m$ krijgt een _penalised complexity_  prior zodat $Prob(\sigma_m > 1) = 0.01$.
-- $\sigma^2_j$ krijgt een _penalised complexity_  prior zodat $Prob(\sigma_j > 0.5) = 0.01$.
-- $\sigma^2_c$ krijgt een _penalised complexity_  prior zodat $Prob(\sigma_c > 0.5) = 0.01$.
+- $\sigma^2_h$ krijgt een `penalised complexity`  prior [@simpson.rue.ea2017PenalisingModelComponent] zodat $Prob(\sigma_h > 1) = 0.01$.
+- $\sigma^2_m$ krijgt een `penalised complexity`  prior zodat $Prob(\sigma_m > 1) = 0.01$.
+- $\sigma^2_j$ krijgt een `penalised complexity`  prior zodat $Prob(\sigma_j > 0.5) = 0.01$.
+- $\sigma^2_c$ krijgt een `penalised complexity`  prior zodat $Prob(\sigma_c > 0.5) = 0.01$.
 - $\nu$ krijgt een Gamma prior zodat $\nu \sim \Gamma(1/7, 1/7)$.
-- $\pi$ wordt intern geparametriseerd als $\theta = \log\frac{\pi}{1 - \pi}$ met Gaussianse prior $\theta ~ \sim \mathcal{N}(-1, 5)$.
+- $\pi$ wordt intern geparametriseerd als $\theta = \log\frac{\pi}{1 - \pi}$ met Gaussiaanse prior $\theta ~ \sim \mathcal{N}(-1, 5)$.
 
 ## Gemiddeld aantal dieren per meetpunt
 
 Een gemiddeld hok heeft als effect $b_h = 0$ en een gemiddeld meetpunt $b_m = 0$.
 In de referentieperiode is $\beta_p = 0$.
-In deze gevallen vereenvoudigt de lineaire predictor tot het effect van stratum $s$ en de trend in dat stratum:
+In deze gevallen vereenvoudigt de `lineaire predictor` tot het effect van stratum $s$ en de trend in dat stratum:
 
 $$\eta_{js} = \beta_s + b_{j,s}$$
 
@@ -310,14 +310,14 @@ Door de effecten van de strata te vermenigvuldigen met hun stratumgewicht ($\gam
 
 $$\eta_{j} = \sum_s(\gamma_s\beta_s + \gamma_sb_{j,s})$$
 
-Om de schatting van het gemiddelde aantal in Vlaanderen te krijgen, moeten we de lineaire predictor terug omzetten van de $\log$ schaal naar de natuurlijke schaal en corrigeren voor de eventuele overmaat aan nullen.
+Om de schatting van het gemiddelde aantal in Vlaanderen te krijgen, moeten we de `lineaire predictor` terug omzetten van de $\log$ schaal naar de natuurlijke schaal en corrigeren voor de eventuele overmaat aan nullen.
 We krijgen dan:
 
 $$E[Y_j] = (1 - \pi) e^{\eta_j} \prod_s(e^{\gamma_s \beta_s} e ^ {\gamma_s b_{j,s}})$$
 
 ## Vergelijken van jaren
 
-We kunnen twee jaren $a$ en $b$ met elkaar vergelijken door hun lineaire predictoren voor het gemiddeld aantal dieren van elkaar af te trekken.
+We kunnen twee jaren $a$ en $b$ met elkaar vergelijken door hun `lineaire predictoren` voor het gemiddeld aantal dieren van elkaar af te trekken.
 
 $$\eta_a - \eta_b = \sum_s(\gamma_s\beta_s + \gamma_sb_{a,s}) - \sum_s(\gamma_s\beta_s + \gamma_sb_{b,s})$$
 
@@ -358,18 +358,18 @@ Bijgevolg zijn de stratumgewichten eveneens soortafhankelijk.
 
 We berekenen een aantal samengestelde indices die de trends voor een groep van soorten aggregeren.
 Deze indices zijn het meetkundig gemiddelde van de verschillen tussen jaren voor alle soorten van de groep.
-Bij de berekening maken we gebruik van het truukje dat we een product kunnen schrijven als een som van logaritmes die we nadien terug exponentiëren.
+Bij de berekening maken we gebruik van het trucje dat we een product kunnen schrijven als een som van logaritmes die we nadien terug exponentiëren.
 Een meetkundig gemiddelde in de natuurlijke schaal kunnen we dat schrijven als een rekenkundig gemiddelde in de log-schaal.
 
 $$\sqrt[n]{\prod_{i+1}^na_i} = \exp\left(\frac{\sum_{i = 1}^n\log a_i}{n}\right)$$
-Het voordeel aan deze techniek is dat de schattingen van de paargewijze verschillen tussen de jaren reeds beschikbaar zijn in de log-schaal.
+Het voordeel aan deze techniek is dat de schattingen van de paarsgewijze verschillen tussen de jaren reeds beschikbaar zijn in de log-schaal.
 Bovendien beschikken we tevens over hun variantie in de log-schaal.
 Dit laat ons toe om makkelijk het betrouwbaarheidsinterval te berekenen aan de hand van een paar vuistregels.
 
 1. Bij onafhankelijke variabelen geldt dat de variantie van hun som gelijk is aan de som van de varianties. $\sigma^2_{\sum X_i} = \sum \sigma^2_{X_i}$
 1. De variantie van het product van een variabele en een constante is gelijk aan de variantie van de variabele vermenigvuldigd met die constante. $\sigma^2_{aX} = a \sigma^2_X$
 1. Het model veronderstelt dat de individuele modelparameters een Gaussiaanse verdeling volgen.
-Hierdoor volgen de paarsgewijze verschillen tussen de jaren en hun gemiddelde (telkens in de log-schaal) een Gausiaanse verdeling.
+Hierdoor volgen de paarsgewijze verschillen tussen de jaren en hun gemiddelde (telkens in de log-schaal) een Gaussiaanse verdeling.
 Aangezien we zowel het gemiddeld als de variantie van deze verdeling kennen, kunnen we hieruit de gewenste kwantielen voor de betrouwbaarheidsintervallen berekenen (nog steeds in de log-schaal).
 1. De log-transformatie is een monotoon stijgende functie aangezien $\log(x)$ steeds groter wordt wanneer $x$ groter wordt.
 Een kenmerk van een monotoon stijgende transformatie is dat ze de volgorde behouden: het 5% kleinste element zal ook na de transformatie het 5% kleinste element zijn.
@@ -402,12 +402,12 @@ Vergelijk een daling met -5% per jaar of een daling met -50% over 15 jaar.
 Deze laatste klinkt dramatischer door het grotere cijfer, terwijl -5% per jaar overeenkomt met -54% over 15 jaar.
 De totale wijziging over de looptijd van het lineaire model is tevens vergelijkbaar met de wijziging tussen het eerste en laatste jaar van het niet-lineaire model.
 
-Om de interpretatie makkelijker te maken, delen we de wijzigingen op in tien klassen door hun 90% interval te vergelijken met een referentie, onder- en bovengrens.
+Om de interpretatie makkelijker te maken, delen we de wijzigingen op in tien klassen door hun 90% interval te vergelijken met een referentie, ondergrens en bovengrens.
 Een effect is significant wanneer de referentie buiten het 90% interval ligt.
 We spreken over een **toename** (**afname**) als het interval volledig boven (onder) de referentie ligt.
-Niet-significante effect is ook informatief wanneer het bijhorende interval voldoende smal is.
-Bijvoorbeeld als het interval volledig tussen de onder- en bovengrens ligt.
-In dat geval kunnen we stellen dat het effect niet-significant en klein is, het immers zeker minder sterk dan de ondergrens en minder sterk dan de bovengrens.
+Niet significante effect is ook informatief wanneer het bijhorende interval voldoende smal is.
+Bijvoorbeeld als het interval volledig tussen de ondergrens en bovengrens ligt.
+In dat geval kunnen we stellen dat het effect niet significant en klein is, het immers zeker minder sterk dan de ondergrens en minder sterk dan de bovengrens.
 Dergelijk effect krijgt de naam **stabiel**.
 Heeft het effect een breed interval dat zowel de boven- als ondergrens bevat, spreken we over een **onduidelijk** effect.
 Daarnaast is er nog de mogelijkheid dat het interval zowel de bovengrens (ondergrens) als de referentie bevat maar niet de ondergrens (bovengrens).
@@ -421,7 +421,7 @@ We vatten de opdeling met bijhorende afkortingen en regels samen in tabel \@ref(
 Figuur \@ref(fig:trendklasse) geeft een grafische voorstelling waarbij we de afkortingen in combinatie met aangepaste symbolen gebruiken.
 De afkortingen zelf zijn te fijn om als symbool te gebruiken.
 
-(ref:regels) Overzicht van de benamingen van de tien effectklasses met hun afkorting en de regels. $R$: referentie, $L$: ondergrens, $B$: bovengrens, $l$: ondergrens van het 90% interval, $b$: bovengrens van het 90% interval. $L < R < B$ en $l < b$.
+(ref:regels) Overzicht van de benamingen van de tien effectklassen met hun afkorting en de regels. $R$: referentie, $L$: ondergrens, $B$: bovengrens, $l$: ondergrens van het 90% interval, $b$: bovengrens van het 90% interval. $L < R < B$ en $l < b$.
 
 ```{r regels}
 tribble(
@@ -470,15 +470,15 @@ Uiteraard hangt de opdeling sterk af van de keuze van de boven- en ondergrens.
 De soortenmeetnetten voor de Natura 2000 monitoring streven er naar om een daling in populatiegrootte met -25% over 25 jaar tijd vast te kunnen stellen.
 Hierbij wordt een wijziging in de populatiegrootte van -25% als belangrijk aanzien.
 Daarom hanteren we voor de algemene broedvogelmonitoring ook -25% als ondergrens, zowel bij de paarsgewijze verschillen tussen de jaren als de lineaire wijziging over de looptijd van het meetnet.
-Een van daling van -25% komt overeen met aantallen die nog 3/4 van de uitgangssituatie bedragen.
-Een even sterke wijziging in de omgekeerde richting zorgt er voor dat de aantallen toenemen tot 4/3 van de uitgangssituatie, of een toename met +33% wat we als bovengrens gebruiken.
+Een van daling van -25% komt overeen met aantallen die nog drie kwart van de uitgangssituatie bedragen.
+Een even sterke wijziging in de omgekeerde richting zorgt er voor dat de aantallen toenemen tot vier derde van de uitgangssituatie, of een toename met +33% wat we als bovengrens gebruiken.
 
 Bij de samengestelde indices hebben we aangepaste grenswaarden nodig.
 Veronderstel een samengestelde index op basis van $n$ soorten.
 We berekenen het rekenkundig gemiddelde in de log-schaal, dan is de variantie van dit gemiddelde een factor $n$ kleiner dan de som van de varianties.
-De breedte van een betrouwhaarheidsinterval hangt samen met de standaard afwijking, wat de vierkantswortel van de variantie is.
+De breedte van een betrouwbaarheidsinterval hangt samen met de standaard afwijking, wat de vierkantswortel van de variantie is.
 Hierdoor zullen de breedtes van de betrouwbaarheidsintervallen van de samengestelde index een factor $\sqrt{n}$ kleiner zijn.
-Vandaar dat we de grenswaarden van de indices evens aanpassen door ze met een factor $\sqrt{n}$ te verkleinen.
+Vandaar dat we de grenswaarden van de indices tevens aanpassen door ze met een factor $\sqrt{n}$ te verkleinen.
 Elke samengestelde index heeft zijn eigen soortenlijst met een variabele aantal soorten.
 Daarom zullen we bij elke samengestelde index zijn aangepaste grenswaarden vermelden.
 
@@ -493,7 +493,7 @@ We sluiten de tabel af met de soorten met een mogelijke of onduidelijke trend.
 De tabel bevat de trend uitgedrukt als een jaarlijkse wijziging en als een wijziging over de volledige looptijd van het meetnet.
 Verder bevat de tabel de opdeling van de trend in klassen en een indicatie of de trend al dan niet lineair is (zie §\@ref(s:lineairetrend)).
 De naam van de soort is een snelkoppeling naar de detail van de soort zelf.
-We raden aan om hiervan gebruikt te maken bij de interpretie van niet-lineaire trends.
+We raden aan om hiervan gebruikt te maken bij de interpretatie van niet-lineaire trends.
 
 ## Evolutie van gemiddelde aantallen per soort
 
@@ -501,7 +501,7 @@ Deze figuur geeft de evolutie van de gemiddelde aantallen per meetpunt weer volg
 Indien het model lineair is, zal het patroon van de niet-lineaire trend dicht bij een lineaire trend liggen.
 De lijn bevat de puntschatting van het gemiddelde aantal in elk jaar.
 Rond de lijn tonen we het 30%, 60% en 90% interval (zie §\@ref(s:onzekerheid)).
-In de webversie van het rapport is de figuur interactief.
+In de online versie van het rapport is de figuur interactief.
 Wanneer de gebruiker met de muis over de figuur gaat verschijnt er in de buurt van de lijn een pop-up met de exacte schatting van dat jaar inclusief het 90% betrouwbaarheidsinterval en het jaartal.
 
 ## Paarsgewijze vergelijking van jaren
@@ -516,7 +516,7 @@ De horizontale streepjeslijn geeft de referentie van 0% verschil weer.
 De horizontale puntlijnen geven de bovengrens (+33%) en ondergrens (-25%) weer.
 Deze laten toe om de vlot zelf de betrouwbaarheidsintervallen te vergelijken met de referentie, boven- en ondergrens.
 De figuur heeft twee y-assen.
-Beide assen geven dezelfde informatie weer, enkel de formatering van de labels is anders.
+Beide assen geven dezelfde informatie weer, enkel de formattering van de labels is anders.
 De linkeras toont procentuele verschillen terwijl de rechteras de relatieve verschillen toont.
 Een procentueel verschil van +50% is equivalent met een relatieve verschil (verhouding) met een factor 1,5.
 
@@ -533,7 +533,7 @@ De vorm van de symbolen geeft zicht op de sterkte en onzekerheid van het effect 
 Wanneer een rij volledig rood (blauw) is, zijn alle verschillen met dit referentiejaar positief (negatief) m.a.w. dit is het referentiejaar met de laagste (hoogste) aantallen.
 Wanneer een kolom volledig rood (blauw) is, zijn alle verschillen van dit jaar t.o.v. alle referentiejaren negatief (positief) m.a.w. dit is het jaar met de hoogste (laagste) aantallen.
 Clusters van punten met een gelijkaardige kleur geven periodes aan waarin de aantallen geleidelijk wijzigen.
-In de webversie van dit rapport is deze grafiek interactief.
+In de online versie van dit rapport is deze figuur interactief.
 Wanneer de gebruiker met de muis over de figuur gaat verschijnt er in de buurt van de lijn een pop-up met de exacte schatting van dat punt inclusief het 90% betrouwbaarheidsinterval en het jaartal en referentiejaar.
 
 # Reproduceerbaarheid en traceerbaarheid van de gegevensverwerking
@@ -547,39 +547,39 @@ Zowel deze code als de tekstbestanden bewaren we onze versiebeheer met [git](htt
 Git is een gratis en open source gedistribueerd versiebeheersysteem dat is ontworpen om alles van kleine tot zeer grote projecten snel en efficiëntie te beheren.
 De code zit vervat in het `abvanalysis` package [@abvanalysis], dat vrij online beschikbaar is.
 De tekstbestanden met de gegevens zijn momenteel niet publiek toegankelijk.
-De ruwe gegevens worden op hokniveau en met drie jaar vertraging publiek ontsloten via [GBIF](https://doi.org/10.15468/xj0ikb) [@vermeersch.anselin.ea2018ABVCommonBreeding].
+De ruwe gegevens worden geaggregreerd per hok en met drie jaar vertraging publiek ontsloten via [GBIF](https://doi.org/10.15468/xj0ikb) [@vermeersch.anselin.ea2018ABVCommonBreeding].
 
 ## Reproduceerbaarheid
 
 Om de reproduceerbaarheid te garanderen starten we de analyses steeds vanaf de tekstbestanden.
 Aan de hand van code in het `abvanalysis` package definiëren we hoe we de tekstbestanden omzetten naar de verschillende analyses (§\@ref(s:trendberekening)).
 Dit resulteert in een resem op zichzelf staande analyseobjecten van het `n2kanalysis` package [@n2kanalysis].
-Dergelijk analyseobject bevat naast de nodige gegevens en de modeldefinitie tevens de nodige metadata zoals alle gebruikte R packages, inclusief hun versie, en een verwijziging naar de voorafgaande analyses waarvan deze analyse afhangt.
+Dergelijk analyseobject bevat naast de nodige gegevens en de modeldefinitie tevens de nodige metadata zoals alle gebruikte R packages, inclusief hun versie, en een verwijzing naar de voorafgaande analyses waarvan deze analyse afhangt.
 Zo verwijst de analyse van een samengestelde index (§\@ref(s:samengesteld)) naar de trendberekening van de bijhorende soorten (§\@ref(s:trendberekening)).
-De individuele trendberekeningen verwijzen naar de 'analyse' die de gegevens importeerde uit de databank.
+De individuele trendberekeningen verwijzen naar de "analyse" die de gegevens importeerde uit de databank.
 Deze laatste bevat de nodige links naar de tekstbestanden en hun versie.
 
 ## Traceerbaarheid {#s:traceerbaarheid}
 
-De `n2kanalysis` objecten hebben elk twee data-hashes.
-Elk data-hash is een reeks van 40 hexadecimale^[Hexadecimaal betekent letterlijk zestientallig. Het is een talstelsel waarbij niet, zoals gebruikelijk, met tien cijfers wordt gewerkt, maar met zestien cijfers. De cijfers 0 t/m 9 worden daarom uitgebreid met 'a' (=10) t/m 'f' (=15).] cijfers die het resultaat zijn van de cryptografische [hashfunctie](https://nl.wikipedia.org/wiki/Hashfunctie) [SHA-1](https://nl.wikipedia.org/wiki/SHA-familie).
+De `n2kanalysis` objecten hebben elk twee data hashes.
+Elk data hash is een reeks van 40 hexadecimale^[Hexadecimaal betekent letterlijk zestientallig. Het is een talstelsel waarbij niet, zoals gebruikelijk, met tien cijfers wordt gewerkt, maar met zestien cijfers. De cijfers 0 t.e.m. 9 worden daarom uitgebreid met `a` (=10) t.e.m. `f` (=15).] cijfers die het resultaat zijn van de cryptografische [hashfunctie](https://nl.wikipedia.org/wiki/Hashfunctie) [SHA-1](https://nl.wikipedia.org/wiki/SHA-familie).
 Deze hashfunctie heeft een aantal belangrijke eigenschappen:
 
 1. Ze zetten elke invoer om naar een uitvoer met vaste lengte (40 hexadecimale cijfers).
 1. De uitvoer is stabiel: als je de hash van een bepaalde invoer opnieuw berekent krijg je steeds dezelfde uitvoer.
 1. Het is niet mogelijk om de invoer te reconstrueren op basis van de uitvoer.
-1. Eenders welke kleine wijziging aan de invoer resulteert in een sterke wijziging van de uitvoer.
+1. Eender welke kleine wijziging aan de invoer resulteert in een sterke wijziging van de uitvoer.
 1. De kans dat twee verschillende invoeren dezelfde uitvoer opleveren is zeer klein.
 
-De eerste data-hash van het analyseobject is gebaseerd op alle informatie die gekend is op het moment dat we het analyseobject definïeren en die nooit zal wijzigen tijdens de analyse.
+De eerste data hash van het analyseobject is gebaseerd op alle informatie die gekend is op het moment dat we het analyseobject definiëren en die nooit zal wijzigen tijdens de analyse.
 Denk hierbij aan de definitie van de analyse, de gegevens, de soort, ...
-Gezien de eigenschappen van de hashfunctie kunnen we deze data-hash gebruiken om ondubbelzinnig te verwijzen naar een specifieke analyse (inclusief de gebruikte gegevens.)
+Gezien de eigenschappen van de hashfunctie kunnen we deze data hash gebruiken om ondubbelzinnig te verwijzen naar een specifieke analyse (inclusief de gebruikte gegevens.)
 
-De tweede data-hash van het analyseobject baseren we enerzijds op de eerste data-hash en anderzijds van alle onderdelen van het analyseobject die wijzigen in de loop van de analyse.
+De tweede data hash van het analyseobject baseren we enerzijds op de eerste data hash en anderzijds van alle onderdelen van het analyseobject die wijzigen in de loop van de analyse.
 Dit is o.a. het resultaat van de statistische analyse, de gebruikte software, ...
-De analyse opnieuw uitrekenen met software van een andere versie zal de tweede data-hash aanpassen.
+De analyse opnieuw uitrekenen met software van een andere versie zal de tweede data hash aanpassen.
 
-De combinatie van deze twee data-hashes laat enerzijds toe om naar een specifieke versie van de analyse te verwijzen.
+De combinatie van deze twee data hashes laat enerzijds toe om naar een specifieke versie van de analyse te verwijzen.
 Anderzijds bieden ze een garantie over de inhoud van het analyseobject.
 In het geval van twijfel over een analyse kunnen we teruggrijpen naar de analyseobject in kwestie.
-De data-hashes bewijzen dan dat we het correcte analyseobject hebben.
+De data hashes bewijzen dan dat we het correcte analyseobject hebben.

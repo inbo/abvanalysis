@@ -46,7 +46,7 @@ Deze trend is `r deze_lineair$interpretatie[deze_lineair$cycle]`.
 Op basis van jaarlijkse gegevens zien we gemiddeld `r deze_lineair$tekst[!deze_lineair$cycle]` `r deze_lineair$jaarlijks[!deze_lineair$cycle]` per jaar of `r deze_lineair$looptijd[!deze_lineair$cycle]` over de volledige looptijd van het meetnet.
 Deze trend is `r deze_lineair$interpretatie[!deze_lineair$cycle]`.
 
-(ref:{{id}}-aantal) Evolutie van het gemodeleerde gemiddeld aantal waargenomen dieren op een meetpunt voor `r soort_naam` tijdens de referentieperiode. Zie §\@ref(s:onzekerheid) voor een verklaring van de intervallen.
+(ref:{{id}}-aantal) Evolutie van het gemodelleerde gemiddeld aantal waargenomen dieren op een meetpunt voor `r soort_naam` tijdens de referentieperiode. Zie §\@ref(s:onzekerheid) voor een verklaring van de intervallen.
 
 ```{r {{id}}-aantal, fig.cap = "(ref:{{id}}-aantal)", eval = output_format == "html" && nrow(dit_aantal) > 0, warning = FALSE}
 dit_aantal %>%

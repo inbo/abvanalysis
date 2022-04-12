@@ -16,9 +16,9 @@ prepare_dataset(
 )
 }
 \arguments{
-\item{origin}{`DBI` connection to the source database}
+\item{origin}{\code{DBI} connection to the source database}
 
-\item{repo}{a [git2rdata::repository()] object}
+\item{repo}{a \code{\link[git2rdata:repository]{git2rdata::repository()}} object}
 
 \item{end_date}{the latest date to import.
 Default to now.}
@@ -26,7 +26,7 @@ Default to now.}
 \item{verbose}{display the progress}
 
 \item{push}{push the changes to the repository.
-Defaults to `FALSE`.}
+Defaults to \code{FALSE}.}
 
 \item{strict}{What to do when the metadata changes. \code{strict = FALSE}
 overwrites the data and the metadata with a warning listing the changes,
@@ -35,9 +35,9 @@ Defaults to \code{TRUE}.}
 
 \item{min_observation}{The minimum number of observations for taking a
 species into account.
-Defaults to `100`.}
+Defaults to \code{100}.}
 
-\item{...}{arguments passed to [git2rdata::commit()] and [git2rdata::push()].}
+\item{...}{arguments passed to \code{\link[git2rdata:commit]{git2rdata::commit()}} and \code{\link[git2rdata:push]{git2rdata::push()}}.}
 }
 \description{
 Prepare all datasets and store the version into a git repository

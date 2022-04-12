@@ -18,9 +18,9 @@ retrieve_results(
 
 \item{project}{Will be a relative path within the base location.}
 
-\item{source_repo}{A [git2rdata::repository()] object containing the raw data}
+\item{source_repo}{A \code{\link[git2rdata:repository]{git2rdata::repository()}} object containing the raw data}
 
-\item{target_repo}{A [git2rdata::repository()] object containing the package
+\item{target_repo}{A \code{\link[git2rdata:repository]{git2rdata::repository()}} object containing the package
 code.}
 
 \item{verbose}{display the progress}

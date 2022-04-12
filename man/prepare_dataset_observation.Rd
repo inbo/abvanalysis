@@ -13,16 +13,16 @@ prepare_dataset_observation(
 )
 }
 \arguments{
-\item{origin}{`DBI` connection to the source database}
+\item{origin}{\code{DBI} connection to the source database}
 
-\item{repo}{a [git2rdata::repository()] object}
+\item{repo}{a \code{\link[git2rdata:repository]{git2rdata::repository()}} object}
 
 \item{end_date}{the latest date to import.
 Default to now.}
 
 \item{min_observation}{The minimum number of observations for taking a
 species into account.
-Defaults to `100`.}
+Defaults to \code{100}.}
 
 \item{strict}{What to do when the metadata changes. \code{strict = FALSE}
 overwrites the data and the metadata with a warning listing the changes,

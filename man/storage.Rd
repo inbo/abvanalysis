@@ -2,12 +2,12 @@
 % Please edit documentation in R/storage.R
 \name{storage}
 \alias{storage}
-\title{store the n2kModel and retrieve its fingerprints}
+\title{store the \code{n2kModel} and retrieve its fingerprints}
 \usage{
 storage(model, base, project, overwrite = FALSE, validate = FALSE)
 }
 \arguments{
-\item{model}{a n2kModel object}
+\item{model}{a \code{n2kModel} object}
 
 \item{base}{The base location to store the model.}
 
@@ -24,5 +24,5 @@ a data.frame with the fingerprint, status and status_fingerprint as
 stored
 }
 \description{
-store the n2kModel and retrieve its fingerprints
+store the \code{n2kModel} and retrieve its fingerprints
 }

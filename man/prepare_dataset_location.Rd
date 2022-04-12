@@ -7,9 +7,9 @@
 prepare_dataset_location(origin, repo, end_date, strict = TRUE)
 }
 \arguments{
-\item{origin}{`DBI` connection to the source database}
+\item{origin}{\code{DBI} connection to the source database}
 
-\item{repo}{a [git2rdata::repository()] object}
+\item{repo}{a \code{\link[git2rdata:repository]{git2rdata::repository()}} object}
 
 \item{end_date}{the latest date to import.
 Default to now.}

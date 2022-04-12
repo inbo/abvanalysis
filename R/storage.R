@@ -1,7 +1,7 @@
-#' store the n2kModel and retrieve its fingerprints
+#' store the `n2kModel` and retrieve its fingerprints
 #' @return a data.frame with the fingerprint, status and status_fingerprint as
 #' stored
-#' @param model a n2kModel object
+#' @param model a `n2kModel` object
 #' @inheritParams n2kanalysis::store_model
 #' @export
 #' @importFrom n2kanalysis get_file_fingerprint status get_status_fingerprint

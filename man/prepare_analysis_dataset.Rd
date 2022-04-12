@@ -33,11 +33,11 @@ prepare_analysis_dataset(
 \item{location_group_id}{the location_group ID}
 
 \item{seed}{The seed for the analysis.
-Defaults to `20070315`.}
+Defaults to \code{20070315}.}
 
 \item{observation}{The dataframe with the visits and location group.}
 
-\item{repo}{a [git2rdata::repository()] object}
+\item{repo}{a \code{\link[git2rdata:repository]{git2rdata::repository()}} object}
 
 \item{base}{The base location to store the model.}
 
@@ -48,19 +48,19 @@ Defaults to \code{TRUE}.}
 
 \item{min_observation}{The minimum number of observations for taking a
 species into account.
-Defaults to `100`.}
+Defaults to \code{100}.}
 
 \item{min_stratum}{The required minimum number of relevant locations per
 stratum.
-Defaults to `3`.}
+Defaults to \code{3}.}
 
 \item{min_cycle}{Minimum number of cycles in which a species must be found
 at a square.
 Square with sightings from fewer cycles will be ignored.
-Defaults to `2`.}
+Defaults to \code{2}.}
 
 \item{proportion}{Minimum proportion of the least important period.
-Defaults to `0.15`.}
+Defaults to \code{0.15}.}
 
 \item{verbose}{display the progress}
 
@@ -68,11 +68,11 @@ Defaults to `0.15`.}
 }
 \value{
 A data.frame with the species id number of rows in the analysis
-   dataset, number of presences in the analysis dataset and SHA-1 of the
-   analysis dataset or NULL if not enough data.
+dataset, number of presences in the analysis dataset and SHA-1 of the
+analysis dataset or NULL if not enough data.
 }
 \description{
 This analysis fits an unweighed model but adds the stratum effect. The
-   indices per year of the different strata are combined with a linear
-   combination into a single index per year.
+indices per year of the different strata are combined with a linear
+combination into a single index per year.
 }

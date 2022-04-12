@@ -85,7 +85,7 @@ We sluiten de tabel af met de soorten met een mogelijke of onduidelijke trend.
 De tabel bevat de trend uitgedrukt als een jaarlijkse wijziging en als een wijziging over de volledige looptijd van het meetnet.
 Verder bevat de tabel de opdeling van de trend in klassen en een indicatie of de trend al dan niet lineair is (zie §\@ref(s:lineairetrend)).
 De naam van de soort is een snelkoppeling naar de detail van de soort zelf.
-We raden aan om hiervan gebruikt te maken bij de interpretie van niet-lineaire trends.
+We raden aan om hiervan gebruikt te maken bij de interpretatie van niet-lineaire trends.
 
 (ref:driejaarlijkse-trends) Gemiddelde wijziging in veronderstelling van een lineaire trend gebaseerd op driejaarlijkse gegevens. `++`: sterke toename, `+`: toename, `+~`: matige toename, `~`: stabiel, `~-`: matige afname, `-`: afname, `--`: sterke afname, `?+`: mogelijke toename, `?-`: mogelijke afname, `?`: onduidelijke trend. Referentie: 0%, ondergrens: -25% over de looptijd, bovengrens: +33% over de looptijd.
 

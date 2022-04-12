@@ -36,7 +36,7 @@ prepare_analysis_composite(
 \item{scheme_id}{a string with the scheme id.}
 
 \item{seed}{The seed for the analysis.
-Defaults to `20070315`.}
+Defaults to \code{20070315}.}
 
 \item{overwrite}{Should an existing object be overwritten?
 Defaults to \code{TRUE}.}

@@ -8,19 +8,24 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 
-ABV stands for Algemene Broedvogelmonitoring Vlaanderen: the common breeding bird census for Flanders (Belgium.)
+ABV stands for
+Algemene Broedvogelmonitoring Vlaanderen: <!-- spell-check: ignore -->
+the common breeding bird census for Flanders (Belgium.)
 
 ## Design
 
-- UTM 1x1 km grid cells are stratified based on the landuse.
-- Stratified random sample of 1200 grid cells. Rare strata are oversampled, common strata undersampled.
+- UTM 1 x 1 km grid cells are stratified based on the land cover.
+- Stratified random sample of 1200 grid cells. Rare strata are oversampled, common strata under sampled.
 - Every year 300 grid cells are sampled. Grid cells are revisited every 3 year.
 - Within each grid cell 6 points on a 3 by 2 grid are predefined.
 - Each of the six points is visited during a fixed amount of time and the number of breeding bird are counted.
-- The survey is repeated during 3 consective periods of 6 weeks in spring:
+- The survey is repeated during 3 consecutive periods of 6 weeks in spring:
+<!-- spell-check: ignore:start -->
     1. from the 1st of March to the 15th of April
     1. from the 16st of April to the 31th of May
     1. from the 1st of June to the 15th of July
+
+<!-- spell-check: ignore:end -->
 
 ## Analysis
 
@@ -33,7 +38,7 @@ ABV stands for Algemene Broedvogelmonitoring Vlaanderen: the common breeding bir
 
 - No observations prior to 2007.
 - Don't include the latest year until most of the observations are available in the dataset. This is relevant in case the analysis is run during or just after the field campaign.
-- No observations outside the 1st of March - 15th of July window.
+- No observations outside the 1st of March - 15th of July window. <!-- spell-check: ignore -->
 - No observations which have been marked unreliable in the database.
 - Only periods in which the average count is at least 15% of the period with the highest average count.
 - Only grid cells in which the species was present in two different years.
@@ -42,14 +47,14 @@ ABV stands for Algemene Broedvogelmonitoring Vlaanderen: the common breeding bir
 ### Statistical model
 
 - Generalised linear mixed model with negative binomial distribution.
-- Reponse: 
+- Response: 
     - Number of observed breeding bird at each point within the grid cell
 - Covariates:
-    - _Stratum_: takes the average difference in abundance among strata into account.
-    - Random walk model of order 1 along _Year_ per _Stratum_. This models a separate non-linear trend for each stratum.
-    - _Period_: categorical factor models the overall differences among periods. Only relevant in case multiple periods are selected.
-    - _Location_: i.i.d. random intercept of grid cell. This models effects of the grid cell not captured by _Stratum_, _Period_ or _Year_.
-    - _SubLocation_: i.i.d. random intercept of point within grid cell. This models effects of the point within the grid cell not captured by _Stratum_, _Period_, _Year_ or _Location_.
+    - `Stratum`: takes the average difference in abundance among strata into account.
+    - Random walk model of order 1 along `Year` per `Stratum`. This models a separate non-linear trend for each stratum.
+    - `Period`: categorical factor models the overall differences among periods. Only relevant in case multiple periods are selected.
+    - `Location`: i.i.d. random intercept of grid cell. This models effects of the grid cell not captured by `Stratum`, `Period` or `Year`.
+    - `SubLocation`: i.i.d. random intercept of point within grid cell. This models effects of the point within the grid cell not captured by `Stratum`, `Period`, `Year` or `Location`.
 - Model fit in [R](https://www.R-project.org) with [INLA](https://www.r-inla.org).
 
 ### Trend

@@ -19,7 +19,7 @@ get_nonlinear_lincomb(
 
 \item{time_var}{variable indicating the time.}
 
-\item{label_var}{variable containing the label for every `time_var`.}
+\item{label_var}{variable containing the label for every \code{time_var}.}
 
 \item{stratum_var}{variable containing the stratum information.}
 }

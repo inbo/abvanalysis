@@ -8,13 +8,13 @@ moving_trend(n_total = 20, n_window = 10, start = 0)
 }
 \arguments{
 \item{n_total}{Length of the time series.
-Defaults to `20`.}
+Defaults to \code{20}.}
 
 \item{n_window}{Size of the moving window.
-Defaults to `10`.}
+Defaults to \code{10}.}
 
 \item{start}{Optional offset for the time series.
-Defaults to `0`.}
+Defaults to \code{0}.}
 }
 \description{
 Create weight matrix for linear trend over a moving window
