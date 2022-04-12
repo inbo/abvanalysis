@@ -27,4 +27,4 @@
 ^man-roxygen$
 ^pkgdown$
 ^README\.Rmd$
-^wercker\.yml$
+^spell_check\.json$

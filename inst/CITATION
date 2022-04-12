@@ -8,5 +8,6 @@ citEntry(
   url = "https://github.com/inbo/abvanalysis",
   abstract = "Read in the raw data and prepare analysis datasets.",
   textVersion = "Onkelinx, Thierry (2022) abvanalysis: Analysis of the Common Breeding Bird Survey. Version 0.2.2. https://github.com/inbo/abvanalysis",
+  keywords = "R package",
 )
 # end checklist entry

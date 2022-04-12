@@ -1,5 +1,20 @@
 description: Configuration file for checklist::check_pkg()
 package: yes
 allowed:
-  warnings: []
+  warnings:
+  - motivation: Requires the n2kanalysis package
+    value: |-
+      checking CRAN incoming feasibility ... WARNING
+      Maintainer: 'Thierry Onkelinx <thierry.onkelinx@inbo.be>'
+
+      New submission
+
+      Strong dependencies not in mainstream repositories:
+        n2kanalysis
+      Availability using Additional_repositories specification:
+        n2kanalysis   yes   https://inbo.r-universe.dev
   notes: []
+citation_roles:
+- aut
+- cre
+keywords: R package

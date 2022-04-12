@@ -17,3 +17,4 @@ license: GPL-3.0
 type: software
 repository-code: https://github.com/inbo/abvanalysis
 identifiers: []
+keywords: R package
