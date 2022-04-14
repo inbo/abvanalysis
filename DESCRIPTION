@@ -26,8 +26,15 @@ Imports:
     tibble,
     tidyr
 Suggests: 
+    INBOmd,
+    INBOtheme,
+    effectclass (>= 0.1.4),
     knitr,
-    rmarkdown
+    pander,
+    plotly,
+    rmarkdown,
+    scales,
+    tidyverse
 VignetteBuilder: 
     knitr
 Additional_repositories: https://inbo.r-universe.dev
