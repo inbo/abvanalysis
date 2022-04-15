@@ -197,6 +197,32 @@ if (interactive() || opts_knit$get("rmarkdown.pandoc.to") == "html") {
 }
 ```
 
+(ref:{{id}}-raster) Paarsgewijze vergelijking tussen jaren voor `r soort_naam`.
+
+```{r {{id}}-wijziging-jaar-alles2, fig.cap = "(ref:{{id}}-raster)", eval = output_format != "html" && nrow(deze_wijziging) > 0}
+deze_wijziging %>%
+  filter(!.data$cycle) %>%
+  rename(periode = .data$referentie, referentie = .data$periode) %>%
+  mutate(
+    klasse = classification(-.data$ucl, -.data$lcl, threshold = deze_threshold)
+  ) %>%
+  bind_rows(
+    deze_wijziging %>%
+      filter(!.data$cycle)
+  ) %>%
+  ggplot(aes(x = periode, y = referentie, label = klasse)) +
+  geom_point(aes(colour = klasse), size = 4, show.legend = FALSE) +
+  scale_colour_manual(values = kleurgradient) +
+  geom_text(
+    aes(label = klasse), hjust = 0.5, vjust = 0.5, colour = "white", size = 2
+  ) +
+  coord_fixed() +
+  theme(
+    axis.title.x = element_blank(),
+    axis.text.x = element_text(angle = 90, vjust = 0.5)
+  )
+```
+
 (ref:{{id}}-raster3) Paarsgewijze vergelijking tussen driejarige cycli voor `r soort_naam`.
 
 ```{r {{id}}-wijziging-jaar-alles3, fig.cap = "(ref:{{id}}-raster3)", eval = output_format != "html" && nrow(deze_wijziging) > 0}
@@ -232,32 +258,6 @@ deze_wijziging %>%
     labels = function(x) {
       sprintf("%02i-%02i", x, x + 2)
     }
-  ) +
-  coord_fixed() +
-  theme(
-    axis.title.x = element_blank(),
-    axis.text.x = element_text(angle = 90, vjust = 0.5)
-  )
-```
-
-(ref:{{id}}-raster) Paarsgewijze vergelijking tussen jaren voor `r soort_naam`.
-
-```{r {{id}}-wijziging-jaar-alles2, fig.cap = "(ref:{{id}}-raster)", eval = output_format != "html" && nrow(deze_wijziging) > 0}
-deze_wijziging %>%
-  filter(!.data$cycle) %>%
-  rename(periode = .data$referentie, referentie = .data$periode) %>%
-  mutate(
-    klasse = classification(-.data$ucl, -.data$lcl, threshold = deze_threshold)
-  ) %>%
-  bind_rows(
-    deze_wijziging %>%
-      filter(!.data$cycle)
-  ) %>%
-  ggplot(aes(x = periode, y = referentie, label = klasse)) +
-  geom_point(aes(colour = klasse), size = 4, show.legend = FALSE) +
-  scale_colour_manual(values = kleurgradient) +
-  geom_text(
-    aes(label = klasse), hjust = 0.5, vjust = 0.5, colour = "white", size = 2
   ) +
   coord_fixed() +
   theme(

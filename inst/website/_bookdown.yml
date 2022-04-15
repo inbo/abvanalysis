@@ -19,3 +19,4 @@ language:
     ex:     'Voorbeeld '
     proof:  'Bewijs. '
     remark: 'Opmerking. '
+edit: https://github.com/inbo/abvanalysis/edit/main/inst/website/%s

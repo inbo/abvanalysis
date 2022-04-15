@@ -40,11 +40,11 @@ stratum %>%
 
 `r titel`
 
-Op basis van driejaarlijkse gegevens zien we gemiddeld `r deze_lineair$tekst[deze_lineair$cycle]` `r deze_lineair$jaarlijks[deze_lineair$cycle]` per jaar of `r deze_lineair$looptijd[deze_lineair$cycle]` over de volledige looptijd van het meetnet.
-Deze trend is `r deze_lineair$interpretatie[deze_lineair$cycle]`.
-
 Op basis van jaarlijkse gegevens zien we gemiddeld `r deze_lineair$tekst[!deze_lineair$cycle]` `r deze_lineair$jaarlijks[!deze_lineair$cycle]` per jaar of `r deze_lineair$looptijd[!deze_lineair$cycle]` over de volledige looptijd van het meetnet.
 Deze trend is `r deze_lineair$interpretatie[!deze_lineair$cycle]`.
+
+Op basis van driejaarlijkse gegevens zien we gemiddeld `r deze_lineair$tekst[deze_lineair$cycle]` `r deze_lineair$jaarlijks[deze_lineair$cycle]` per jaar of `r deze_lineair$looptijd[deze_lineair$cycle]` over de volledige looptijd van het meetnet.
+Deze trend is `r deze_lineair$interpretatie[deze_lineair$cycle]`.
 
 (ref:{{id}}-aantal) Evolutie van het gemodelleerde gemiddeld aantal waargenomen dieren op een meetpunt voor `r soort_naam` tijdens de referentieperiode. Zie §\@ref(s:onzekerheid) voor een verklaring van de intervallen.
 
@@ -161,6 +161,25 @@ plot_ly(
   )
 ```
 
+```{r {{id}}-aantal2, fig.cap = "(ref:{{id}}-aantal)", eval = output_format != "html" && nrow(dit_aantal) > 0, warning = FALSE}
+dit_aantal %>%
+  filter(!.data$cycle) %>%
+  ggplot(
+    aes(
+      x = year, y = exp(estimate), ymin = exp(lower_confidence_limit),
+      ymax = exp(upper_confidence_limit)
+    )
+  ) +
+  geom_ribbon(alpha = ribbon_opacity) +
+  geom_line() +
+  scale_x_continuous(breaks = pretty) +
+  scale_y_continuous(
+    "gemiddeld aantal dieren per meetpunt", limits = c(0, NA)
+  ) +
+  theme(axis.title.x = element_blank()) +
+  ggtitle(soort_naam)
+```
+
 ```{r {{id}}-aantal3, fig.cap = "(ref:{{id}}-aantal)", eval = output_format != "html" && nrow(dit_aantal) > 0, warning = FALSE}
 breaks <- seq(min(dit_aantal$year), max(dit_aantal$year), by = 3)
 labels <- sprintf("%i-%i", breaks, breaks + 2)
@@ -175,25 +194,6 @@ dit_aantal %>%
   geom_rect(alpha = ribbon_opacity) +
   geom_segment(aes(x = year - 1.4, xend = year + 1.4, yend = exp(estimate))) +
   scale_x_continuous(breaks = breaks, labels = labels) +
-  scale_y_continuous(
-    "gemiddeld aantal dieren per meetpunt", limits = c(0, NA)
-  ) +
-  theme(axis.title.x = element_blank()) +
-  ggtitle(soort_naam)
-```
-
-```{r {{id}}-aantal2, fig.cap = "(ref:{{id}}-aantal)", eval = output_format != "html" && nrow(dit_aantal) > 0, warning = FALSE}
-dit_aantal %>%
-  filter(!.data$cycle) %>%
-  ggplot(
-    aes(
-      x = year, y = exp(estimate), ymin = exp(lower_confidence_limit),
-      ymax = exp(upper_confidence_limit)
-    )
-  ) +
-  geom_ribbon(alpha = ribbon_opacity) +
-  geom_line() +
-  scale_x_continuous(breaks = pretty) +
   scale_y_continuous(
     "gemiddeld aantal dieren per meetpunt", limits = c(0, NA)
   ) +
@@ -362,6 +362,30 @@ if (interactive() || opts_knit$get("rmarkdown.pandoc.to") == "html") {
 
 (ref:{{id}}-raster3) Paarsgewijze vergelijking tussen driejarige cycli voor `r soort_naam`. Uitleg van de symbolen in tabel \@ref(tab:regels).
 
+```{r {{id}}-wijziging-jaar-alles2, fig.cap = "(ref:{{id}}-raster2)", eval = output_format != "html" && nrow(deze_wijziging) > 0}
+deze_wijziging %>%
+  filter(!.data$cycle) %>%
+  rename(periode = .data$referentie, referentie = .data$periode) %>%
+  mutate(
+    klasse = classification(-.data$ucl, -.data$lcl, threshold = log(threshold))
+  ) %>%
+  bind_rows(
+    deze_wijziging %>%
+      filter(!.data$cycle)
+  ) %>%
+  ggplot(aes(x = periode, y = referentie, label = klasse)) +
+  geom_point(aes(colour = klasse), size = 4, show.legend = FALSE) +
+  scale_colour_manual(values = kleurgradient) +
+  geom_text(
+    aes(label = klasse), hjust = 0.5, vjust = 0.5, colour = "white", size = 2
+  ) +
+  coord_fixed() +
+  theme(
+    axis.title.x = element_blank(),
+    axis.text.x = element_text(angle = 90, vjust = 0.5)
+  )
+```
+
 ```{r {{id}}-wijziging-jaar-alles3, fig.cap = "(ref:{{id}}-raster3)", eval = output_format != "html" && nrow(deze_wijziging) > 0}
 deze_wijziging %>%
   filter(.data$cycle) %>%
@@ -395,30 +419,6 @@ deze_wijziging %>%
     labels = function(x) {
       sprintf("%02i-%02i", x, x + 2)
     }
-  ) +
-  coord_fixed() +
-  theme(
-    axis.title.x = element_blank(),
-    axis.text.x = element_text(angle = 90, vjust = 0.5)
-  )
-```
-
-```{r {{id}}-wijziging-jaar-alles2, fig.cap = "(ref:{{id}}-raster2)", eval = output_format != "html" && nrow(deze_wijziging) > 0}
-deze_wijziging %>%
-  filter(!.data$cycle) %>%
-  rename(periode = .data$referentie, referentie = .data$periode) %>%
-  mutate(
-    klasse = classification(-.data$ucl, -.data$lcl, threshold = log(threshold))
-  ) %>%
-  bind_rows(
-    deze_wijziging %>%
-      filter(!.data$cycle)
-  ) %>%
-  ggplot(aes(x = periode, y = referentie, label = klasse)) +
-  geom_point(aes(colour = klasse), size = 4, show.legend = FALSE) +
-  scale_colour_manual(values = kleurgradient) +
-  geom_text(
-    aes(label = klasse), hjust = 0.5, vjust = 0.5, colour = "white", size = 2
   ) +
   coord_fixed() +
   theme(

@@ -28,7 +28,7 @@ Imports:
 Suggests: 
     INBOmd,
     INBOtheme,
-    effectclass (>= 0.1.4),
+    effectclass,
     knitr,
     pander,
     plotly,

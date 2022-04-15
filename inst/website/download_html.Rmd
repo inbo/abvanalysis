@@ -21,9 +21,7 @@ Elke dataset bestaat uit twee bestanden:
     - `referentie`: het referentiejaartal;
     - `naar`: het jaartal waarvoor we verhouding het referentiejaar berekenen;
     - `schatting`: de geschatte verhouding van dit jaar t.o.v. het referentiejaar;
-    - `lcl90` en `ucl90`: de ondergrens en bovengrens van het 90% betrouwbaarheidsinterval rond de schatting;
-    - `lcl60` en `ucl60`: de ondergrens en bovengrens van het 60% betrouwbaarheidsinterval rond de schatting;
-    - `lcl30` en `ucl30`: de ondergrens en bovengrens van het 30% betrouwbaarheidsinterval rond de schatting;
+    - `lcl` en `ucl`: de ondergrens en bovengrens van het 90% betrouwbaarheidsinterval rond de schatting;
     - `klasse`: interpretatie van de wijziging (zie §\@ref(s:trendklasse));
     - `wijziging`: tekstuele beschrijving van de evolutie;
     - `analyse`: data-hash van de analyse;
@@ -40,9 +38,7 @@ Elke dataset bestaat uit twee bestanden:
     - `frequentie`: trend op basis van jaarlijkse of driejaarlijkse gegevens;
     - `jaar`: jaartal of startjaar van de driejaarlijkse periode;
     - `schatting`: schatting van het gemiddeld aantal dieren op een meetpunt;
-    - `lcl90` en `ucl90`: de ondergrens en bovengrens van het 90% betrouwbaarheidsinterval rond de schatting;
-    - `lcl60` en `ucl60`: de ondergrens en bovengrens van het 60% betrouwbaarheidsinterval rond de schatting;
-    - `lcl30` en `ucl30`: de ondergrens en bovengrens van het 30% betrouwbaarheidsinterval rond de schatting;
+    - `lcl` en `ucl`: de ondergrens en bovengrens van het 90% betrouwbaarheidsinterval rond de schatting;
     - `analyse`: data-hash van de analyse;
     - `status`: data-hash van de status van de analyse
 - **lineaire trends:** [`lineaire_trend.csv`](lineaire_trend.csv) en [`lineaire_trend.yml`](lineaire_trend.yml).
@@ -60,9 +56,7 @@ Elke dataset bestaat uit twee bestanden:
     - `referentie`: het referentiejaartal;
     - `naar`: het jaartal waarvoor we verhouding het referentiejaar berekenen;
     - `schatting`: de geschatte verhouding van dit jaar t.o.v. het referentiejaar;
-    - `lcl90` en `ucl90`: de ondergrens en bovengrens van het 90% betrouwbaarheidsinterval rond de schatting;
-    - `lcl60` en `ucl60`: de ondergrens en bovengrens van het 60% betrouwbaarheidsinterval rond de schatting;
-    - `lcl30` en `ucl30`: de ondergrens en bovengrens van het 30% betrouwbaarheidsinterval rond de schatting;
+    - `lcl` en `ucl`: de ondergrens en bovengrens van het 90% betrouwbaarheidsinterval rond de schatting;
     - `klasse`: interpretatie van de wijziging (zie §\@ref(s:trendklasse));
     - `wijziging`: tekstuele beschrijving van de evolutie;
     - `analyse`: data-hash van de analyse;

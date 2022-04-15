@@ -291,10 +291,10 @@ INLA gebruikt een Bayesiaanse benadering om de modellen te fitten.
 Daarom moeten we priors specificeren voor de parameters en hyperparameters.
 
 - $\beta_s$, $\beta_p$ en $\beta_{s1}$ krijgen een Gaussiaanse prior $\mathcal{N}(0, 5)$.
-- $\sigma^2_h$ krijgt een `penalised complexity`  prior [@simpson.rue.ea2017PenalisingModelComponent] zodat $Prob(\sigma_h > 1) = 0.01$.
-- $\sigma^2_m$ krijgt een `penalised complexity`  prior zodat $Prob(\sigma_m > 1) = 0.01$.
-- $\sigma^2_j$ krijgt een `penalised complexity`  prior zodat $Prob(\sigma_j > 0.5) = 0.01$.
-- $\sigma^2_c$ krijgt een `penalised complexity`  prior zodat $Prob(\sigma_c > 0.5) = 0.01$.
+- $\sigma^2_h$ krijgt een `penalised complexity` prior [@simpson.rue.ea2017PenalisingModelComponent] zodat $Prob(\sigma_h > 1) = 0.01$.
+- $\sigma^2_m$ krijgt een `penalised complexity` prior zodat $Prob(\sigma_m > 1) = 0.01$.
+- $\sigma^2_j$ krijgt een `penalised complexity` prior zodat $Prob(\sigma_j > 0.5) = 0.01$.
+- $\sigma^2_c$ krijgt een `penalised complexity` prior zodat $Prob(\sigma_c > 0.5) = 0.01$.
 - $\nu$ krijgt een Gamma prior zodat $\nu \sim \Gamma(1/7, 1/7)$.
 - $\pi$ wordt intern geparametriseerd als $\theta = \log\frac{\pi}{1 - \pi}$ met Gaussiaanse prior $\theta ~ \sim \mathcal{N}(-1, 5)$.
 
