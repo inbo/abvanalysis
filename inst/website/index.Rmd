@@ -324,7 +324,7 @@ Dit project is een gezamenlijk initiatief van het Instituut voor Natuur- en Boso
 De samenwerking tussen deze organisaties staat garant voor een goede ondersteuning van en communicatie naar het vrijwilligersnetwerk door Natuurpunt Studie, en een degelijke professionele wetenschappelijke ondersteuning en dataverwerking door het INBO.
 
 Het project werd opgestart in 2007 en heeft als doelstelling het beschrijven van aantalsontwikkelingen van een set van ca. 80 algemene broedvogelsoorten in Vlaanderen. 
-Zowel jaarlijkse fluctuaties als meerjarige trends zijn daarbij interessante resultaten in functie van lokaal, regionaal en internationaal beleid.
+Zowel jaarlijkse schommelingen als meerjarige trends zijn daarbij interessante resultaten in functie van lokaal, regionaal en internationaal beleid.
 
 Dit rapport is bedoeld als een technisch achtergrondrapport.
 Het bestaat uit drie delen: 
