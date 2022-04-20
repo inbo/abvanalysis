@@ -27,4 +27,4 @@
 ^man-roxygen$
 ^pkgdown$
 ^README\.Rmd$
-^spell_check\.json$
+spell_check.json

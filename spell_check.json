@@ -1,4 +1,4 @@
 {
   "default": ["en_GB"],
-  "nl_BE": ["inst/website"]
+  "nl_BE": ["inst/website/0_methodologie.Rmd", "inst/website/1_samengesteld.Rmd", "inst/website/2_trend_per_soort.Rmd", "inst/website/_samengesteld.Rmd", "inst/website/_soort.Rmd", "inst/website/download_html.Rmd", "inst/website/download_non_html.Rmd", "inst/website/index.Rmd"]
 }
