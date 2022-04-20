@@ -333,5 +333,3 @@ het tweede deel geeft een aantal indicatoren gebaseerd op trends van meerdere so
 het derde deel beschrijft de tijdreeks van individuele soorten.
 We beperken ons in delen twee en drie tot een droge, gestandaardiseerde weergave van de cijfers zonder ecologische interpretatie.
 Voor een ecologische interpretatie van de resultaten verwijzen we naar andere publicaties zoals [INBO Vogelnieuws](https://pureportal.inbo.be/portal/nl/publications/search.html?lastName=&search=&organisationName=&publicationYearsFrom=&organisations=&advanced=true&documents=%20&language=%20&publicationYearsTo=&type=%2Fdk%2Fatira%2Fpure%2Fresearchoutput%2Fresearchoutputtypes%2Fcontributiontojournal%2Finbovogelnieuws&uri=&logicalname=%2Fdk%2Fatira%2Fpure%2Fthematic&ordering=researchOutputOrderByPublicationYear&descending=true).
-
-\mainmatter <!-- spell-check: ignore -->

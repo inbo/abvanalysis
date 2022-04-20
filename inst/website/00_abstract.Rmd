@@ -1,0 +1,22 @@
+\benglish <!-- spell-check: ignore -->
+
+# English abstract {-}
+
+This report publishes the most recent analyses based on the census work carried out for the project "Algemene Broedvogelmonitoring Vlaanderen" or ABV for short.
+This project is a joint initiative of the Instituut voor Natuur- en Bosonderzoek (INBO) and Natuurpunt Studie in cooperation with the local bird working groups.
+The cooperation between these organisations guarantees a good support of and communication to the volunteer network by Natuurpunt Studie, and solid professional scientific support and data processing by INBO.
+
+The project was started in 2007 and aims at describing the number trends of a set of ca. 80 general breeding bird species in Flanders.
+Both annual fluctuations and multi-annual trends are interesting results in function of local, regional and international policy.
+
+This report is meant as a technical background report.
+It consists of three parts:
+the first part describes the methodology of processing and presenting the results;
+the second part presents a number of indicators based on trends of several types;
+the third part describes the time series of individual species.
+In parts two and three, we limit ourselves to a dry, standardised representation of the figures without an ecological interpretation.
+For an ecological interpretation of the results we refer to other publications such as INBO Vogelnieuws.
+
+\english <!-- spell-check: ignore -->
+
+\mainmatter <!-- spell-check: ignore -->
