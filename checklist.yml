@@ -1,0 +1,25 @@
+description: Configuration file for checklist::check_pkg()
+package: yes
+allowed:
+  warnings:
+  - motivation: require other INBO packages
+    value: |-
+      checking CRAN incoming feasibility ... WARNING
+      Maintainer: 'Thierry Onkelinx <thierry.onkelinx@inbo.be>'
+
+      New submission
+
+      Strong dependencies not in mainstream repositories:
+        n2kanalysis
+      Suggests or Enhances not in mainstream repositories:
+        INBOmd, INBOtheme, effectclass
+      Availability using Additional_repositories specification:
+        n2kanalysis   yes   https://inbo.r-universe.dev
+        INBOmd        yes   https://inbo.r-universe.dev
+        INBOtheme     yes   https://inbo.r-universe.dev
+        effectclass   yes   https://inbo.r-universe.dev
+  notes: []
+citation_roles:
+- aut
+- cre
+keywords: R package

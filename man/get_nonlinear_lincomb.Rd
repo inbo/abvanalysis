@@ -4,16 +4,24 @@
 \alias{get_nonlinear_lincomb}
 \title{Calculate the matrix for linear combinations of strata}
 \usage{
-get_nonlinear_lincomb(dataset, time.var, stratum.var = "fStratum", formula)
+get_nonlinear_lincomb(
+  dataset,
+  stratum_weights,
+  time_var,
+  label_var,
+  stratum_var
+)
 }
 \arguments{
-\item{dataset}{the raw dataset}
+\item{dataset}{the raw dataset.}
 
-\item{time.var}{the name of the time variable}
+\item{stratum_weights}{a dataframe with stratum weights.}
 
-\item{stratum.var}{the name of the stratum variable}
+\item{time_var}{variable indicating the time.}
 
-\item{formula}{the formula for the model.matrix}
+\item{label_var}{variable containing the label for every \code{time_var}.}
+
+\item{stratum_var}{variable containing the stratum information.}
 }
 \description{
 Calculate the matrix for linear combinations of strata

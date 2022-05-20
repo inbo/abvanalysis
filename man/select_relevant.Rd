@@ -4,14 +4,41 @@
 \alias{select_relevant}
 \title{Select the relevant observation of a species}
 \usage{
-select_relevant(observation, observation.species)
+select_relevant(
+  observation,
+  species,
+  repo,
+  min_observation = 100,
+  min_stratum = 3,
+  min_cycle = 2,
+  proportion = 0.15
+)
 }
 \arguments{
-\item{observation}{the dataframe with observations. Should be the output of
-\code{\link{read_observation}}}
+\item{observation}{The dataframe with the visits and location group.}
 
-\item{observation.species}{The output from \code{\link{read_observation_species}}}
+\item{species}{The fingerprint of the species.}
+
+\item{repo}{a \code{\link[git2rdata:repository]{git2rdata::repository()}} object}
+
+\item{min_observation}{The minimum number of observations for taking a
+species into account.
+Defaults to \code{100}.}
+
+\item{min_stratum}{The required minimum number of relevant locations per
+stratum.
+Defaults to \code{3}.}
+
+\item{min_cycle}{Minimum number of cycles in which a species must be found
+at a square.
+Square with sightings from fewer cycles will be ignored.
+Defaults to \code{2}.}
+
+\item{proportion}{Minimum proportion of the least important period.
+Defaults to \code{0.15}.}
 }
 \description{
-Relevant locations have at least two observations in different years. Relevant periods have average numbers of at least 5% of the most important period.
+Relevant locations have at least two observations in different cycle.
+Relevant periods have average numbers of at least 15\% of the most important
+period.
 }

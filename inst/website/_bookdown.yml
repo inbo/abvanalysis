@@ -1,0 +1,22 @@
+book_filename: "abv_standaard_rapport.Rmd"
+output_dir: "../output/website"
+rmd_files:
+  html: ["index.Rmd", "00_abstract.Rmd", "0_methodologie.Rmd", "download_html.Rmd", "1_samengesteld.Rmd", "2_trend_per_soort.Rmd", "zzz_bibliografietitel.Rmd"]
+  latex: ["index.Rmd", "00_abstract.Rmd", "0_methodologie.Rmd", "download_non_html.Rmd", "1_samengesteld.Rmd", "2_trend_per_soort.Rmd", "zzz_bibliografietitel.Rmd"]
+  epub: ["index.Rmd", "00_abstract.Rmd", "0_methodologie.Rmd", "download_non_html.Rmd", "1_samengesteld.Rmd", "2_trend_per_soort.Rmd", "zzz_bibliografietitel.Rmd"]
+  word: ["index.Rmd", "00_abstract.Rmd", "0_methodologie.Rmd", "download_non_html.Rmd", "1_samengesteld.Rmd", "2_trend_per_soort.Rmd", "zzz_bibliografietitel.Rmd"]
+delete_merged_file: TRUE
+language:
+  label:
+    fig:    'Figuur '
+    tab:    'Tabel '
+    eq:     'Vergelijking '
+    thm:    'Theorema '
+    lem:    'Lemma '
+    def:    'Definitie '
+    cor:    'Gevolgtrekking '
+    prp:    'Bewering '
+    ex:     'Voorbeeld '
+    proof:  'Bewijs. '
+    remark: 'Opmerking. '
+edit: https://github.com/inbo/abvanalysis/edit/main/inst/website/%s

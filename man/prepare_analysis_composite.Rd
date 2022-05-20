@@ -4,14 +4,44 @@
 \alias{prepare_analysis_composite}
 \title{Prepare the analysis files for the composite indices}
 \usage{
-prepare_analysis_composite(dataset, raw.connection, analysis.path)
+prepare_analysis_composite(
+  frequency,
+  type,
+  species_group_id,
+  location_group_id,
+  models,
+  base,
+  project,
+  scheme_id = "ABV",
+  seed = 20070315,
+  overwrite = FALSE,
+  verbose = TRUE
+)
 }
 \arguments{
-\item{dataset}{the raw dataset}
+\item{frequency}{frequency of the analysis (year or cycle)}
 
-\item{raw.connection}{a git-connection object to write the output to}
+\item{type}{the model type}
 
-\item{analysis.path}{the path to store the rda files for the analysis}
+\item{species_group_id}{the species_group ID}
+
+\item{location_group_id}{the location_group ID}
+
+\item{models}{a dataframe with the parent models.}
+
+\item{base}{The base location to store the model.}
+
+\item{project}{Will be a relative path within the base location.}
+
+\item{scheme_id}{a string with the scheme id.}
+
+\item{seed}{The seed for the analysis.
+Defaults to \code{20070315}.}
+
+\item{overwrite}{Should an existing object be overwritten?
+Defaults to \code{TRUE}.}
+
+\item{verbose}{display the progress}
 }
 \description{
 Prepare the analysis files for the composite indices

@@ -1,439 +1,281 @@
 #' Create the analysis dataset based on the available raw data
 #'
-#' This analysis fits an unweighted model but adds the stratum effect. The
+#' This analysis fits an unweighed model but adds the stratum effect. The
 #'    indices per year of the different strata are combined with a linear
 #'    combination into a single index per year.
 #' @return A data.frame with the species id number of rows in the analysis
-#'    dataset, number of precenses in the analysis datset and SHA-1 of the
+#'    dataset, number of presences in the analysis dataset and SHA-1 of the
 #'    analysis dataset or NULL if not enough data.
-#' @importFrom n2khelper check_path check_dataframe_variable git_recent
-#' @importFrom assertthat assert_that is.count
-#' @importFrom plyr ddply
-#' @importClassesFrom n2kanalysis n2kInlaNbinomial
-#' @importFrom n2kanalysis n2k_inla_nbinomial
-#' @importMethodsFrom n2kanalysis get_file_fingerprint get_status_fingerprint get_seed
-#' @importFrom dplyr %>% mutate_ group_by_ filter_ inner_join select_ distinct ungroup inner_join bind_rows
-#' @export
-#' @param rawdata.file The file with the counts per visit
-#' @param observation the dataframe with the visits and location group
-#' @param analysis.path the path to store the rda files for the analysis
-#' @param min.observation The minimum number of positive observations
-#'    (Count > 0)
-#' @param min.stratum minimum of locations per stratum. Strata with less locations will be dropped from the analysis
 #' @inheritParams prepare_dataset
+#' @inheritParams prepare_analysis
+#' @inheritParams select_relevant
+#' @inheritParams n2kanalysis::store_model
+#' @param species_group_id the species_group ID
+#' @param location_group_id the location_group ID
+#' @param family The statistical distribution to use for this species.
+#' @export
+#' @importFrom dplyr %>% bind_rows count distinct slice_max
+#' @importFrom git2rdata read_vc recent_commit
+#' @importFrom n2kanalysis display n2k_inla
+#' @importFrom rlang .data
+#' @importFrom stats as.formula
+#' @importFrom tidyr replace_na
 prepare_analysis_dataset <- function(
-  rawdata.file,
-  observation,
-  raw.connection,
-  analysis.path,
-  min.observation,
-  min.stratum
-){
-  assert_that(is.count(min.observation))
-  metadata <- read_delim_git("metadata.txt", connection = raw.connection)
-  scheme.id <- metadata$Value[metadata$Key == "SchemeID"]
-  assert_that(is.count(scheme.id))
-  first.year <- metadata$Value[metadata$Key == "FirstImportedYear"]
-  assert_that(is.count(first.year))
-  last.year <- metadata$Value[metadata$Key == "LastImportedYear"]
-  assert_that(is.count(last.year))
+  scheme_id, species_group_id, species, location_group_id, seed = 20070315,
+  observation, repo, base, project, overwrite = FALSE, min_observation = 100,
+  min_stratum = 3, min_cycle = 2, proportion = 0.15, verbose = TRUE, family
+) {
+  display(verbose, c(location_group_id, " ", species_group_id))
 
-  parent <- read_delim_git(file = "parent.txt", connection = raw.connection)
-  check_dataframe_variable(
-    df = parent,
-    variable = c("SpeciesGroupID", "Fingerprint"),
-    name = "parent.txt"
-  )
+  control <- list(control.fixed = list(prec = list(default = 0.2)))
 
-  analysis.path <- check_path(paste0(analysis.path, "/"), type = "directory")
-  check_dataframe_variable(
-    df = observation,
-    variable = c(
-      "ObservationID", "DatasourceID", "LocationID", "SubLocationID", "Year",
-      "Period", "Stratum", "Weight", "LocationGroupID"
+  # define metadata
+
+  first_imported_year <- min(observation$year)
+  last_imported_year <- max(observation$year)
+  bind_rows(
+    recent_commit(
+      file = file.path("observation", "visit"), root = repo, data = TRUE
     ),
-    name = "observation"
+    recent_commit(
+      file = file.path("observation", species), root = repo, data = TRUE
+    )
+  ) %>%
+    slice_max(.data$when, n = 1) -> rc
+
+  # select relevant data
+
+  dataset <- select_relevant(
+    observation = observation, species = species, repo = repo,
+    min_observation = min_observation, min_stratum = min_stratum,
+    min_cycle = min_cycle, proportion = proportion
   )
 
-  species.observation <- read_delim_git(
-    file = rawdata.file,
-    connection = raw.connection
-  )
-  check_dataframe_variable(
-    df = species.observation,
-    variable = c("ObservationID", "Count"),
-    name = rawdata.file
-  )
-  analysis.date <- git_recent(
-    file = rawdata.file,
-    connection = raw.connection
-  )$Date
-  speciesgroup.id <- as.integer(gsub("\\.txt$", "", rawdata.file))
-  species.id <- read_delim_git("species.txt", connection = raw.connection)
-  seed <- species.id$Seed[species.id$SpeciesGroupID == speciesgroup.id]
-  parent <- parent$Fingerprint[parent$SpeciesGroupID == speciesgroup.id]
-
-  rawdata <- observation %>%
-    group_by_(~Stratum) %>%
-    mutate_(Nobserved = ~n_distinct(LocationID)) %>%
-    inner_join(species.observation, by = "ObservationID") %>%
-    mutate_(
-      Nrelevant = ~n_distinct(LocationID)
+  # empty dataset implies insufficient data
+  if (is.null(dataset)) {
+    display(verbose, "insufficient data")
+    n2k_inla(
+      result_datasource_id = rc$commit, scheme_id = scheme_id,
+      species_group_id = species_group_id, family = family,
+      location_group_id = location_group_id, analysis_date = rc$when,
+      model_type = paste0(
+        "inla ", family, ": Year:Stratum + Period + Location + SubLocation"
+      ),
+      formula = "count ~ 1", first_imported_year = first_imported_year,
+      last_imported_year = last_imported_year,
+      data = data.frame(
+        count = integer(0), observation_id = integer(0),
+        datafield_id = character(0)
+      ),
+      status = "insufficient_data", seed = seed
     ) %>%
-    ungroup()
+      storage(base = base, project = project, overwrite = overwrite)
+    return(data.frame())
+  }
 
-  message(speciesgroup.id, " ", appendLF = FALSE)
-  utils::flush.console()
-  analysis <- ddply(
-    .data = rawdata,
-    .variables = "LocationGroupID",
-    .fun = function(dataset){
-      locationgroup.id <- dataset$LocationGroupID[1]
+  # calculate stratum weights
+  dataset %>%
+    complete(
+      year = min(.data$year):max(.data$year),
+      stratum = as.character(unique(.data$stratum))
+    ) %>%
+    mutate(
+      cycle = 1 + (.data$year - 2007) %/% 3,
+      cyear = .data$year - min(.data$year) + 1
+    ) -> dataset
+  dataset %>%
+    filter(!is.na(.data$square)) %>%
+    distinct(.data$stratum, .data$square, n = .data$n) %>%
+    count(.data$stratum, .data$n, name = "r") %>%
+    inner_join(
+      observation %>%
+        distinct(.data$stratum, .data$square) %>%
+        count(.data$stratum, name = "t"),
+      by = "stratum"
+    ) %>%
+    transmute(
+      .data$stratum,
+      weight = .data$n * .data$r / .data$t,
+      weight = .data$weight / sum(.data$weight)
+    ) %>%
+    inner_join(dataset, by = "stratum") %>%
+    mutate(
+      stratum = factor(.data$stratum),
+      observation_id = ifelse(
+        is.na(.data$observation_id), -row_number(), .data$observation_id
+      ),
+      datafield_id = replace_na(.data$datafield_id, -1)
+    ) %>%
+    arrange(
+      .data$cyear, .data$stratum, .data$square, .data$point,
+      .data$observation_id
+    ) -> dataset
+  stratum_weights <- distinct(dataset, .data$stratum, .data$weight)
 
-      dataset <- dataset %>%
-        filter_(~Nrelevant >= 3) %>%
-        select_(~Stratum, ~Weight, ~Nobserved, ~Nrelevant) %>%
-        distinct() %>%
-        mutate_(
-          Weight = ~Weight * Nrelevant / Nobserved,
-          Weight = ~Weight / sum(Weight)
-        ) %>%
-        select_(~Stratum, ~Weight) %>%
-        inner_join(
-          dataset %>%
-            select_(~-Weight, ~-Nobserved, ~-Nrelevant),
-          by = "Stratum"
-        )
+  base_effects <- c(
+    "period"[length(levels(dataset$period)) > 1],
+    "f(square, model = \"iid\",
+      hyper = list(theta = list(prior = \"pc.prec\", param = c(1, 0.01))))",
+    "f(point, model = \"iid\",
+      hyper = list(theta = list(prior = \"pc.prec\", param = c(1, 0.01))))"[
+        length(levels(dataset$point)) > 2 * length(levels(dataset$square))
+      ]
+  )
 
-      if (sum(dataset$Count > 0) < min.observation) {
-        analysis <- n2k_inla_nbinomial(
-          scheme.id = scheme.id,
-          species.group.id = speciesgroup.id,
-          location.group.id = locationgroup.id,
-          analysis.date = analysis.date,
-          model.type =
-            "inla nbinomial: Year:Stratum + Period + Location + SubLocation",
-          formula = "Count ~ 1",
-          first.imported.year = first.year,
-          last.imported.year = last.year,
-          data = dataset,
-          status = "insufficient data",
-          parent = parent,
-          seed = seed
-        )
-        filename <- sprintf(
-          "%s/%s.rda",
-          analysis.path,
-          get_file_fingerprint(analysis)
-        )
-        if (!file.exists(filename)) {
-          save(analysis, file = filename)
-        }
-        return(NULL)
-      }
+  # analysis on data by year
+  display(verbose, "linear year, ", linefeed = FALSE)
 
-      dataset <- dataset %>%
-        mutate_(
-          fPeriod = ~factor(Period),
-          fLocation = ~factor(LocationID),
-          fSubLocation = ~factor(SubLocationID),
-          fStratum = ~factor(Stratum),
-          cYear = ~Year - max(Year),
-          Cycle = ~(Year - 2007) %/% 3
-        )
-      multi.stratum <- length(levels(dataset$fStratum)) > 1
-      design.variable <- character(0)
-      design <- character(0)
-
-      if (min(dataset$cYear) == 0) {
-        stop("Dataset with a single year not yet handled")
-      }
-      weights <- dataset %>%
-        ungroup() %>%
-        select_(~fStratum, ~Weight) %>%
-        distinct() %>%
-        arrange_(~fStratum)
-      lc.index <- min(dataset$cYear):max(dataset$cYear) %>%
-        length() %>%
-        diag() %>%
-        outer(weights$Weight) %>%
-        apply(3, as.data.frame) %>%
-        unlist(recursive = FALSE) %>%
-        do.call(what = cbind)
-      rownames(lc.index) <- min(dataset$Year):max(dataset$Year)
-      colnames(lc.index) <- outer(
-          min(dataset$cYear):max(dataset$cYear) %>%
-          sprintf(fmt = "cYear%s:"),
-          weights$fStratum %>%
-            sprintf(fmt = "fStratum%s"),
-          FUN = "paste0"
-        ) %>%
-        as.vector()
-      lc.index <- list(cYear = lc.index)
-
-      if (multi.stratum) {
-        lc.trend <- get_linear_lincomb(
-          dataset = dataset,
-          time.var = "cYear",
-          stratum.var = "fStratum",
-          formula = ~ 0 + fStratum + cYear:fStratum
-        )
-        names(lc.trend[[1]]) <- c(min(dataset$Year):max(dataset$Year), "Trend")
-      } else {
-        lc.trend <- cbind(
-          "(Intercept)" = 1,
-          cYear = min(dataset$cYear):max(dataset$cYear)
-        )
-        rownames(lc.trend) <- c(min(dataset$Year):max(dataset$Year))
-        lc.trend <- rbind(lc.trend, Trend = c(0, 1))
-      }
-      if (multi.stratum) {
-        trend <- c(
-          "0 + fStratum +
-          f(
-            cYear,
-            model = \"ar1\",
-            replicate = as.integer(fStratum),
-            hyper = list(
-              theta1 = list(param = c(.1, 1e-5)),
-              theta2 = list(param = c(0, .5))
-            )
-          )",
-          "0 + fStratum +
-          f(
-            cYear,
-            model = \"rw1\",
-            replicate = as.integer(fStratum),
-            hyper = list(theta = list(param = c(.1, 1e-5)))
-          )",
-          "0 + fStratum + cYear:fStratum"
-        )
-        trend.variable <- rep(list(list("cYear", "fStratum")), 3)
-      } else {
-        trend <- c(
-          "f(
-            cYear,
-            model = \"ar1\",
-            hyper = list(
-              theta1 = list(param = c(.1, 1e-5)),
-              theta2 = list(param = c(0, .5))
-            )
-          )",
-          "f(
-            cYear,
-            model = \"rw1\",
-            hyper = list(theta = list(param = c(.1, 1e-5)))
-          )",
-          "cYear"
-        )
-        trend.variable <- rep(list("cYear"), 3)
-      }
-      trend.name <- c("AR1(Year|Stratum)", "RW1(Year|Stratum)", "Year:Stratum")
-      if (max(dataset$Cycle) == 0) {
-        lc <- list(lc.index, lc.index, lc.trend)
-        if (multi.stratum) {
-          replicate.name <- list(
-            list(cYear = levels(dataset$fStratum)),
-            list(cYear = levels(dataset$fStratum)),
-            list()
-          )
-        } else {
-          replicate.name <- rep(list(list()), 3)
-        }
-      } else {
-        cycle.label <- sort(unique(dataset$Cycle)) * 3 + 2007
-        cycle.label <- sprintf("%i - %i", cycle.label, cycle.label + 2)
-        dataset$fCycle <- factor(
-          dataset$Cycle,
-          labels = cycle.label
-        )
-
-        lc.cycle <- min(dataset$Cycle):max(dataset$Cycle) %>%
-          length() %>%
-          diag() %>%
-          outer(weights$Weight) %>%
-          apply(3, as.data.frame) %>%
-          unlist(recursive = FALSE) %>%
-          do.call(what = cbind)
-        rownames(lc.cycle) <- cycle.label
-        colnames(lc.cycle) <- outer(
-            min(dataset$Cycle):max(dataset$Cycle) %>%
-            sprintf(fmt = "Cycle%s:"),
-            weights$fStratum %>%
-              sprintf(fmt = "fStratum%s"),
-            FUN = "paste0"
-          ) %>%
-          as.vector()
-        lc.cycle <- list(Cycle = lc.cycle)
-        if (multi.stratum) {
-          lc.cycletrend <- get_linear_lincomb(
-            dataset = dataset,
-            time.var = "Cycle",
-            stratum.var = "fStratum",
-            formula = ~ 0 + fStratum + Cycle:fStratum
-          )
-          names(lc.cycletrend[[1]]) <- c(cycle.label, "Trend")
-          replicate.name <- list(
-            list(cYear = levels(dataset$fStratum)),
-            list(cYear = levels(dataset$fStratum)),
-            list(),
-            list(Cycle = levels(dataset$fStratum)),
-            list(Cycle = levels(dataset$fStratum)),
-            list()
-          )
-        } else {
-          lc.cycletrend <- cbind(
-            "(Intercept)" = 1,
-            Cycle = min(dataset$Cycle):max(dataset$Cycle)
-          )
-          rownames(lc.cycletrend) <- cycle.label
-          lc.cycletrend <- rbind(lc.cycletrend, Trend = c(0, 3))
-          replicate.name <- rep(list(list()), 6)
-        }
-        lc <- list(lc.index, lc.index, lc.trend, lc.cycle, lc.cycle, lc.cycletrend)
-        if (multi.stratum) {
-          trend <- c(
-            trend,
-            "0 + fStratum +
-            f(
-              Cycle,
-              model = \"ar1\",
-              replicate = as.integer(fStratum),
-              hyper = list(
-                theta1 = list(param = c(.1, 1e-5)),
-                theta2 = list(param = c(0, .5))
-              )
-            )",
-            "0 + fStratum +
-            f(
-              Cycle,
-              model = \"rw1\",
-              replicate = as.integer(fStratum),
-              hyper = list(theta = list(param = c(.1, 1e-5)))
-            )",
-            "0 + fStratum + Cycle:fStratum"
-          )
-          trend.variable <- c(
-            trend.variable,
-            rep(list(list("fStratum", "Cycle", "fCycle")), 2),
-            list(list("fStratum", "Cycle"))
-          )
-        } else {
-          trend <- c(
-            trend,
-            "f(
-              Cycle,
-              model = \"ar1\",
-              hyper = list(
-                theta1 = list(param = c(.1, 1e-5)),
-                theta2 = list(param = c(0, .5))
-              )
-            )",
-            "f(
-              Cycle,
-              model = \"rw1\",
-              hyper = list(theta = list(param = c(.1, 1e-5)))
-            )",
-            "Cycle"
-          )
-          trend.variable <- c(
-            trend.variable,
-            rep(list(list("Cycle", "fCycle")), 2),
-            list(list("Cycle"))
-          )
-        }
-        trend.name <- c(
-          trend.name,
-          c("AR1(Cycle|Stratum)", "RW1(Cycle|Stratum)", "Cycle:Stratum")
-        )
-      }
-
-      if (length(levels(dataset$fLocation)) > 1) {
-        design <- c(
-          design,
-          "f(
-            fLocation,
-            model = \"iid\",
-            hyper = list(theta = list(param = c(.1, 1e-5)))
-          )"
-        )
-        design.variable <- c(design.variable, "fLocation")
-      }
-      if (length(levels(dataset$fSubLocation)) > 1) {
-        design <- c(
-          design,
-          "f(
-            fSubLocation,
-            model = \"iid\",
-            hyper = list(theta = list(param = c(.1, 1e-5)))
-          )"
-        )
-        design.variable <- c(design.variable, "fSubLocation")
-      }
-      if (length(levels(dataset$fPeriod)) > 1) {
-        design <- c(design, "fPeriod")
-        design.variable <- c(design.variable, "fPeriod")
-      }
-
-      design <- paste(design, collapse = " + ")
-      covariates <- paste(trend, design, sep = " + ")
-
-      fingerprint <- lapply(
-        seq_along(covariates),
-        function(i){
-          data <- dataset %>%
-            ungroup() %>%
-            select_(
-              ~ObservationID, ~DatasourceID, ~Count, ~Weight,
-              .dots = c(trend.variable[[i]], design.variable)
-            )
-          model.type <- paste(
-            "inla nbinomial:",
-            trend.name[i], "+ Period + Location + SubLocation"
-          )
-          formula <- paste("Count ~", covariates[i])
-          analysis <- n2k_inla_nbinomial(
-            scheme.id = scheme.id,
-            species.group.id = speciesgroup.id,
-            location.group.id = locationgroup.id,
-            analysis.date = analysis.date,
-            seed = seed,
-            model.type = model.type,
-            formula = formula,
-            first.imported.year = first.year,
-            last.imported.year = last.year,
-            data = data,
-            parent = parent,
-            replicate.name = replicate.name[[i]],
-            lin.comb = lc[[i]]
-          )
-          file.fingerprint <- get_file_fingerprint(analysis)
-          filename <- sprintf("%s/%s.rda", analysis.path, file.fingerprint)
-          if (!file.exists(filename)) {
-            save(analysis, file = filename)
-          }
-          data.frame(
-            ModelType = model.type,
-            Covariate = trend.name[i],
-            FileFingerprint = file.fingerprint,
-            StatusFingerprint = get_status_fingerprint(analysis),
-            Seed = get_seed(analysis),
-            stringsAsFactors = FALSE
-          )
-        }
-      ) %>%
-        bind_rows()
-      return(
-        cbind(
-          LocationGroupID = locationgroup.id,
-          AnalysisDate = analysis.date,
-          fingerprint
+  ifelse(
+    length(levels(dataset$stratum)) > 1, "0 + stratum + cyear:stratum", "cyear"
+  ) %>%
+    c(base_effects) %>%
+    paste(collapse = " + ") %>%
+    sprintf(fmt = "count ~ %s") -> formula_ly
+  expand_grid(
+    cyear = min(dataset$cyear):max(dataset$cyear),
+    stratum = unique(dataset$stratum)
+  ) %>%
+    get_linear_lincomb(
+      stratum_weights = stratum_weights, time_var = "cyear",
+      stratum_var = "stratum",
+      formula = as.formula(
+        ifelse(
+          length(levels(dataset$stratum)) == 1, "~1 + cyear",
+          "~0 + stratum + cyear:stratum"
         )
       )
-    }
-  )
-  if (nrow(analysis) > 0) {
-    analysis$SpeciesGroupID <- speciesgroup.id
-  }
-  return(analysis)
+    ) -> lin_comb
+  n2k_inla(
+    result_datasource_id = rc$commit, scheme_id = scheme_id,
+    species_group_id = species_group_id, location_group_id = location_group_id,
+    analysis_date = rc$when, family = family, lin_comb = lin_comb,
+    model_type = sprintf(
+      "inla %s: year:stratum + period + square + point", family
+    ),
+    formula = formula_ly, control = control,
+    first_imported_year = first_imported_year,
+    last_imported_year = last_imported_year, data = dataset, status = "new",
+    seed = seed
+  ) %>%
+    storage(base = base, project = project, overwrite = overwrite) ->
+    year_lin_fingerprint
+
+  display(verbose, "non-linear year, ", linefeed = FALSE)
+
+  expand_grid(
+    cyear = min(dataset$cyear):max(dataset$cyear),
+    stratum = unique(dataset$stratum)
+  ) %>%
+    mutate(label = .data$cyear + first_imported_year - 1) %>%
+    get_nonlinear_lincomb(
+      stratum_weights = stratum_weights, time_var = "cyear",
+      label_var = "label", stratum_var = "stratum"
+    ) -> lin_comb
+  c(base_effects,
+  "f(cyear, model = \"rw1\", replicate = as.integer(stratum),
+    hyper = list(theta = list(prior = \"pc.prec\", param = c(0.5, 0.01))))"
+  ) %>%
+    paste(collapse = " + ") %>%
+    sprintf(fmt = "count ~ %s") -> formula_nly
+  n2k_inla(
+    result_datasource_id = rc$commit, scheme_id = scheme_id,
+    species_group_id = species_group_id, location_group_id = location_group_id,
+    analysis_date = rc$when, family = family,
+    model_type = sprintf(
+      "inla %s: RW1(year|stratum) + period + square + point", family
+    ),
+    formula = formula_nly, lin_comb = lin_comb, control = control,
+    first_imported_year = first_imported_year,
+    last_imported_year = last_imported_year, data = dataset, status = "new",
+    seed = seed, replicate_name = list(cyear = levels(dataset$stratum))
+  ) %>%
+    storage(base = base, project = project, overwrite = overwrite) ->
+    year_nl_fingerprint
+
+  # analysis on data by cycle
+  display(verbose, "linear cycle, ", linefeed = FALSE)
+
+  ifelse(
+    length(levels(dataset$stratum)) > 1, "0 + stratum + cycle:stratum", "cycle"
+  ) %>%
+    c(base_effects) %>%
+    paste(collapse = " + ") %>%
+    sprintf(fmt = "count ~ %s") -> formula_ly
+  expand_grid(
+    cycle = min(dataset$cycle):max(dataset$cycle),
+    stratum = unique(dataset$stratum)
+  ) %>%
+    get_linear_lincomb(
+      stratum_weights = stratum_weights,
+      time_var = "cycle",
+      stratum_var = "stratum",
+      formula = as.formula(
+        ifelse(
+          length(levels(dataset$stratum)) == 1, "~1 + cycle",
+          "~0 + stratum + cycle:stratum"
+        )
+      )
+    ) -> lin_comb
+  n2k_inla(
+    result_datasource_id = rc$commit, scheme_id = scheme_id,
+    species_group_id = species_group_id, location_group_id = location_group_id,
+    analysis_date = rc$when, family = family, lin_comb = lin_comb,
+    model_type = sprintf(
+      "inla %s: cycle:stratum + period + square + point", family
+    ),
+    formula = formula_ly, control = control,
+    first_imported_year = first_imported_year,
+    last_imported_year = last_imported_year, data = dataset, status = "new",
+    seed = seed
+  ) %>%
+    storage(base = base, project = project, overwrite = overwrite) ->
+    cycle_lin_fingerprint
+
+  display(verbose, "non-linear cycle")
+
+  expand_grid(
+    cycle = min(dataset$cycle):max(dataset$cycle),
+    stratum = unique(dataset$stratum)
+  ) %>%
+    mutate(label = (.data$cycle - 1) * 3 + first_imported_year) %>%
+    get_nonlinear_lincomb(
+      stratum_weights = stratum_weights, time_var = "cycle",
+      label_var = "label", stratum_var = "stratum"
+    ) -> lin_comb
+  c(base_effects,
+    "f(cycle, model = \"rw1\", replicate = as.integer(stratum),
+    hyper = list(theta = list(prior = \"pc.prec\", param = c(0.5, 0.01))))"
+  ) %>%
+    paste(collapse = " + ") %>%
+    sprintf(fmt = "count ~ %s") -> formula_nly
+  n2k_inla(
+    result_datasource_id = rc$commit, scheme_id = scheme_id,
+    species_group_id = species_group_id, location_group_id = location_group_id,
+    analysis_date = rc$when, family = family,
+    model_type = sprintf(
+      "inla %s: RW1(cycle|stratum) + period + square + point", family
+    ),
+    formula = formula_nly, lin_comb = lin_comb, control = control,
+    first_imported_year = first_imported_year,
+    last_imported_year = last_imported_year, data = dataset, status = "new",
+    seed = seed, replicate_name = list(cyear = levels(dataset$stratum))
+  ) %>%
+    storage(base = base, project = project, overwrite = overwrite) ->
+    cycle_nl_fingerprint
+
+  expand_grid(
+    frequency = c("year", "cycle"),
+    type = c("linear", "non linear")
+  ) %>%
+    mutate(
+      parent_id = species_group_id, first_imported_year = first_imported_year,
+      last_imported_year = last_imported_year, analysis_date = rc$when,
+      result_datasource = rc$commit
+    ) %>%
+    bind_cols(
+      bind_rows(
+        year_lin_fingerprint, year_nl_fingerprint, cycle_lin_fingerprint,
+        cycle_nl_fingerprint
+      )
+    )
 }

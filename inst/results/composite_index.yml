@@ -1,0 +1,53 @@
+..generic:
+  git2rdata: 0.4.0
+  optimize: yes
+  NA string: NA
+  sorting:
+  - analysis
+  - reference
+  - alternative
+  hash: b427b47c89e89a7040afe5730471e1a62988d68d
+  data_hash: 2c79b604909ab7f26ace76e4b962c157fca7bb92
+analysis:
+  class: factor
+  labels:
+  - 065435d795c0670ce5039ac3e5256f0191ff158c
+  - 593eb6fb0c4fd3dd7f1589aae4c3f8fb9037e2f3
+  - 5c768b1b3225a54e92a6ec71495ac6e9182d6c7f
+  - 6ade7b159cc06f6bf36a2ec2eabd79b9a221f0f0
+  - 70b79804deca9d2c5b1a79f91beea54d38655f0b
+  - 723a683c2943df4cd52e6d803c9d301bb3b47f26
+  - 72c6c284e0c0e33b4043cd8323728d150d712013
+  - 78f60d32e602167f6906ebb509792a8298a58d1b
+  - 7de2fb5569c605361a4448a1cc8bd0cc8620bf98
+  - b482fae1586cb229f7a7f81021ed4292a1ba4527
+  - c035733ae7b98af78ce67c149ed93f974259ed7c
+  - c9e6386fa4d39c2dc28af7775b3badf100b90235
+  - f655d5e735833ee196c513bb9144b1463ffe4dcf
+  - fdedf450a47913ea876d233e655a6dce63fc61f4
+  index:
+  - 1
+  - 17
+  - 18
+  - 20
+  - 22
+  - 23
+  - 2
+  - 3
+  - 4
+  - 5
+  - 27
+  - 6
+  - 7
+  - 28
+  ordered: no
+reference:
+  class: integer
+alternative:
+  class: integer
+estimate:
+  class: numeric
+lower_confidence_limit:
+  class: numeric
+upper_confidence_limit:
+  class: numeric

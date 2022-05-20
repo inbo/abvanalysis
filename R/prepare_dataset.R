@@ -1,92 +1,60 @@
 #' Prepare all datasets
+#'
 #' Prepare all datasets and store the version into a git repository
-#' @param result.channel An open RODBC connection to the results database
-#' @param source.channel An open ODBC connection to the source database
-#' @param attribute.connection a git-connection object to the attribute data
-#' @param raw.connection a git-connection object to write the output to
-#' @param scheme.id The id of the scheme
-#' @param verbose Display a progress bar when TRUE (default)
+#' @param origin `DBI` connection to the source database
+#' @param end_date the latest date to import.
+#' Default to now.
+#' @param verbose display the progress
+#' @param repo a [git2rdata::repository()] object
+#' @param push push the changes to the repository.
+#' Defaults to `FALSE`.
+#' @param min_observation The minimum number of observations for taking a
+#' species into account.
+#' Defaults to `100`.
+#' @param ... arguments passed to [git2rdata::commit()] and [git2rdata::push()].
+#' @inheritParams git2rdata::write_vc
 #' @export
-#' @importFrom assertthat is.count is.flag noNA
-#' @importFrom n2khelper write_delim_git auto_commit
-#' @importFrom plyr d_ply
-#' @importFrom n2khelper git_connect remove_files_git write_delim_git
+#' @importFrom assertthat is.string is.flag noNA
+#' @importFrom git2rdata commit push
+#' @importFrom n2kanalysis display
+#' @importFrom utils flush.console
+#' @importFrom rlang .data
 prepare_dataset <- function(
-  result.channel,
-  source.channel,
-  attribute.connection,
-  raw.connection,
-  scheme.id,
-  verbose = TRUE
-){
-  assert_that(is.count(scheme.id))
-  assert_that(is.flag(verbose))
-  assert_that(noNA(verbose))
+  origin, repo, end_date = Sys.time(), verbose = TRUE, push = FALSE,
+  strict = TRUE, min_observation = 100, ...
+) {
+  assert_that(
+    inherits(end_date, "POSIXct"), length(end_date) == 1, noNA(end_date)
+  )
+  assert_that(is.flag(verbose), noNA(verbose))
+  assert_that(is.flag(push), noNA(push))
 
-  remove_files_git(connection = raw.connection, pattern = "txt$")
+  display(verbose, "Importing locations")
+  prepare_dataset_location(
+    origin = origin, repo = repo, end_date = end_date, strict = strict
+  )
 
-  if (verbose) {
-    message("Importing observations")
-    utils::flush.console()
+  display(verbose, "Importing species")
+  prepare_dataset_species(
+    origin = origin, repo = repo, end_date = end_date, strict = strict
+  )
+
+  display(verbose, "Importing observations")
+  prepare_dataset_observation(
+    origin = origin, repo = repo, end_date = end_date, strict = strict
+  )
+
+  if (length(git2rdata::status(repo)$staged) == 0) {
+    return(invisible(NULL))
   }
-  observation <- prepare_dataset_observation(
-    source.channel = source.channel,
-    result.channel = result.channel,
-    raw.connection = raw.connection,
-    attribute.connection = attribute.connection,
-    scheme.id = scheme.id
+  commit(
+    message = "Automated commit from abvanalysis", repo = repo,
+    session = TRUE, ...
   )
-
-  if (verbose) {
-    message("Importing species")
-    utils::flush.console()
+  if (!push) {
+    return(invisible(NULL))
   }
-  species <- prepare_dataset_species(
-    source.channel = source.channel,
-    result.channel = result.channel,
-    raw.connection = raw.connection,
-    scheme.id = scheme.id
-  )
+  push(object = repo, ...)
 
-  if (verbose) {
-    progress <- "time"
-    message("Importing observations per species")
-    utils::flush.console()
-  } else {
-    progress <- "none"
-  }
-#   this.species <- subset(species, SpeciesGroupID == sample(species$SpeciesGroupID, 1))
-  fingerprint <- ddply(
-    .data = species,
-    .variables = "SpeciesGroupID",
-    .progress = progress,
-    .fun = prepare_dataset_species_observation,
-    observation = observation,
-    result.channel = result.channel,
-    source.channel = source.channel,
-    raw.connection = raw.connection,
-    first.year = min(observation$Year),
-    last.year = max(observation$Year),
-    scheme.id = scheme.id
-  )
-  parent.sha <- write_delim_git(
-    x = fingerprint,
-    file = "parent.txt",
-    connection = raw.connection
-  )
-
-  metadata <- data.frame(
-    Key = c("SchemeID", "FirstImportedYear", "LastImportedYear", "Duration"),
-    Value = c(scheme.id, range(observation$Year), diff(range(observation$Year)) + 1)
-  )
-  metadata.sha <- write_delim_git(
-    x = metadata,
-    file = "metadata.txt",
-    connection = raw.connection
-  )
-
-  auto_commit(
-    package = environmentName(parent.env(environment())),
-    connection = raw.connection
-  )
+  return(invisible(NULL))
 }

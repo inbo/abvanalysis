@@ -4,19 +4,30 @@
 \alias{prepare_dataset_observation}
 \title{Read the observations and save them to git and the results database}
 \usage{
-prepare_dataset_observation(source.channel, result.channel, raw.connection,
-  attribute.connection, scheme.id)
+prepare_dataset_observation(
+  origin,
+  repo,
+  end_date,
+  min_observation = 100,
+  strict = TRUE
+)
 }
 \arguments{
-\item{source.channel}{An open ODBC connection to the source database}
+\item{origin}{\code{DBI} connection to the source database}
 
-\item{result.channel}{An open RODBC connection to the results database}
+\item{repo}{a \code{\link[git2rdata:repository]{git2rdata::repository()}} object}
 
-\item{raw.connection}{a git-connection object to write the output to}
+\item{end_date}{the latest date to import.
+Default to now.}
 
-\item{attribute.connection}{a git-connection object to the attribute data}
+\item{min_observation}{The minimum number of observations for taking a
+species into account.
+Defaults to \code{100}.}
 
-\item{scheme.id}{The id of the scheme}
+\item{strict}{What to do when the metadata changes. \code{strict = FALSE}
+overwrites the data and the metadata with a warning listing the changes,
+\code{strict = TRUE} returns an error and leaves the data and metadata as is.
+Defaults to \code{TRUE}.}
 }
 \description{
 Read the observations and save them to git and the results database

@@ -4,16 +4,24 @@
 \alias{get_linear_lincomb}
 \title{Calculate the matrix for linear combinations of strata}
 \usage{
-get_linear_lincomb(dataset, time.var, stratum.var = "fStratum", formula)
+get_linear_lincomb(
+  dataset,
+  time_var,
+  stratum_var = "stratum",
+  stratum_weights,
+  formula
+)
 }
 \arguments{
-\item{dataset}{the raw dataset}
+\item{dataset}{the raw dataset.}
 
-\item{time.var}{the name of the time variable}
+\item{time_var}{variable indicating the time.}
 
-\item{stratum.var}{the name of the stratum variable}
+\item{stratum_var}{variable containing the stratum information.}
 
-\item{formula}{the formula for the model.matrix}
+\item{stratum_weights}{a dataframe with stratum weights.}
+
+\item{formula}{the formula for the trend component}
 }
 \description{
 Calculate the matrix for linear combinations of strata

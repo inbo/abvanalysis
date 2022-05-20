@@ -2,26 +2,43 @@
 % Please edit documentation in R/prepare_dataset.R
 \name{prepare_dataset}
 \alias{prepare_dataset}
-\title{Prepare all datasets
-Prepare all datasets and store the version into a git repository}
+\title{Prepare all datasets}
 \usage{
-prepare_dataset(result.channel, source.channel, attribute.connection,
-  raw.connection, scheme.id, verbose = TRUE)
+prepare_dataset(
+  origin,
+  repo,
+  end_date = Sys.time(),
+  verbose = TRUE,
+  push = FALSE,
+  strict = TRUE,
+  min_observation = 100,
+  ...
+)
 }
 \arguments{
-\item{result.channel}{An open RODBC connection to the results database}
+\item{origin}{\code{DBI} connection to the source database}
 
-\item{source.channel}{An open ODBC connection to the source database}
+\item{repo}{a \code{\link[git2rdata:repository]{git2rdata::repository()}} object}
 
-\item{attribute.connection}{a git-connection object to the attribute data}
+\item{end_date}{the latest date to import.
+Default to now.}
 
-\item{raw.connection}{a git-connection object to write the output to}
+\item{verbose}{display the progress}
 
-\item{scheme.id}{The id of the scheme}
+\item{push}{push the changes to the repository.
+Defaults to \code{FALSE}.}
 
-\item{verbose}{Display a progress bar when TRUE (default)}
+\item{strict}{What to do when the metadata changes. \code{strict = FALSE}
+overwrites the data and the metadata with a warning listing the changes,
+\code{strict = TRUE} returns an error and leaves the data and metadata as is.
+Defaults to \code{TRUE}.}
+
+\item{min_observation}{The minimum number of observations for taking a
+species into account.
+Defaults to \code{100}.}
+
+\item{...}{arguments passed to \code{\link[git2rdata:commit]{git2rdata::commit()}} and \code{\link[git2rdata:push]{git2rdata::push()}}.}
 }
 \description{
-Prepare all datasets
 Prepare all datasets and store the version into a git repository
 }

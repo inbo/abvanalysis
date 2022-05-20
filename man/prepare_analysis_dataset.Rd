@@ -4,30 +4,75 @@
 \alias{prepare_analysis_dataset}
 \title{Create the analysis dataset based on the available raw data}
 \usage{
-prepare_analysis_dataset(rawdata.file, observation, raw.connection,
-  analysis.path, min.observation, min.stratum)
+prepare_analysis_dataset(
+  scheme_id,
+  species_group_id,
+  species,
+  location_group_id,
+  seed = 20070315,
+  observation,
+  repo,
+  base,
+  project,
+  overwrite = FALSE,
+  min_observation = 100,
+  min_stratum = 3,
+  min_cycle = 2,
+  proportion = 0.15,
+  verbose = TRUE,
+  family
+)
 }
 \arguments{
-\item{rawdata.file}{The file with the counts per visit}
+\item{scheme_id}{a string with the scheme id.}
 
-\item{observation}{the dataframe with the visits and location group}
+\item{species_group_id}{the species_group ID}
 
-\item{raw.connection}{a git-connection object to write the output to}
+\item{species}{The fingerprint of the species.}
 
-\item{analysis.path}{the path to store the rda files for the analysis}
+\item{location_group_id}{the location_group ID}
 
-\item{min.observation}{The minimum number of positive observations
-(Count > 0)}
+\item{seed}{The seed for the analysis.
+Defaults to \code{20070315}.}
 
-\item{min.stratum}{minimum of locations per stratum. Strata with less locations will be dropped from the analysis}
+\item{observation}{The dataframe with the visits and location group.}
+
+\item{repo}{a \code{\link[git2rdata:repository]{git2rdata::repository()}} object}
+
+\item{base}{The base location to store the model.}
+
+\item{project}{Will be a relative path within the base location.}
+
+\item{overwrite}{Should an existing object be overwritten?
+Defaults to \code{TRUE}.}
+
+\item{min_observation}{The minimum number of observations for taking a
+species into account.
+Defaults to \code{100}.}
+
+\item{min_stratum}{The required minimum number of relevant locations per
+stratum.
+Defaults to \code{3}.}
+
+\item{min_cycle}{Minimum number of cycles in which a species must be found
+at a square.
+Square with sightings from fewer cycles will be ignored.
+Defaults to \code{2}.}
+
+\item{proportion}{Minimum proportion of the least important period.
+Defaults to \code{0.15}.}
+
+\item{verbose}{display the progress}
+
+\item{family}{The statistical distribution to use for this species.}
 }
 \value{
 A data.frame with the species id number of rows in the analysis
-   dataset, number of precenses in the analysis datset and SHA-1 of the
-   analysis dataset or NULL if not enough data.
+dataset, number of presences in the analysis dataset and SHA-1 of the
+analysis dataset or NULL if not enough data.
 }
 \description{
-This analysis fits an unweighted model but adds the stratum effect. The
-   indices per year of the different strata are combined with a linear
-   combination into a single index per year.
+This analysis fits an unweighed model but adds the stratum effect. The
+indices per year of the different strata are combined with a linear
+combination into a single index per year.
 }
