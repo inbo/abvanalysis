@@ -1,6 +1,6 @@
 {
   "title": "abvanalysis: Analysis of the Common Breeding Bird Survey",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "Read in the raw data and prepare analysis datasets.",
   "creators": [
     {

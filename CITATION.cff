@@ -11,7 +11,7 @@ contact:
 - email: info@inbo.be
   name: Research Institute for Nature and Forest
 title: 'abvanalysis: Analysis of the Common Breeding Bird Survey'
-version: 0.2.2
+version: 0.2.3
 abstract: Read in the raw data and prepare analysis datasets.
 license: GPL-3.0
 type: software
