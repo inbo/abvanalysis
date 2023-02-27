@@ -8,17 +8,16 @@ origin <- RPostgreSQL::dbConnect(
 )
 base <- file.path("~", "n2kanalysis")
 project <- "abv"
+dir.create(file.path(base, project), recursive = TRUE, showWarnings = FALSE)
 
 prepare_dataset(
   origin = origin, repo = repo, end_date = Sys.time(), verbose = TRUE,
-  push = TRUE, strict = TRUE
+  push = FALSE, strict = TRUE
 )
 
 script <- prepare_analysis(
-  repo = repo, base = base, project = project,
-  dependencies = c(
-    "inbo/n2khelper@checklist", "inbo/n2kanalysis@inla_arguments"
-  )
+  repo = repo, base = base, project = project, docker = "inbobmk/rn2k:0.8",
+  dependencies = c("inbo/n2khelper", "inbo/n2kanalysis")
 )
 
 writeLines(
@@ -30,5 +29,5 @@ writeLines(
 
 retrieve_results(
   base = base, project = project, source_repo = repo,
-  target_repo = git2rdata::repository(), strict = TRUE
+  target_repo = git2rdata::repository(), strict = FALSE
 )

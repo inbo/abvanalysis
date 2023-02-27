@@ -23,3 +23,19 @@ citation_roles:
 - aut
 - cre
 keywords: R package
+spelling:
+  default: en-GB
+  ignore:
+  - .github
+  - LICENSE.md
+  other:
+    nl-BE:
+    - inst/website/0_methodologie.Rmd
+    - inst/website/1_samengesteld.Rmd
+    - inst/website/2_trend_per_soort.Rmd
+    - inst/website/_samengesteld.Rmd
+    - inst/website/_soort.Rmd
+    - inst/website/download_html.Rmd
+    - inst/website/download_non_html.Rmd
+    - inst/website/index.Rmd
+    - inst/website/zzz_bibliografietitel.Rmd

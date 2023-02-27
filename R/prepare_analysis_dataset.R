@@ -14,7 +14,7 @@
 #' @param location_group_id the location_group ID
 #' @param family The statistical distribution to use for this species.
 #' @export
-#' @importFrom dplyr %>% bind_rows count distinct slice_max
+#' @importFrom dplyr bind_rows count distinct slice_max
 #' @importFrom git2rdata read_vc recent_commit
 #' @importFrom n2kanalysis display n2k_inla
 #' @importFrom rlang .data
@@ -40,8 +40,9 @@ prepare_analysis_dataset <- function(
     recent_commit(
       file = file.path("observation", species), root = repo, data = TRUE
     )
-  ) %>%
-    slice_max(.data$when, n = 1) -> rc
+  ) |>
+    slice_max(.data$when, n = 1, with_ties = FALSE) |>
+    distinct() -> rc
 
   # select relevant data
 
@@ -68,44 +69,48 @@ prepare_analysis_dataset <- function(
         datafield_id = character(0)
       ),
       status = "insufficient_data", seed = seed
-    ) %>%
+    ) |>
       storage(base = base, project = project, overwrite = overwrite)
     return(data.frame())
   }
 
   # calculate stratum weights
-  dataset %>%
+  levels(dataset$period) |>
+    factor() |>
+    head(1) -> extra_period
+  dataset |>
     complete(
       year = min(.data$year):max(.data$year),
-      stratum = as.character(unique(.data$stratum))
-    ) %>%
+      stratum = as.character(unique(.data$stratum)),
+      fill = list(period = extra_period)
+    ) |>
     mutate(
       cycle = 1 + (.data$year - 2007) %/% 3,
       cyear = .data$year - min(.data$year) + 1
     ) -> dataset
-  dataset %>%
-    filter(!is.na(.data$square)) %>%
-    distinct(.data$stratum, .data$square, n = .data$n) %>%
-    count(.data$stratum, .data$n, name = "r") %>%
+  dataset |>
+    filter(!is.na(.data$square)) |>
+    distinct(.data$stratum, .data$square, n = .data$n) |>
+    count(.data$stratum, .data$n, name = "r") |>
     inner_join(
-      observation %>%
-        distinct(.data$stratum, .data$square) %>%
+      observation |>
+        distinct(.data$stratum, .data$square) |>
         count(.data$stratum, name = "t"),
       by = "stratum"
-    ) %>%
+    ) |>
     transmute(
       .data$stratum,
       weight = .data$n * .data$r / .data$t,
       weight = .data$weight / sum(.data$weight)
-    ) %>%
-    inner_join(dataset, by = "stratum") %>%
+    ) |>
+    inner_join(dataset, by = "stratum") |>
     mutate(
       stratum = factor(.data$stratum),
       observation_id = ifelse(
         is.na(.data$observation_id), -row_number(), .data$observation_id
       ),
       datafield_id = replace_na(.data$datafield_id, -1)
-    ) %>%
+    ) |>
     arrange(
       .data$cyear, .data$stratum, .data$square, .data$point,
       .data$observation_id
@@ -127,14 +132,14 @@ prepare_analysis_dataset <- function(
 
   ifelse(
     length(levels(dataset$stratum)) > 1, "0 + stratum + cyear:stratum", "cyear"
-  ) %>%
-    c(base_effects) %>%
-    paste(collapse = " + ") %>%
+  ) |>
+    c(base_effects) |>
+    paste(collapse = " + ") |>
     sprintf(fmt = "count ~ %s") -> formula_ly
   expand_grid(
     cyear = min(dataset$cyear):max(dataset$cyear),
     stratum = unique(dataset$stratum)
-  ) %>%
+  ) |>
     get_linear_lincomb(
       stratum_weights = stratum_weights, time_var = "cyear",
       stratum_var = "stratum",
@@ -156,7 +161,7 @@ prepare_analysis_dataset <- function(
     first_imported_year = first_imported_year,
     last_imported_year = last_imported_year, data = dataset, status = "new",
     seed = seed
-  ) %>%
+  ) |>
     storage(base = base, project = project, overwrite = overwrite) ->
     year_lin_fingerprint
 
@@ -165,8 +170,8 @@ prepare_analysis_dataset <- function(
   expand_grid(
     cyear = min(dataset$cyear):max(dataset$cyear),
     stratum = unique(dataset$stratum)
-  ) %>%
-    mutate(label = .data$cyear + first_imported_year - 1) %>%
+  ) |>
+    mutate(label = .data$cyear + first_imported_year - 1) |>
     get_nonlinear_lincomb(
       stratum_weights = stratum_weights, time_var = "cyear",
       label_var = "label", stratum_var = "stratum"
@@ -174,8 +179,8 @@ prepare_analysis_dataset <- function(
   c(base_effects,
   "f(cyear, model = \"rw1\", replicate = as.integer(stratum),
     hyper = list(theta = list(prior = \"pc.prec\", param = c(0.5, 0.01))))"
-  ) %>%
-    paste(collapse = " + ") %>%
+  ) |>
+    paste(collapse = " + ") |>
     sprintf(fmt = "count ~ %s") -> formula_nly
   n2k_inla(
     result_datasource_id = rc$commit, scheme_id = scheme_id,
@@ -188,7 +193,7 @@ prepare_analysis_dataset <- function(
     first_imported_year = first_imported_year,
     last_imported_year = last_imported_year, data = dataset, status = "new",
     seed = seed, replicate_name = list(cyear = levels(dataset$stratum))
-  ) %>%
+  ) |>
     storage(base = base, project = project, overwrite = overwrite) ->
     year_nl_fingerprint
 
@@ -197,14 +202,14 @@ prepare_analysis_dataset <- function(
 
   ifelse(
     length(levels(dataset$stratum)) > 1, "0 + stratum + cycle:stratum", "cycle"
-  ) %>%
-    c(base_effects) %>%
-    paste(collapse = " + ") %>%
+  ) |>
+    c(base_effects) |>
+    paste(collapse = " + ") |>
     sprintf(fmt = "count ~ %s") -> formula_ly
   expand_grid(
     cycle = min(dataset$cycle):max(dataset$cycle),
     stratum = unique(dataset$stratum)
-  ) %>%
+  ) |>
     get_linear_lincomb(
       stratum_weights = stratum_weights,
       time_var = "cycle",
@@ -227,7 +232,7 @@ prepare_analysis_dataset <- function(
     first_imported_year = first_imported_year,
     last_imported_year = last_imported_year, data = dataset, status = "new",
     seed = seed
-  ) %>%
+  ) |>
     storage(base = base, project = project, overwrite = overwrite) ->
     cycle_lin_fingerprint
 
@@ -236,8 +241,8 @@ prepare_analysis_dataset <- function(
   expand_grid(
     cycle = min(dataset$cycle):max(dataset$cycle),
     stratum = unique(dataset$stratum)
-  ) %>%
-    mutate(label = (.data$cycle - 1) * 3 + first_imported_year) %>%
+  ) |>
+    mutate(label = (.data$cycle - 1) * 3 + first_imported_year) |>
     get_nonlinear_lincomb(
       stratum_weights = stratum_weights, time_var = "cycle",
       label_var = "label", stratum_var = "stratum"
@@ -245,8 +250,8 @@ prepare_analysis_dataset <- function(
   c(base_effects,
     "f(cycle, model = \"rw1\", replicate = as.integer(stratum),
     hyper = list(theta = list(prior = \"pc.prec\", param = c(0.5, 0.01))))"
-  ) %>%
-    paste(collapse = " + ") %>%
+  ) |>
+    paste(collapse = " + ") |>
     sprintf(fmt = "count ~ %s") -> formula_nly
   n2k_inla(
     result_datasource_id = rc$commit, scheme_id = scheme_id,
@@ -259,19 +264,19 @@ prepare_analysis_dataset <- function(
     first_imported_year = first_imported_year,
     last_imported_year = last_imported_year, data = dataset, status = "new",
     seed = seed, replicate_name = list(cyear = levels(dataset$stratum))
-  ) %>%
+  ) |>
     storage(base = base, project = project, overwrite = overwrite) ->
     cycle_nl_fingerprint
 
   expand_grid(
     frequency = c("year", "cycle"),
     type = c("linear", "non linear")
-  ) %>%
+  ) |>
     mutate(
       parent_id = species_group_id, first_imported_year = first_imported_year,
       last_imported_year = last_imported_year, analysis_date = rc$when,
       result_datasource = rc$commit
-    ) %>%
+    ) |>
     bind_cols(
       bind_rows(
         year_lin_fingerprint, year_nl_fingerprint, cycle_lin_fingerprint,

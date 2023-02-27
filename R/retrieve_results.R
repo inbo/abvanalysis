@@ -58,7 +58,7 @@ retrieve_results <- function(
   results@AnalysisMetadata %>%
     inner_join(
       read_vc(file.path("species", "speciesgroup"), source_repo) %>%
-        select(.data$id, speciesgroup = .data$description),
+        select("id", speciesgroup = "description"),
       by = c("species_group_id" = "id")
     ) %>%
     transmute(
@@ -81,7 +81,7 @@ retrieve_results <- function(
         semi_join(
           x = results@ParameterEstimate, by = c("parameter" = "fingerprint")
         ) %>%
-        select(.data$analysis, waic = .data$estimate),
+        select("analysis", waic = "estimate"),
       by = "analysis"
     ) %>%
     write_vc(
