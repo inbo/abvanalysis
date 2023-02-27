@@ -7,7 +7,7 @@
   - location
   - year
   hash: e965405754d40969c45640d8ae3089fc1cd94be4
-  data_hash: da5ef972bfa903664e5b919ea3b4c9fea0afb53a
+  data_hash: 1f19b60e4e95168a74004c704243cd6b81e7c61d
 year:
   class: numeric
 location:

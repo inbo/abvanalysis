@@ -1,38 +1,47 @@
 ---
 title: "Trends op basis van de Algemene Broedvogelmonitoring Vlaanderen (ABV)"
-subtitle: "Technisch achtergrondrapport voor de periode 2007-2021"
+subtitle: "Technisch achtergrondrapport voor de periode 2007-2022"
 author: 
-  - name: "Thierry Onkelinx"
-    email: "thierry.onkelinx@inbo.be"
-    orcid: "0000-0001-8804-4216"
-  - name: "Glenn Vermeersch"
-    email: "glenn.vermeersch@inbo.be"
-    orcid: "0000-0002-9176-8917"
-  - name: "Koen Devos"
-    email: "koen.devos@inbo.be"
-    orcid: "0000-0001-7265-6349"
-shortauthor: Onkelinx, T. _et al._
+  - name:
+      given : Thierry
+      family: Onkelinx
+    email: thierry.onkelinx@inbo.be
+    orcid: 0000-0001-8804-4216
+    corresponding: true
+  - name:
+      given: Glenn
+      family: Vermeersch
+    email: glenn.vermeersch@inbo.be
+    orcid: 0000-0002-9176-8917
+  - name:
+      given: Koen
+      family: Devos
+    email: koen.devos@inbo.be
+    orcid: 0000-0001-7265-6349
 reviewer:
-  - name: Hans Van Calster
+  - name:
+      given: Hans
+      family: Van Calster
     email: hans.vancalster@inbo.be
     orcid: 0000-0001-8595-8426
+lang: nl
+style: INBO
 bibliography: references.bib
 link-citations: TRUE
 site: bookdown::bookdown_site
-year: 2022
-reportnr: 9
-doi: 10.21436/inbor.73009782
-depotnr: D/2022/3241/087
-corresponding: thierry.onkelinx@inbo.be
+year: 2023
+reportnr: 1
+doi: 10.21436/inbor.89419879
+depotnr: D/2023/3241/035
 cooperation:
   - Natuurpunt Studie vzw
   - Coxiestraat 11, 2800 Mechelen
   - https://www.natuurpunt.be
 cooperation_logo: natuurpunt.png
-cover_photo: https://img2.vildaphoto.net/asset/l/68813.jpg
-cover_description: Geelgorzen (_Emberiza citrinella_) op een stuk hout tijden de winter. (© Yves Adams, Vildaphoto)
-cover: cover.pdf
-embargo: 2022-03-24
+cover_photo: https://img1.vildaphoto.net/asset/l/126681.jpg
+cover_description: Zwarte specht (_Dryocopus martius_) zittend op een stam. (© Yves Adams, Vildaphoto)
+#cover: cover.pdf
+embargo: 2023-03-25
 output:
   INBOmd::gitbook: default
   INBOmd::pdf_report: default
@@ -323,6 +332,7 @@ read_vc("composite_index", root = repo) %>%
 Dit rapport publiceert de meest recente analyses op basis van het telwerk voor het project "Algemene Broedvogelmonitoring Vlaanderen" of kortweg ABV.
 Dit project is een gezamenlijk initiatief van het Instituut voor Natuur- en Bosonderzoek (INBO) en Natuurpunt Studie in samenwerking met de lokale vogelwerkgroepen. 
 De samenwerking tussen deze organisaties staat garant voor een goede ondersteuning van en communicatie naar het vrijwilligersnetwerk door Natuurpunt Studie, en een degelijke professionele wetenschappelijke ondersteuning en dataverwerking door het INBO.
+Sinds 2016 maakt het integraal deel uit van het project Soortenmeetnetten, dat door INBO en Agentschap Natuur en Bos (ANB) wordt gefinancierd.
 
 Het project werd opgestart in 2007 en heeft als doelstelling het beschrijven van aantalsontwikkelingen van een set van ca. 80 algemene broedvogelsoorten in Vlaanderen. 
 Zowel jaarlijkse schommelingen als meerjarige trends zijn daarbij interessante resultaten in functie van lokaal, regionaal en internationaal beleid.
@@ -332,5 +342,5 @@ Het bestaat uit drie delen:
 het eerste deel beschrijft de methodiek van de verwerking en de weergave van de resultaten;
 het tweede deel geeft een aantal indicatoren gebaseerd op trends van meerdere soorten;
 het derde deel beschrijft de tijdreeks van individuele soorten.
-We beperken ons in delen twee en drie tot een droge, gestandaardiseerde weergave van de cijfers zonder ecologische interpretatie.
+We beperken ons in delen twee en drie tot een gestandaardiseerde weergave van de meest relevante cijfers zonder ecologische interpretatie.
 Voor een ecologische interpretatie van de resultaten verwijzen we naar andere publicaties zoals [INBO Vogelnieuws](https://pureportal.inbo.be/portal/nl/publications/search.html?lastName=&search=&organisationName=&publicationYearsFrom=&organisations=&advanced=true&documents=%20&language=%20&publicationYearsTo=&type=%2Fdk%2Fatira%2Fpure%2Fresearchoutput%2Fresearchoutputtypes%2Fcontributiontojournal%2Finbovogelnieuws&uri=&logicalname=%2Fdk%2Fatira%2Fpure%2Fthematic&ordering=researchOutputOrderByPublicationYear&descending=true).

@@ -14,7 +14,11 @@ meta %>%
   filter(.data$hash == id) -> deze_analyse
 deze_analyse %>%
   select(.data$analysis, .data$cycle) %>%
-  inner_join(estimate, by = "analysis") %>%
+  inner_join(x = estimate, by = "analysis") %>%
+  filter(
+    !.data$cycle | .data$year < max(.data$year) |
+      (.data$year == max(.data$year) & (max(.data$year) - 2007) %% 3 == 2)
+  ) |>
   mutate(
     text_median = format_ci(
       estimate = .data$estimate, lcl = .data$lower_confidence_limit,
@@ -33,17 +37,21 @@ tolower(soort_naam) %>%
   sprintf(fmt = "# %2$s {#soort-%1$s}", soort_naam) -> titel
 deze_analyse %>%
   select(.data$analysis, .data$cycle) %>%
-  inner_join(index, by = "analysis") -> deze_wijziging
+  inner_join(x = index, by = "analysis") |>
+  filter(
+    !.data$cycle | .data$periode < max(.data$periode) |
+      (.data$periode == max(.data$periode) & (.data$periode - 2007) %% 3 == 2)
+  ) -> deze_wijziging
 stratum %>%
   semi_join(deze_analyse, by = "analysis") -> dit_stratum
 ```
 
 `r titel`
 
-Op basis van jaarlijkse gegevens zien we gemiddeld `r deze_lineair$tekst[!deze_lineair$cycle]` `r deze_lineair$jaarlijks[!deze_lineair$cycle]` per jaar of `r deze_lineair$looptijd[!deze_lineair$cycle]` over de volledige looptijd van het meetnet.
+Op basis van jaarlijkse gegevens zien we een gemiddeld `r deze_lineair$tekst[!deze_lineair$cycle]` `r deze_lineair$jaarlijks[!deze_lineair$cycle]` per jaar of `r deze_lineair$looptijd[!deze_lineair$cycle]` over de volledige looptijd van het meetnet.
 Deze trend is `r deze_lineair$interpretatie[!deze_lineair$cycle]`.
 
-Op basis van driejaarlijkse gegevens zien we gemiddeld `r deze_lineair$tekst[deze_lineair$cycle]` `r deze_lineair$jaarlijks[deze_lineair$cycle]` per jaar of `r deze_lineair$looptijd[deze_lineair$cycle]` over de volledige looptijd van het meetnet.
+Op basis van driejaarlijkse gegevens zien we een gemiddeld `r deze_lineair$tekst[deze_lineair$cycle]` `r deze_lineair$jaarlijks[deze_lineair$cycle]` per jaar of `r deze_lineair$looptijd[deze_lineair$cycle]` over de volledige looptijd van het meetnet.
 Deze trend is `r deze_lineair$interpretatie[deze_lineair$cycle]`.
 
 (ref:{{id}}-aantal) Evolutie van het gemodelleerde gemiddeld aantal waargenomen dieren op een meetpunt voor `r soort_naam` tijdens de referentieperiode. Zie §\@ref(s:onzekerheid) voor een verklaring van de intervallen.
@@ -427,7 +435,7 @@ deze_wijziging %>%
   )
 ```
 
-(ref:{{id}}-sg) Stratumgewicht, raming aan het aantal hokken waarin de soort aanwezig is, aantal relevant hokken voor de analyse, aantal onderzochte hokken in het stratum, totaal aantal hokken van het stratum in Vlaanderen, aantal bezoeken aan een meetpunt en het gemiddeld aandeel relevante punten per hok voor `r soort_naam` (zie §\@ref(s:stratumgewicht)).
+(ref:{{id}}-sg) Stratumgewicht, raming van het aantal hokken waarin de soort aanwezig is, aantal relevante hokken voor de analyse, aantal onderzochte hokken in het stratum, totaal aantal hokken van het stratum in Vlaanderen, aantal bezoeken aan een meetpunt en het gemiddeld aandeel relevante punten per hok voor `r soort_naam` (zie §\@ref(s:stratumgewicht)).
 
 ```{r {{id}}-sd}
 dit_stratum %>%
