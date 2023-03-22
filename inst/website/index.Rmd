@@ -7,25 +7,34 @@ author:
       family: Onkelinx
     email: thierry.onkelinx@inbo.be
     orcid: 0000-0001-8804-4216
+    affiliation: Research Institute for Nature and Forest (INBO)
     corresponding: true
   - name:
       given: Glenn
       family: Vermeersch
     email: glenn.vermeersch@inbo.be
     orcid: 0000-0002-9176-8917
+    affiliation: Research Institute for Nature and Forest (INBO)
   - name:
       given: Koen
       family: Devos
     email: koen.devos@inbo.be
     orcid: 0000-0001-7265-6349
+    affiliation: Research Institute for Nature and Forest (INBO)
 reviewer:
   - name:
       given: Hans
       family: Van Calster
     email: hans.vancalster@inbo.be
     orcid: 0000-0001-8595-8426
+    affiliation: Research Institute for Nature and Forest (INBO)
 lang: nl
 style: INBO
+funder: Research Institute for Nature and Forest (INBO)
+rightsholder: Research Institute for Nature and Forest (INBO)
+community: inbo
+keywords: natuurindicator; trend; broedvogel; citizen science
+publication_type: report
 bibliography: references.bib
 link-citations: TRUE
 site: bookdown::bookdown_site
@@ -40,7 +49,7 @@ cooperation:
 cooperation_logo: natuurpunt.png
 cover_photo: https://img1.vildaphoto.net/asset/l/126681.jpg
 cover_description: Zwarte specht (_Dryocopus martius_) zittend op een stam. (© Yves Adams, Vildaphoto)
-#cover: cover.pdf
+cover: cover.pdf
 embargo: 2023-03-25
 output:
   INBOmd::gitbook: default
@@ -63,6 +72,7 @@ library(effectclass)
 library(plotly)
 library(pander)
 library(INBOtheme)
+conflicted::conflicts_prefer(dplyr::pull, plotly::filter, plotly::layout)
 output_format <- ifelse(
   interactive(), "html", opts_knit$get("rmarkdown.pandoc.to")
 )

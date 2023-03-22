@@ -44,14 +44,23 @@ deze_analyse %>%
   ) -> deze_wijziging
 stratum %>%
   semi_join(deze_analyse, by = "analysis") -> dit_stratum
+trend_tekst <- function(x) {
+  if (x == "stabiel") {
+    return("een stabiele toestand. De trend blijft beperkt tot")
+  }
+  if (x == "onduidelijke") {
+    return("een onduidelijke toestand. De geschatte trend bedraagt")
+  }
+  paste("een", x, "met")
+}
 ```
 
 `r titel`
 
-Op basis van jaarlijkse gegevens zien we een gemiddeld `r deze_lineair$tekst[!deze_lineair$cycle]` `r deze_lineair$jaarlijks[!deze_lineair$cycle]` per jaar of `r deze_lineair$looptijd[!deze_lineair$cycle]` over de volledige looptijd van het meetnet.
+Op basis van jaarlijkse gegevens zien we gemiddeld `r trend_tekst(deze_lineair$tekst[!deze_lineair$cycle])` `r deze_lineair$jaarlijks[!deze_lineair$cycle]` per jaar of `r deze_lineair$looptijd[!deze_lineair$cycle]` over de volledige looptijd van het meetnet.
 Deze trend is `r deze_lineair$interpretatie[!deze_lineair$cycle]`.
 
-Op basis van driejaarlijkse gegevens zien we een gemiddeld `r deze_lineair$tekst[deze_lineair$cycle]` `r deze_lineair$jaarlijks[deze_lineair$cycle]` per jaar of `r deze_lineair$looptijd[deze_lineair$cycle]` over de volledige looptijd van het meetnet.
+Op basis van driejaarlijkse gegevens zien we gemiddeld `r trend_tekst(deze_lineair$tekst[deze_lineair$cycle])` `r deze_lineair$jaarlijks[deze_lineair$cycle]` per jaar of `r deze_lineair$looptijd[deze_lineair$cycle]` over de volledige looptijd van het meetnet.
 Deze trend is `r deze_lineair$interpretatie[deze_lineair$cycle]`.
 
 (ref:{{id}}-aantal) Evolutie van het gemodelleerde gemiddeld aantal waargenomen dieren op een meetpunt voor `r soort_naam` tijdens de referentieperiode. Zie §\@ref(s:onzekerheid) voor een verklaring van de intervallen.

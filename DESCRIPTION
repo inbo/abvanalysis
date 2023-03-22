@@ -4,7 +4,7 @@ Version: 0.2.3
 Authors@R: c(
     person("Thierry", "Onkelinx", , "thierry.onkelinx@inbo.be", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0001-8804-4216")),
-    person("Research Institute for Nature and Forest", , , "info@inbo.be", role = c("cph", "fnd"))
+    person("Research Institute for Nature and Forest (INBO)", , , "info@inbo.be", role = c("cph", "fnd"))
   )
 Description: Read in the raw data and prepare analysis datasets.
 License: GPL-3
@@ -38,6 +38,9 @@ Suggests:
 VignetteBuilder: 
     knitr
 Additional_repositories: https://inbo.r-universe.dev
+Config/checklist/communities: inbo
+Config/checklist/keywords: common breeding birds; monitoring; analysis;
+    reproducible science
 Encoding: UTF-8
 Language: en-GB
 Roxygen: list(markdown = TRUE)
