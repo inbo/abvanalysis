@@ -20,6 +20,7 @@
 #' @importFrom rlang .data
 #' @importFrom stats as.formula
 #' @importFrom tidyr replace_na
+#' @importFrom utils head
 prepare_analysis_dataset <- function(
   scheme_id, species_group_id, species, location_group_id, seed = 20070315,
   observation, repo, base, project, overwrite = FALSE, min_observation = 100,
