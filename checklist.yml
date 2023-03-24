@@ -19,15 +19,25 @@ allowed:
         INBOtheme     yes   https://inbo.r-universe.dev
         effectclass   yes   https://inbo.r-universe.dev
   notes: []
-citation_roles:
-- aut
-- cre
-keywords: R package
+required:
+- CITATION
+- DESCRIPTION
+- R CMD check
+- checklist
+- codemeta
+- documentation
+- filename conventions
+- folder conventions
+- license
+- lintr
+- repository secret
+- spelling
 spelling:
   default: en-GB
   ignore:
   - .github
   - LICENSE.md
+  - inst/website/LICENSE.md
   other:
     nl-BE:
     - inst/website/0_methodologie.Rmd
