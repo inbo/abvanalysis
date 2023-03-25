@@ -1,3 +1,3 @@
 ## Downloadbaar cijfermateriaal
 
-We stellen het cijfermateriaal om de figuren te genereren beschikbaar in de online versie van dit rapport: `r rmarkdown::yaml_front_matter("index.Rmd")$doi`.
+We stellen het cijfermateriaal om de figuren te genereren beschikbaar in de online versie van dit rapport: https://doi.org/`r rmarkdown::yaml_front_matter("index.Rmd")$doi`.

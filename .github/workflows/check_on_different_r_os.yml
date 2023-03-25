@@ -22,24 +22,23 @@ jobs:
         config:
           - {os: macOS-latest,   r: 'release'}
           - {os: windows-latest, r: 'release'}
-          - {os: ubuntu-20.04,   r: 'devel', rspm: "https://packagemanager.rstudio.com/cran/__linux__/focal/latest"}
-          - {os: ubuntu-20.04,   r: 'oldrel',  rspm: "https://packagemanager.rstudio.com/cran/__linux__/focal/latest"}
+          - {os: ubuntu-22.04,   r: 'devel', rspm: "https://packagemanager.rstudio.com/cran/__linux__/yammy/latest"}
+          - {os: ubuntu-22.04,   r: 'oldrel',  rspm: "https://packagemanager.rstudio.com/cran/__linux__/yammy/latest"}
 
     env:
       R_REMOTES_NO_ERRORS_FROM_WARNINGS: true
       _R_CHECK_SYSTEM_CLOCK_: false
       RSPM: ${{ matrix.config.rspm }}
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
-      ORCID_TOKEN: ${{ secrets.ORCID_TOKEN }}
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
-      - uses: r-lib/actions/setup-r@master
+      - uses: r-lib/actions/setup-r@v2
         with:
           r-version: ${{ matrix.config.r }}
 
-      - uses: r-lib/actions/setup-pandoc@master
+      - uses: r-lib/actions/setup-pandoc@v2
 
       - name: Query dependencies
         run: |
@@ -50,17 +49,23 @@ jobs:
 
       - name: Cache R packages
         if: runner.os != 'Windows'
-        uses: actions/cache@v1
+        uses: actions/cache@v3
         with:
           path: ${{ env.R_LIBS_USER }}
           key: ${{ runner.os }}-${{ hashFiles('.github/R-version') }}-1-${{ hashFiles('.github/depends.Rds') }}
           restore-keys: ${{ runner.os }}-${{ hashFiles('.github/R-version') }}-1-
+
+      - name: Install macOS system dependencies
+        if: runner.os == 'macOS'
+        run: |
+          brew install fribidi libgit2
 
       - name: Install system dependencies
         if: runner.os == 'Linux'
         env:
           RHUB_PLATFORM: linux-x86_64-ubuntu-gcc
         run: |
+          sudo apt-get update
           Rscript -e "remotes::install_github('r-hub/sysreqs')"
           sysreqs=$(Rscript -e "cat(sysreqs::sysreq_commands('DESCRIPTION'))")
           sudo -s eval "$sysreqs"
@@ -68,8 +73,8 @@ jobs:
 
       - name: Install dependencies
         run: |
-          options(pkgType = "binary", install.packages.check.source = "no")
-          remotes::install_deps(dependencies = TRUE)
+          remotes::install_deps(dependencies = TRUE,
+          type = ifelse(.Platform$OS.type=="unix", "source", "binary"))
           remotes::install_cran("rcmdcheck")
         shell: Rscript {0}
 

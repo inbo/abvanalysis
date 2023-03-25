@@ -12,14 +12,40 @@ allowed:
       Strong dependencies not in mainstream repositories:
         n2kanalysis
       Suggests or Enhances not in mainstream repositories:
-        INBOmd, INBOtheme, effectclass
+        effectclass, INBOmd, INBOtheme
       Availability using Additional_repositories specification:
         n2kanalysis   yes   https://inbo.r-universe.dev
+        effectclass   yes   https://inbo.r-universe.dev
         INBOmd        yes   https://inbo.r-universe.dev
         INBOtheme     yes   https://inbo.r-universe.dev
-        effectclass   yes   https://inbo.r-universe.dev
   notes: []
-citation_roles:
-- aut
-- cre
-keywords: R package
+required:
+- CITATION
+- DESCRIPTION
+- R CMD check
+- checklist
+- codemeta
+- documentation
+- filename conventions
+- folder conventions
+- license
+- lintr
+- repository secret
+- spelling
+spelling:
+  default: en-GB
+  ignore:
+  - .github
+  - LICENSE.md
+  - inst/website/LICENSE.md
+  other:
+    nl-BE:
+    - inst/website/0_methodologie.Rmd
+    - inst/website/1_samengesteld.Rmd
+    - inst/website/2_trend_per_soort.Rmd
+    - inst/website/_samengesteld.Rmd
+    - inst/website/_soort.Rmd
+    - inst/website/download_html.Rmd
+    - inst/website/download_non_html.Rmd
+    - inst/website/index.Rmd
+    - inst/website/zzz_bibliografietitel.Rmd

@@ -219,7 +219,7 @@ Deze heeft als kenmerk dat de variantie gelijk is aan het gemiddelde ($\sigma^2 
 Bij veel ecologisch gegevens zien we dat de variantie in de praktijk groter is dan het gemiddelde, een fenomeen dat we overdispersie noemen.
 In dat geval kunnen we een negatief binomiale verdeling gebruiken.
 Deze heeft als variantie $\sigma^2 = \mu + \mu^2/\nu$, waarbij de parameter $\nu$ is een maat voor overdispersie.
-Merk op dat als de overdisperieparameter zeer groot wordt ($\nu = \infty$), dan wordt de term $\mu/\nu = 0$ en bijgevolg reduceert de negatief binomiale verdeling dan tot een Poisson verdeling.
+Merk op dat als de overdispersieparameter zeer groot wordt ($\nu = \infty$), dan wordt de term $\mu/\nu = 0$ en bijgevolg reduceert de negatief binomiale verdeling dan tot een Poisson verdeling.
 
 Sommige ecologische gegevens vertonen een "overmaat" aan nullen, dat zijn meer nulwaarnemingen dan de Poisson of negatief binomiale verdeling kan modelleren.
 In dergelijke gevallen kunnen we overschakelen naar de `zero-inflated` versie van deze verdelingen.
