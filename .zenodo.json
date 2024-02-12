@@ -1,6 +1,6 @@
 {
   "title": "abvanalysis: Analysis of the Common Breeding Bird Survey",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "license": "GPL-3.0",
   "upload_type": "software",
   "description": "<p>Read in the raw data and prepare analysis datasets.<\/p>",
@@ -10,10 +10,12 @@
     "analysis",
     "reproducible science"
   ],
+  "access_right": "open",
   "language": "eng",
   "contributors": [
     {
       "name": "Onkelinx, Thierry",
+      "affiliation": "Research Institute for Nature and Forest (INBO)",
       "orcid": "0000-0001-8804-4216",
       "type": "ContactPerson"
     },
@@ -25,10 +27,10 @@
   "creators": [
     {
       "name": "Onkelinx, Thierry",
+      "affiliation": "Research Institute for Nature and Forest (INBO)",
       "orcid": "0000-0001-8804-4216"
     }
   ],
-  "access_right": "open",
   "communities": [
     {
       "identifier": "inbo"

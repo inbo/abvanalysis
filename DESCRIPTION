@@ -1,9 +1,9 @@
 Package: abvanalysis
 Title: Analysis of the Common Breeding Bird Survey
-Version: 0.2.3
+Version: 0.2.4
 Authors@R: c(
     person("Thierry", "Onkelinx", , "thierry.onkelinx@inbo.be", role = c("aut", "cre"),
-           comment = c(ORCID = "0000-0001-8804-4216")),
+           comment = c(ORCID = "0000-0001-8804-4216", affiliation = "Research Institute for Nature and Forest (INBO)")),
     person("Research Institute for Nature and Forest (INBO)", , , "info@inbo.be", role = c("cph", "fnd"))
   )
 Description: Read in the raw data and prepare analysis datasets.
@@ -44,4 +44,4 @@ Config/checklist/keywords: common breeding birds; monitoring; analysis;
 Encoding: UTF-8
 Language: en-GB
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.2.3
+RoxygenNote: 7.3.1
