@@ -28,8 +28,9 @@ prepare_analysis_dataset <- function(
 ) {
   display(verbose, c(location_group_id, " ", species_group_id))
 
-  control <- list(control.fixed = list(prec = list(default = 0.2)))
-
+  control <- list(
+    control.fixed = list(prec = list(default = 0.2)), inla.mode = "classic"
+  )
   # define metadata
 
   first_imported_year <- min(observation$year)
