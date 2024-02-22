@@ -11,6 +11,7 @@
 #' @param min_observation The minimum number of observations for taking a
 #' species into account.
 #' Defaults to `100`.
+#' @param db_scheme optional database scheme name.
 #' @param ... arguments passed to [git2rdata::commit()] and [git2rdata::push()].
 #' @inheritParams git2rdata::write_vc
 #' @export
@@ -21,7 +22,7 @@
 #' @importFrom rlang .data
 prepare_dataset <- function(
   origin, repo, end_date = Sys.time(), verbose = TRUE, push = FALSE,
-  strict = TRUE, min_observation = 100, ...
+  strict = TRUE, min_observation = 100, db_scheme = NULL, ...
 ) {
   assert_that(
     inherits(end_date, "POSIXct"), length(end_date) == 1, noNA(end_date)
@@ -31,17 +32,20 @@ prepare_dataset <- function(
 
   display(verbose, "Importing locations")
   prepare_dataset_location(
-    origin = origin, repo = repo, end_date = end_date, strict = strict
+    origin = origin, repo = repo, end_date = end_date, strict = strict,
+    db_scheme = db_scheme
   )
 
   display(verbose, "Importing species")
   prepare_dataset_species(
-    origin = origin, repo = repo, end_date = end_date, strict = strict
+    origin = origin, repo = repo, end_date = end_date, strict = strict,
+    db_scheme = db_scheme
   )
 
   display(verbose, "Importing observations")
   prepare_dataset_observation(
-    origin = origin, repo = repo, end_date = end_date, strict = strict
+    origin = origin, repo = repo, end_date = end_date, strict = strict,
+    db_scheme = db_scheme
   )
 
   if (length(git2rdata::status(repo)$staged) == 0) {
