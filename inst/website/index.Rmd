@@ -1,6 +1,6 @@
 ---
 title: "Trends op basis van de Algemene Broedvogelmonitoring Vlaanderen (ABV)"
-subtitle: "Technisch achtergrondrapport voor de periode 2007-2022"
+subtitle: "Technisch achtergrondrapport voor de periode 2007-2023"
 author: 
   - name:
       given : Thierry
@@ -9,6 +9,12 @@ author:
     orcid: 0000-0001-8804-4216
     affiliation: Research Institute for Nature and Forest (INBO)
     corresponding: true
+  - name:
+      given: Olivier
+      family: Dochy
+    email: olivier.dochy@inbo.be
+    orcid: 0009-0002-2822-5634
+    affiliation: Research Institute for Nature and Forest (INBO)
   - name:
       given: Glenn
       family: Vermeersch
@@ -38,19 +44,14 @@ publication_type: report
 bibliography: references.bib
 link-citations: TRUE
 site: bookdown::bookdown_site
-year: 2023
-reportnr: 1
-doi: 10.21436/inbor.89419879
-depotnr: D/2023/3241/035
 cooperation:
   - Natuurpunt Studie vzw
   - Coxiestraat 11, 2800 Mechelen
   - https://www.natuurpunt.be
 cooperation_logo: natuurpunt.png
-cover_photo: https://img1.vildaphoto.net/asset/l/126681.jpg
-cover_description: Zwarte specht (_Dryocopus martius_) zittend op een stam. (© Yves Adams, Vildaphoto)
-cover: cover.pdf
-embargo: 2023-03-25
+cover_photo: https://img2.vildaphoto.net/asset/l/86103.jpg
+cover_description: Putter (_Carduelis carduelis_) eet zaden uit een kaardebol. (© Lars Soerink, Vildaphoto)
+embargo: 2024-03-25
 output:
   INBOmd::gitbook: default
   INBOmd::pdf_report: default
@@ -59,20 +60,21 @@ output:
 ---
 
 ```{r setup, include = FALSE}
+library(crosstalk)
+library(digest)
+library(effectclass)
+library(git2rdata)
+library(INBOtheme)
 library(knitr)
+library(pander)
+library(plotly)
+library(scales)
+library(tidyverse)
+conflicted::conflicts_prefer(dplyr::pull, plotly::filter, plotly::layout)
 opts_chunk$set(
   echo = FALSE, eval = TRUE, cache = FALSE, warning = FALSE, error = FALSE,
   message = TRUE
 )
-library(digest)
-library(git2rdata)
-library(tidyverse)
-library(scales)
-library(effectclass)
-library(plotly)
-library(pander)
-library(INBOtheme)
-conflicted::conflicts_prefer(dplyr::pull, plotly::filter, plotly::layout)
 output_format <- ifelse(
   interactive(), "html", opts_knit$get("rmarkdown.pandoc.to")
 )
@@ -90,6 +92,7 @@ switch(
   latex = {
     opts_chunk$set(dev = "cairo_pdf")
     update_geom_defaults("point", list(size = 2))
+    update_geom_defaults("text", list(size = 2))
     theme_set(theme_inbo(base_size = 8))
   }, {
     opts_chunk$set(dev = "png", dpi = 72, fig.height = 8, fig.width = 10.5)
@@ -103,42 +106,7 @@ threshold <- 0.75
 ```
 
 ```{r helper-functies}
-index_breaks <- function(x) {
-  z <- 1 - c(
-    9 / 10, 4 / 5, 3 / 4, 2 / 3, 1 / 2, 1 / 3, 1 / 4, 1 / 5, 1 / 10, 1 / 20,
-    1 / 50, 1 / 100, 1 / 200, 0
-  )
-  z <- log(sort(z))
-  z <- z[which(z >= min(-abs(x)))[1] + -1:2]
-  c(z, 0, -z)
-}
-index_breaks2 <- function(x) {
-  z <- 1 - c(
-    9 / 10, 4 / 5, 3 / 4, 2 / 3, 1 / 2, 1 / 3, 1 / 4, 1 / 5, 1 / 10, 1 / 20,
-    1 / 50, 1 / 100, 1 / 200, 0
-  )
-  z <- log(sort(z))
-  z <- z[which(z >= min(-abs(x)))[1] + -1:1]
-  c(z, 0, -z)
-}
-index_labels <- function(x) {
-  sprintf("%+.0f%%", 100 * (exp(x) - 1))
-}
-display_trend <- function(mean, lcl, ucl, duration = 1) {
-  mean <- 100 * exp(duration * mean) - 100
-  lcl <- 100 * exp(duration * lcl) - 100
-  ucl <- 100 * exp(duration * ucl) - 100
-  upper <- pmax(abs(lcl), abs(ucl))
-  magnitude <- floor(log10(upper))
-  magnitude <- magnitude - ifelse(upper * 10 ^ -magnitude < 2, 2, 1)
-  sprintf(
-    "%+g%% (%+g%%; %+g%%)",
-    round(mean * 10 ^ -magnitude) * 10 ^ magnitude,
-    round(lcl * 10 ^ -magnitude) * 10 ^ magnitude,
-    round(ucl * 10 ^ -magnitude) * 10 ^ magnitude
-  )
-}
-c(rev(traffic_palette(7)), "grey65", "grey35", "grey50") %>%
+c(rev(traffic_palette(7)), "grey65", "grey35", "grey50") |>
   setNames(
     c("++", "+", "+~", "~", "-~", "-", "--", "?+", "?-", "?")
   ) -> kleurgradient
@@ -151,8 +119,8 @@ periode_labels <- function(x) {
 ```{r document-packages}
 package_list <- c("R", "git2rdata", "abvanalysis", "n2kanalysis")
 references <- readLines("references.bib")
-paste(package_list, collapse = "|") %>%
-  sprintf(fmt = "^@.+\\{(%s),$") %>%
+paste(package_list, collapse = "|") |>
+  sprintf(fmt = "^@.+\\{(%s),$") |>
   grep(references) -> start
 end <- grep("^\\}$", references)
 lapply(
@@ -160,17 +128,17 @@ lapply(
   function(i) {
     i:head(end[i < end], 1)
   }
-) %>%
+) |>
   do.call(what = c) -> existing_citation
 cite_package <- function(x) {
-  citation(ifelse(x == "R", "base", x)) %>%
-  toBibtex() %>%
+  citation(ifelse(x == "R", "base", x)) |>
+  toBibtex() |>
   str_replace("Manual\\{,", paste0("Manual\\{", x, ","))
 }
-package_list %>%
-  map(cite_package) %>%
-  c(references[-existing_citation]) %>%
-  do.call(what = c) %>%
+package_list |>
+  map(cite_package) |>
+  c(references[-existing_citation]) |>
+  do.call(what = c) |>
   writeLines("references.bib")
 ```
 
@@ -178,7 +146,7 @@ package_list %>%
 repo <- system.file("results", package = "abvanalysis")
 strata <- read_vc("stratum", root = repo)
 effort <- read_vc("effort", root = repo)
-read_vc("meta", root = repo) %>%
+read_vc("meta", root = repo) |>
   mutate(
     speciesgroup = as.character(.data$speciesgroup),
     hash = map_chr(.data$speciesgroup, sha1)
@@ -191,27 +159,24 @@ tribble(
   ~x, ~y, "stabiel", 0, "toename", 1, "afname", -1, "sterke toename", 1.5,
   "sterke afname", -1.5, "matige toename",  0.5, "matige afname", -0.5,
   "mogelijke toename", 0.5, "mogelijke afname", -0.5, "onduidelijk", 0
-) %>%
+) |>
   mutate(
     s = c(rep(0.25, 7), 0.5, 0.5, 1), lcl = qnorm(0.05, .data$y, .data$s),
     ucl = qnorm(0.95, .data$y, .data$s),
     klasse = classification(.data$lcl, .data$ucl, 1)
-  ) %>%
-  arrange(.data$klasse) %>%
+  ) |>
+  arrange(.data$klasse) |>
   mutate(
     x = factor(.data$x, levels = rev(.data$x)), x_int = as.integer(.data$x)
   ) -> effect
 looptijd <- diff(range(estimate$year))
-meta %>%
-  inner_join(read_vc("linear_trend", root = repo), by = "analysis") %>%
+meta |>
+  inner_join(read_vc("linear_trend", root = repo), by = "analysis") |>
   transmute(
     .data$hash, .data$analysis, .data$cycle,
-    estimate = ifelse(.data$cycle, 1 / 3, 1) %>%
-      `*`(.data$estimate),
-    lcl = ifelse(.data$cycle, 1 / 3, 1) %>%
-      `*`(.data$lower_confidence_limit),
-    ucl = ifelse(.data$cycle, 1 / 3, 1) %>%
-      `*`(.data$upper_confidence_limit),
+    estimate = ifelse(.data$cycle, 1 / 3, 1) * .data$estimate,
+    lcl = ifelse(.data$cycle, 1 / 3, 1) * .data$lower_confidence_limit,
+    ucl = ifelse(.data$cycle, 1 / 3, 1) * .data$upper_confidence_limit,
     klasse = classification(
       .data$lcl * looptijd, .data$ucl * looptijd, log(threshold)
     ),
@@ -223,21 +188,20 @@ meta %>%
       exp(looptijd * .data$estimate) - 1, lcl = exp(looptijd * .data$lcl) - 1,
       ucl = exp(looptijd * .data$ucl) - 1, percent = TRUE, sign = TRUE
     )
-  ) %>%
+  ) |>
   inner_join(
-    effect %>%
+    effect |>
       select(.data$klasse, tekst = .data$x),
     by = "klasse"
-  ) %>%
+  ) |>
   inner_join(
-    meta %>%
-      filter(!.data$composite) %>%
-      select(.data$hash, .data$cycle, .data$linear, .data$waic) %>%
-      pivot_wider(names_from = .data$linear, values_from = .data$waic) %>%
+    meta |>
+      filter(!.data$composite) |>
+      select(.data$hash, .data$cycle, .data$linear, .data$waic) |>
+      pivot_wider(names_from = .data$linear, values_from = .data$waic) |>
       transmute(
         .data$hash, .data$cycle,
-        interpretatie = .data$`FALSE` %>%
-          `-`(.data$`TRUE`) %>%
+        interpretatie = (.data$`FALSE` - .data$`TRUE`) |>
           cut(
             breaks = c(-Inf, -2, 0, Inf),
             labels = c("niet-lineair", "mogelijk niet-lineair", "lineair")
@@ -245,7 +209,7 @@ meta %>%
       ),
     by = c("hash", "cycle")
   ) -> linear_trend
-read_vc("index", root = repo) %>%
+read_vc("index", root = repo) |>
   transmute(
     .data$analysis, referentie = .data$reference, periode = .data$alternative,
     .data$estimate, lcl = .data$lower_confidence_limit,
@@ -259,21 +223,21 @@ read_vc("index", root = repo) %>%
       .data$lower_confidence_limit, .data$upper_confidence_limit,
       threshold = log(threshold)
     )
-  ) %>%
+  ) |>
   inner_join(
-    effect %>%
+    effect |>
       select(.data$klasse, interpretatie = .data$x),
     by = "klasse"
   ) -> index
-effort %>%
-  distinct(.data$stratum, .data$location) %>%
-  count(.data$stratum, name = "onderzocht") %>%
+effort |>
+  distinct(.data$stratum, .data$location) |>
+  count(.data$stratum, name = "onderzocht") |>
   inner_join(
-    strata %>%
-      select(stratum = .data$description, totaal = .data$n),
+    strata |>
+      select(stratum = "description", totaal = "n"),
     by = "stratum"
-  ) %>%
-  inner_join(read_vc("stratum_weight", root = repo), by = "stratum") %>%
+  ) |>
+  inner_join(read_vc("stratum_weight", root = repo), by = "stratum") |>
   transmute(
     .data$analysis, .data$stratum, gewicht = .data$weight,
     aanwezig = .data$relevant * .data$totaal / .data$onderzocht, .data$relevant,
@@ -282,32 +246,32 @@ effort %>%
       .data$points_1 / 6 + .data$points_2 / 3 + .data$points_3 / 2 +
         .data$points_4 * 2 / 3 + .data$points_5 * 5 / 6 + .data$points_6
     ) / .data$relevant
-  ) %>%
+  ) |>
   arrange(desc(.data$gewicht)) -> stratum
-meta %>%
-  filter(.data$composite, !.data$cycle, !.data$linear) %>%
-  select(.data$speciesgroup, .data$hash, .data$analysis) %>%
-  inner_join(parent, by = "analysis") %>%
+meta |>
+  filter(.data$composite, !.data$cycle, !.data$linear) |>
+  select("speciesgroup", "hash", "analysis") |>
+  inner_join(parent, by = "analysis") |>
   inner_join(
-    meta %>%
-      select(.data$analysis, soort = .data$speciesgroup),
+    meta |>
+      select("analysis", soort = "speciesgroup"),
     by = c("parent" = "analysis")
-  ) %>%
-  select(.data$hash, .data$speciesgroup, .data$soort) %>%
-  group_by(.data$hash) %>%
-  mutate(drempel = log(threshold) / sqrt(n())) %>%
+  ) |>
+  select("hash", "speciesgroup", "soort") |>
+  group_by(.data$hash) |>
+  mutate(drempel = log(threshold) / sqrt(n())) |>
   ungroup() -> soortenlijst
-read_vc("composite_index", root = repo) %>%
+read_vc("composite_index", root = repo) |>
   inner_join(
-    meta %>%
-      select(.data$analysis, .data$hash, .data$speciesgroup),
+    meta |>
+      select("analysis", "hash", "speciesgroup"),
     by = "analysis"
-  ) %>%
+  ) |>
   inner_join(
-    soortenlijst %>%
+    soortenlijst |>
       distinct(.data$hash, .data$drempel),
     by = "hash"
-  ) %>%
+  ) |>
   transmute(
     .data$analysis, referentie = .data$reference, periode = .data$alternative,
     .data$estimate, lcl = .data$lower_confidence_limit,
@@ -323,18 +287,18 @@ read_vc("composite_index", root = repo) %>%
         threshold = .data$drempel
       ),
       classification
-    ) %>%
+    ) |>
       unlist(),
     tmp = as.character(klasse)
-  ) %>%
+  ) |>
   inner_join(
-    effect %>%
+    effect |>
       transmute(
         tmp = as.character(.data$klasse), interpretatie = .data$x
       ),
     by = "tmp"
-  ) %>%
-  select(-.data$tmp) -> composite_index
+  ) |>
+  select(-"tmp") -> composite_index
 ```
 
 # Samenvatting {-}
@@ -353,4 +317,4 @@ het eerste deel beschrijft de methodiek van de verwerking en de weergave van de 
 het tweede deel geeft een aantal indicatoren gebaseerd op trends van meerdere soorten;
 het derde deel beschrijft de tijdreeks van individuele soorten.
 We beperken ons in delen twee en drie tot een gestandaardiseerde weergave van de meest relevante cijfers zonder ecologische interpretatie.
-Voor een ecologische interpretatie van de resultaten verwijzen we naar andere publicaties zoals [INBO Vogelnieuws](https://pureportal.inbo.be/portal/nl/publications/search.html?lastName=&search=&organisationName=&publicationYearsFrom=&organisations=&advanced=true&documents=%20&language=%20&publicationYearsTo=&type=%2Fdk%2Fatira%2Fpure%2Fresearchoutput%2Fresearchoutputtypes%2Fcontributiontojournal%2Finbovogelnieuws&uri=&logicalname=%2Fdk%2Fatira%2Fpure%2Fthematic&ordering=researchOutputOrderByPublicationYear&descending=true).
+Voor een ecologische interpretatie van de resultaten verwijzen we naar andere publicaties zoals [INBO Vogelnieuws](https://www.vlaanderen.be/inbo/publicaties/vogelnieuws).
