@@ -41,6 +41,10 @@ rightsholder: Research Institute for Nature and Forest (INBO)
 community: inbo
 keywords: natuurindicator; trend; broedvogel; citizen science
 publication_type: report
+reportnr: 15
+year: 2024
+doi: 10.21436/inbor.102669823
+depotnr: D/2024/3241/046
 bibliography: references.bib
 link-citations: TRUE
 site: bookdown::bookdown_site
@@ -51,7 +55,9 @@ cooperation:
 cooperation_logo: natuurpunt.png
 cover_photo: https://img2.vildaphoto.net/asset/l/86103.jpg
 cover_description: Putter (_Carduelis carduelis_) eet zaden uit een kaardebol. (© Lars Soerink, Vildaphoto)
-embargo: 2024-03-25
+cover: cover.pdf
+embargo: 2024-03-29
+floatbarrier: section
 output:
   INBOmd::gitbook: default
   INBOmd::pdf_report: default
@@ -60,7 +66,6 @@ output:
 ---
 
 ```{r setup, include = FALSE}
-library(crosstalk)
 library(digest)
 library(effectclass)
 library(git2rdata)

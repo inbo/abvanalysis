@@ -62,11 +62,11 @@ ggplot(jaarlijks, aes(x = periode, y = estimate)) +
   ) +
   annotate(
     geom = "text", x = Inf, y = deze_threshold, hjust = 1, vjust = 1,
-    label = "belangrijk afname t.o.v. 2007", colour = inbo_hoofd
+    label = "belangrijke afname t.o.v. 2007", colour = inbo_hoofd
   ) +
   annotate(
     geom = "text", x = Inf, y = -deze_threshold, hjust = 1, vjust = 0,
-    label = "belangrijk toename t.o.v. 2007", colour = inbo_hoofd
+    label = "belangrijke toename t.o.v. 2007", colour = inbo_hoofd
   ) +
   theme(axis.title = element_blank()) +
   scale_y_continuous(breaks = deze_breaks, labels = change_labels)
@@ -104,17 +104,12 @@ voordien |>
         periode = .data$referentie, estimate = 0, lcl = 0, ucl = 0,
         wijziging = "", interpretatie = "referentie"
       )
-  ) -> jaarlijks
-range(jaarlijks$periode) + c(-1, 1) -> bereik_x
-jaarlijks |>
-  mutate(periode = .data$periode - 0.5, volgorde = 0) |>
-  bind_rows(
-    jaarlijks |>
-      mutate(volgorde = 0.5),
-    jaarlijks |>
-      mutate(periode = .data$periode + 0.499999, volgorde = 1)
   ) |>
-  arrange(.data$referentie, .data$periode, .data$volgorde) |>
+  arrange(.data$referentie, .data$periode) -> jaarlijks
+change_breaks(n = 4, extra = c(deze_threshold, -deze_threshold))(
+  c(jaarlijks$lcl, jaarlijks$ucl)
+) -> deze_breaks
+jaarlijks |>
   transmute(
     .data$referentie, .data$periode, .data$estimate, .data$lcl, .data$ucl,
     sd = (.data$ucl - .data$lcl) / 2 / qnorm(0.95),
@@ -122,65 +117,51 @@ jaarlijks |>
       "%.0f t.o.v. %i\n%s\n%s", floor(.data$periode), .data$referentie,
       .data$wijziging, .data$interpretatie
     ) |>
-      str_replace_all(".*\n\nreferentie", "referentie"),
-    key = sprintf("%.0f-%i", floor(.data$periode), .data$referentie)
+      str_replace_all(".*\n\nreferentie", "referentie")
   ) |>
   group_by(.data$referentie) |>
   mutate(
-    ref_x = rep(bereik_x[2], 3) |>
-      c(rep(NA, n() - 3)),
     ref_y = c(0, deze_threshold, -deze_threshold) |>
       c(rep(NA, n() - 3)),
     ref_text = c(
       "toestand in", "belangrijke afname t.o.v.", "belangrijke toename t.o.v."
     ) |>
       paste(.data$referentie),
-    textposition = c("top left", "bottom left") |>
+    textposition = c(-0.1, 1, 0) |>
       rep(n()) |>
       head(n())
   ) |>
-  SharedData$new(key = ~key) -> index_jaarlijks
-c(
-  index_jaarlijks$data(withFilter = FALSE)$lcl,
-  index_jaarlijks$data(withFilter = FALSE)$ucl,
-  deze_threshold, -deze_threshold
-) |>
-  range(na.rm = TRUE) -> bereik
-change_breaks(n = 5, extra = c(-deze_threshold, deze_threshold))(
-  bereik
-) -> deze_breaks
-bscols(
-  widths = c(10, 2),
-  plot_ly(index_jaarlijks, x = ~periode, y = ~estimate) |>
-    add_fan(sd = ~sd, text = ~wijziging) |>
-    add_text(
-      x = ~ref_x, y = ~ref_y, text = ~ref_text, textposition = ~textposition
-    ) |>
-    config(
-      displaylogo = FALSE,
-      modeBarButtonsToRemove = c(
-        "autoScale", "hoverCompareCartesian", "lasso2d", "select2d"
+  ungroup() -> index_jaarlijks
+p <- ggplot(index_jaarlijks, aes(x = periode, y = estimate, frame = referentie)) +
+  annotate(
+    geom = "rect", xmin = -Inf, xmax = Inf, ymin = deze_threshold,
+    ymax = -deze_threshold, alpha = 0.2, fill = inbo_grijs
+  ) +
+  geom_hline(yintercept = 0) +
+  stat_fan(aes(link_sd = sd), geom = "rect") +
+  geom_text(
+    aes(x = Inf, y = ref_y, label = ref_text, vjust = textposition), hjust = 1,
+    colour = inbo_hoofd
+  ) +
+  theme(axis.title = element_blank()) +
+  scale_y_continuous(breaks = deze_breaks, labels = change_labels)
+ggplotly(p) |>
+    animation_opts(frame = 1000, transition = 0, redraw = TRUE) |>
+    animation_slider(
+      font = list(color = "black"),
+      currentvalue = list(
+        prefix = "geselecteerd referentiejaar: ",
+        font = list(color = inbo_hoofd), xanchor = "center"
       )
     ) |>
-    layout(
-      title = soort_naam,
-      xaxis = list(title = list(font = list(size = 0)), range = bereik_x),
-      yaxis = list(
-        title = list(font = list(size = 0)), zerolinewidth = 1,
-        tickvals = deze_breaks, ticktext = change_labels(deze_breaks)
+    animation_button(label = "\u25B6") |>
+    plotly::config(
+      modeBarButtonsToRemove = list(
+        "lasso2d", "select2d", "autoScale2d", "hoverClosestCartesian",
+        "hoverCompareCartesian", "toggleSpikelines"
       ),
-      shapes = list(
-        type = "rect", x0 = 0, x1 = 1, xref = "paper", y0 = deze_threshold,
-        y1 = -deze_threshold, line = list(width = 0), opacity = 0.1,
-        fillcolor = "black", layer = "below"
-      )
-    ),
-  filter_select(
-    id = "ref_jaar", label = "Referentiejaar", sharedData = index_jaarlijks,
-    group = ~referentie, multiple = FALSE
-  )
-) %>%
-  `class<-`(c(class(.), "htmlwidget"))
+      displaylogo = FALSE
+    )
 ```
 
 (ref:{{id}}-index-cyclus) Wijzigingen per driejarige cyclus voor `r soort_naam`. Zie §\@ref(s:onzekerheid) voor een verklaring van de intervallen en §\@ref(s:trendklasse) voor uitleg over de symbolen en referentielijnen.
@@ -205,130 +186,17 @@ ggplot(cyclus, aes(x = periode, y = estimate)) +
   ) +
   annotate(
     geom = "text", x = Inf, y = deze_threshold, hjust = 1, vjust = 1,
-    label = "belangrijk afname t.o.v. 2007", colour = inbo_hoofd
+    label = "belangrijke afname t.o.v. 2007", colour = inbo_hoofd
   ) +
   annotate(
     geom = "text", x = Inf, y = -deze_threshold, hjust = 1, vjust = 0,
-    label = "belangrijk toename t.o.v. 2007", colour = inbo_hoofd
+    label = "belangrijke toename t.o.v. 2007", colour = inbo_hoofd
   ) +
   theme(axis.title = element_blank()) +
   scale_x_continuous(
     breaks = unique(cyclus$periode), labels = periode_labels
   ) +
   scale_y_continuous(breaks = deze_breaks, labels = change_labels)
-```
-
-```{r {{id}}-wijziging-cyclus, fig.cap = "(ref:{{id}}-index-cyclus)", eval = nrow(deze_wijziging) > 0 && (interactive() || opts_knit$get("rmarkdown.pandoc.to") == "html")}
-deze_wijziging |>
-  filter(.data$cycle) -> nadien
-nadien |>
-  mutate(
-    old = .data$referentie, referentie = .data$periode, periode = .data$old,
-    estimate = -.data$estimate, old = .data$lcl, lcl = -.data$ucl,
-    ucl = -.data$old,
-    interpretatie = classification(
-      .data$lcl, .data$ucl, threshold = deze_threshold
-    ) |>
-      as.character() |>
-      recode(
-        "++" = "sterke toename", "+" = "toename", "+~" = "matige toename",
-        "~" = "stabiel", "-~" = "matige afname", "-" = "afname",
-        "--" = "sterke afname", "?+" = "mogelijke toename",
-        "?-" = "mogelijke afname", "?" = "onduidelijk", "R" = "referentie"
-      ),
-    wijziging = format_ci(
-      .data$estimate, lcl = .data$lcl, ucl = .data$ucl, percent = TRUE,
-      sign = TRUE, change = TRUE, link = "log"
-    )
-  ) -> voordien
-voordien |>
-  bind_rows(
-    nadien,
-    nadien |>
-      distinct(.data$referentie) |>
-      mutate(
-        periode = .data$referentie, estimate = 0, lcl = 0, ucl = 0,
-        wijziging = "", interpretatie = "referentie"
-      )
-  ) -> jaarlijks
-range(jaarlijks$periode) + c(-2, 2) -> bereik_x
-jaarlijks |>
-  mutate(jaar = .data$periode - 1.5, volgorde = 0) |>
-  bind_rows(
-    jaarlijks |>
-      mutate(jaar = .data$periode, volgorde = 0.5),
-    jaarlijks |>
-      mutate(jaar = .data$periode + 1.499999, volgorde = 1)
-  ) |>
-  arrange(.data$referentie, .data$periode, .data$volgorde) |>
-  transmute(
-    .data$referentie, .data$jaar, .data$estimate, .data$lcl, .data$ucl,
-    sd = (.data$ucl - .data$lcl) / 2 / qnorm(0.95),
-    wijziging = sprintf(
-      "%i-%i t.o.v. %i-%i\n%s\n%s", .data$periode, .data$periode + 2,
-      .data$referentie, .data$referentie + 2, .data$wijziging,
-      .data$interpretatie
-    ) |>
-      str_replace_all(".*\n\nreferentie", "referentie"),
-    key = sprintf("%.0f-%i", .data$jaar, .data$referentie),
-    referentie = sprintf("%i-%i", .data$referentie, .data$referentie + 2)
-  ) |>
-  group_by(.data$referentie) |>
-  mutate(
-    ref_x = rep(bereik_x[2], 3) |>
-      c(rep(NA, n() - 3)),
-    ref_y = c(0, deze_threshold, -deze_threshold) |>
-      c(rep(NA, n() - 3)),
-    ref_text = c(
-      "toestand in", "belangrijke afname t.o.v.", "belangrijke toename t.o.v."
-    ) |>
-      paste(.data$referentie),
-    textposition = c("top left", "bottom left") |>
-      rep(n()) |>
-      head(n())
-  ) |>
-  SharedData$new(key = ~key) -> index_cyclus
-c(
-  index_cyclus$data(withFilter = FALSE)$lcl,
-  index_cyclus$data(withFilter = FALSE)$ucl,
-  deze_threshold, -deze_threshold
-) |>
-  range(na.rm = TRUE) -> bereik
-change_breaks(n = 5, extra = c(-deze_threshold, deze_threshold))(
-  bereik
-) -> deze_breaks
-bscols(
-  widths = c(10, 2),
-  plot_ly(index_cyclus, x = ~jaar, y = ~estimate) |>
-    add_fan(sd = ~sd, text = ~wijziging) |>
-    add_text(
-      x = ~ref_x, y = ~ref_y, text = ~ref_text, textposition = ~textposition
-    ) |>
-    config(
-      displaylogo = FALSE,
-      modeBarButtonsToRemove = c(
-        "autoScale", "hoverCompareCartesian", "lasso2d", "select2d"
-      )
-    ) |>
-    layout(
-      title = soort_naam,
-      xaxis = list(title = list(font = list(size = 0)), range = bereik_x),
-      yaxis = list(
-        title = list(font = list(size = 0)), zerolinewidth = 1,
-        tickvals = deze_breaks, ticktext = change_labels(deze_breaks)
-      ),
-      shapes = list(
-        type = "rect", x0 = 0, x1 = 1, xref = "paper", y0 = deze_threshold,
-        y1 = -deze_threshold, line = list(width = 0), opacity = 0.1,
-        fillcolor = "black", layer = "below"
-      )
-    ),
-  filter_select(
-    id = "ref_cyclus", label = "Referentieperiode", sharedData = index_cyclus,
-    group = ~referentie, multiple = FALSE
-  )
-) %>%
-  `class<-`(c(class(.), "htmlwidget"))
 ```
 
 (ref:{{id}}-raster) Paarsgewijze vergelijking tussen jaren voor `r soort_naam`.
@@ -417,7 +285,6 @@ deze_analyse |>
   pandoc.table(caption = "(\\#tab:{{id}}-hash) (ref:{{id}}-hash)")
 ```
 
-
 ```{js {{id}}-change-js, eval = opts_knit$get("rmarkdown.pandoc.to") == "html"}
 function filter_default() {
   document.getElementById("ref_jaar").getElementsByClassName("selectized")[0].selectize.removeOption("");
@@ -425,7 +292,7 @@ function filter_default() {
 [0].selectize.setValue("2007", false);
   document.getElementById("ref_cyclus").getElementsByClassName("selectized")[0].selectize.removeOption("");
   document.getElementById("ref_cyclus").getElementsByClassName("selectized") 
-[0].selectize.setValue("2007-2010", false);
+[0].selectize.setValue("2007-2009", false);
  }
 $(document).ready(filter_default);
 ```
