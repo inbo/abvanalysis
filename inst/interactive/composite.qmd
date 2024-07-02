@@ -1,0 +1,381 @@
+---
+title: "{{species}}"
+---
+
+```{r setup-{{label}}}
+library(crosstalk)
+library(effectclass)
+library(git2rdata)
+library(INBOtheme)
+library(gt)
+library(plotly)
+library(tidyverse)
+conflicted::conflicts_prefer(dplyr::filter, dplyr::pull, plotly::layout)
+if (interactive()) {
+  root <- file.path("..", "..", "..", "abv", "results")
+  read_vc("meta", root) |>
+    filter(.data$composite, .data$status == "converged") |>
+    slice_sample(n = 1) -> this
+  this_species <- this$speciesgroup
+} else{
+  root <- file.path("..", "..", "results")
+  this_species <- "{{species}}"
+}
+threshold <- log(0.75)
+```
+
+```{r load-data-{{label}}}
+read_vc("meta", root) |>
+  filter(.data$speciesgroup == this_species, , !.data$linear) |>
+  select("analysis", "cycle", "status_fingerprint") -> meta
+paste0(
+  "Wijzigingen tussen jaren voor %s. ",
+  "De band geeft het [90%% geloofwaardigheidsinterval]",
+  "(../methodologie/voorstelling.html#sec-onzekerheid). ",
+  "De [referentielijnen]",
+  "(../methodologie/voorstelling.html#sec-trendklasse) ",
+  "zorgen voor de opdeling van de wijzigingen in [klassen]",
+  "(../methodologie/voorstelling.html#sec-trendklasse)."
+) |>
+  sprintf(as.character(this_species)) -> caption_year_index
+paste0(
+  "Wijzigingen tussen driejarige cycli voor %s. ",
+  "De band geeft het [90%% geloofwaardigheidsinterval]",
+  "(../methodologie/voorstelling.html#sec-onzekerheid). ",
+  "De [referentielijnen]",
+  "(../methodologie/voorstelling.html#sec-trendklasse) ",
+  "zorgen voor de opdeling van de wijzigingen in [klassen]",
+  "(../methodologie/voorstelling.html#sec-trendklasse)."
+) |>
+  sprintf(as.character(this_species)) -> caption_cycle_index
+meta |>
+  filter(!.data$cycle) |>
+  semi_join(x = read_vc("parent", root), by = "analysis") |>
+  semi_join(
+    x = read_vc("meta", root), by = c("analysis" = "parent_analysis")
+  ) |>
+  pull(.data$speciesgroup) |>
+  as.character() |>
+  sort() -> specieslist
+str_replace_all(specieslist, " ", "-") |>
+  tolower() |>
+  sprintf(fmt = "[%2$s](../soort/%1$s.html)", specieslist) -> specieslist
+threshold <- threshold / sqrt(length(specieslist))
+```
+
+## Samenstelling van de index
+
+Deze index is gebaseerd op volgende `r length(specieslist)` soorten: `r paste(specieslist, collapse = ", ")`.
+De aangepaste grenswaarden zijn `r sprintf("%+.1f%%", 100 * exp(threshold) - 100)` en  `r sprintf("%+.1f%%", 100 * exp(-threshold) - 100)`
+
+## Analyse per jaar
+
+```{r fig-year-change-{{label}}}
+#| warning: false
+#| fig-cap: !expr caption_year_index
+meta |>
+  filter(!.data$cycle) |>
+  semi_join(x = read_vc("composite_index", root), by = "analysis") |>
+  mutate(
+    interpretatie = classification(
+      .data$lower_confidence_limit, .data$upper_confidence_limit,
+      threshold = threshold
+    ) |>
+      as.character() |>
+      recode(
+        "++" = "sterke toename", "+" = "toename", "+~" = "matige toename",
+        "~" = "stabiel", "-~" = "matige afname", "-" = "afname",
+        "--" = "sterke afname", "?+" = "mogelijke toename",
+        "?-" = "mogelijke afname", "?" = "onduidelijk", "R" = "referentie"
+      ),
+    wijziging = format_ci(
+      .data$estimate, lcl = .data$lower_confidence_limit,
+      ucl = .data$upper_confidence_limit, percent = TRUE, sign = TRUE,
+      change = TRUE, link = "log"
+    )
+  ) -> nadien
+nadien |>
+  mutate(
+    old = .data$reference, reference = .data$alternative,
+    alternative = .data$old, estimate = -.data$estimate,
+    old = .data$lower_confidence_limit,
+    lower_confidence_limit = -.data$upper_confidence_limit,
+    upper_confidence_limit = -.data$old,
+    interpretatie = classification(
+      .data$lower_confidence_limit, .data$upper_confidence_limit,
+      threshold = threshold
+    ) |>
+      as.character() |>
+      recode(
+        "++" = "sterke toename", "+" = "toename", "+~" = "matige toename",
+        "~" = "stabiel", "-~" = "matige afname", "-" = "afname",
+        "--" = "sterke afname", "?+" = "mogelijke toename",
+        "?-" = "mogelijke afname", "?" = "onduidelijk", "R" = "referentie"
+      ),
+    wijziging = format_ci(
+      .data$estimate, lcl = .data$lower_confidence_limit,
+      ucl = .data$upper_confidence_limit, percent = TRUE, sign = TRUE,
+      change = TRUE, link = "log"
+    )
+  ) -> voordien
+voordien |>
+  bind_rows(
+    nadien,
+    nadien |>
+      distinct(.data$reference) |>
+      mutate(
+        alternative = .data$reference, estimate = 0, lcl = 0, ucl = 0,
+        wijziging = "", interpretatie = "referentie"
+      )
+  ) -> jaarlijks
+range(jaarlijks$alternative) + c(-1, 1) -> bereik_x
+jaarlijks |>
+  mutate(alternative = .data$alternative - 0.49999) |>
+  bind_rows(
+    jaarlijks,
+    jaarlijks |>
+      mutate(alternative = .data$alternative + 0.499999)
+  ) |>
+  arrange(.data$reference, .data$alternative) |>
+  transmute(
+    .data$reference, .data$alternative, .data$estimate,
+    .data$lower_confidence_limit, .data$upper_confidence_limit,
+    sd = .data$upper_confidence_limit - .data$lower_confidence_limit,
+    sd = .data$sd / 2 / qnorm(0.95),
+    wijziging = sprintf(
+      "%.0f t.o.v. %i\n%s\n%s", round(.data$alternative), .data$reference,
+      .data$wijziging, .data$interpretatie
+    ) |>
+      str_replace_all(".*\n\nreferentie", "referentie"),
+    key = sprintf("%.0f-%i", round(.data$alternative), .data$reference)
+  ) |>
+  group_by(.data$reference) |>
+  mutate(
+    ref_x = rep(bereik_x[2], 3) |>
+      c(rep(NA, n() - 3)),
+    ref_y = c(0, threshold, -threshold) |>
+      c(rep(NA, n() - 3)),
+    ref_text = c(
+      "toestand in", "belangrijke afname t.o.v.", "belangrijke toename t.o.v."
+    ) |>
+      paste(.data$reference),
+    textposition = c("top left", "bottom left") |>
+      rep(n()) |>
+      head(n())
+  ) |>
+  SharedData$new(key = ~key) -> index_year
+c(
+  index_year$data(withFilter = FALSE)$lower_confidence_limit, threshold,
+  index_year$data(withFilter = FALSE)$upper_confidence_limit, -threshold
+) |>
+  range(na.rm = TRUE) -> bereik
+change_breaks(n = 5, extra = c(-threshold, threshold))(
+  bereik
+) -> deze_breaks
+bscols(
+  widths = c(10, 2),
+  plot_ly(index_year, x = ~alternative, y = ~estimate) |>
+    add_fan(sd = ~sd, text = ~wijziging) |>
+    add_text(
+      x = ~ref_x, y = ~ref_y, text = ~ref_text, textposition = ~textposition,
+      color = I(inbo_hoofd), hoverinfo = "none"
+    ) |>
+    config(
+      displaylogo = FALSE,
+      modeBarButtonsToRemove = c(
+        "autoScale", "hoverCompareCartesian", "lasso2d", "select2d"
+      )
+    ) |>
+    layout(
+      title = this_species,
+      xaxis = list(title = list(font = list(size = 0)), range = bereik_x),
+      yaxis = list(
+        title = list(font = list(size = 0)), zerolinewidth = 1,
+        tickvals = deze_breaks, ticktext = change_labels(deze_breaks)
+      ),
+      shapes = list(
+        type = "rect", x0 = 0, x1 = 1, xref = "paper", y0 = threshold,
+        y1 = -threshold, line = list(width = 0), opacity = 0.1,
+        fillcolor = "black", layer = "below"
+      )
+    ),
+  filter_select(
+    id = "ref_year", label = "Referentiejaar", sharedData = index_year,
+    group = ~reference, multiple = FALSE
+  )
+) %>%
+  `class<-`(c(class(.), "htmlwidget"))
+```
+
+## Analyse per driejarige cyclus
+
+```{r fig-cycle-change-{{label}}}
+#| warning: false
+#| fig-cap: !expr caption_cycle_index
+meta |>
+  filter(.data$cycle) |>
+  semi_join(x = read_vc("composite_index", root), by = "analysis") |>
+  mutate(
+    interpretatie = classification(
+      .data$lower_confidence_limit, .data$upper_confidence_limit,
+      threshold = threshold
+    ) |>
+      as.character() |>
+      recode(
+        "++" = "sterke toename", "+" = "toename", "+~" = "matige toename",
+        "~" = "stabiel", "-~" = "matige afname", "-" = "afname",
+        "--" = "sterke afname", "?+" = "mogelijke toename",
+        "?-" = "mogelijke afname", "?" = "onduidelijk", "R" = "referentie"
+      ),
+    wijziging = format_ci(
+      .data$estimate, lcl = .data$lower_confidence_limit,
+      ucl = .data$upper_confidence_limit, percent = TRUE, sign = TRUE,
+      change = TRUE, link = "log"
+    )
+  ) -> nadien
+nadien |>
+  mutate(
+    old = .data$reference, reference = .data$alternative,
+    alternative = .data$old, estimate = -.data$estimate,
+    old = .data$lower_confidence_limit,
+    lower_confidence_limit = -.data$upper_confidence_limit,
+    upper_confidence_limit = -.data$old,
+    interpretatie = classification(
+      .data$lower_confidence_limit, .data$upper_confidence_limit,
+      threshold = threshold
+    ) |>
+      as.character() |>
+      recode(
+        "++" = "sterke toename", "+" = "toename", "+~" = "matige toename",
+        "~" = "stabiel", "-~" = "matige afname", "-" = "afname",
+        "--" = "sterke afname", "?+" = "mogelijke toename",
+        "?-" = "mogelijke afname", "?" = "onduidelijk", "R" = "referentie"
+      ),
+    wijziging = format_ci(
+      .data$estimate, lcl = .data$lower_confidence_limit,
+      ucl = .data$upper_confidence_limit, percent = TRUE, sign = TRUE,
+      change = TRUE, link = "log"
+    )
+  ) -> voordien
+voordien |>
+  bind_rows(
+    nadien,
+    nadien |>
+      distinct(.data$reference) |>
+      mutate(
+        alternative = .data$reference, estimate = 0, lcl = 0, ucl = 0,
+        wijziging = "", interpretatie = "referentie"
+      )
+  ) |>
+  mutate(
+    reference = sprintf("%i-%i", .data$reference, .data$reference + 2),
+    sd = .data$upper_confidence_limit - .data$lower_confidence_limit,
+    sd = .data$sd / 2 / qnorm(0.95),
+    wijziging = sprintf(
+      "%i-%i t.o.v. %s\n%s\n%s", .data$alternative, .data$alternative + 2,
+      .data$reference, .data$wijziging, .data$interpretatie
+    ) |>
+      str_replace_all(".*\n\nreferentie", "referentie")
+  ) -> jaarlijks
+range(jaarlijks$alternative) + c(-2, 2) -> bereik_x
+jaarlijks |>
+  mutate(alternative = .data$alternative - 1.49999) |>
+  bind_rows(
+    jaarlijks,
+    jaarlijks |>
+      mutate(alternative = .data$alternative + 1.499999)
+  ) |>
+  arrange(.data$reference, .data$alternative) |>
+  select(
+    "reference", "alternative", "estimate", "lower_confidence_limit",
+    "upper_confidence_limit", "sd", "wijziging"
+  ) |>
+  group_by(.data$reference) |>
+  mutate(
+    ref_x = rep(bereik_x[2], 3) |>
+      c(rep(NA, n() - 3)),
+    ref_y = c(0, threshold, -threshold) |>
+      c(rep(NA, n() - 3)),
+    ref_text = c(
+      "toestand in", "belangrijke afname t.o.v.", "belangrijke toename t.o.v."
+    ) |>
+      paste(.data$reference),
+    textposition = c("top left", "bottom left") |>
+      rep(n()) |>
+      head(n()),
+    key = paste(.data$alternative, .data$reference)
+  ) |>
+  SharedData$new(key = ~key) -> index_cycle
+c(
+  index_cycle$data(withFilter = FALSE)$lower_confidence_limit, threshold,
+  index_cycle$data(withFilter = FALSE)$upper_confidence_limit, -threshold
+) |>
+  range(na.rm = TRUE) -> bereik
+change_breaks(n = 5, extra = c(-threshold, threshold))(
+  bereik
+) -> deze_breaks
+bscols(
+  widths = c(10, 2),
+  plot_ly(index_cycle, x = ~alternative, y = ~estimate) |>
+    add_fan(sd = ~sd, text = ~wijziging) |>
+    add_text(
+      x = ~ref_x, y = ~ref_y, text = ~ref_text, textposition = ~textposition,
+      color = I(inbo_hoofd), hoverinfo = "none"
+    ) |>
+    config(
+      displaylogo = FALSE,
+      modeBarButtonsToRemove = c(
+        "autoScale", "hoverCompareCartesian", "lasso2d", "select2d"
+      )
+    ) |>
+    layout(
+      title = this_species,
+      xaxis = list(title = list(font = list(size = 0)), range = bereik_x),
+      yaxis = list(
+        title = list(font = list(size = 0)), zerolinewidth = 1,
+        tickvals = deze_breaks, ticktext = change_labels(deze_breaks)
+      ),
+      shapes = list(
+        type = "rect", x0 = 0, x1 = 1, xref = "paper", y0 = threshold,
+        y1 = -threshold, line = list(width = 0), opacity = 0.1,
+        fillcolor = "black", layer = "below"
+      )
+    ),
+  filter_select(
+    id = "ref_cycle", label = "Referentieperiode", sharedData = index_cycle,
+    group = ~reference, multiple = FALSE
+  )
+) %>%
+  `class<-`(c(class(.), "htmlwidget"))
+```
+
+## Kenmerken van de analyses
+
+```{r tbl-hash-{{label}}}
+#| tbl-cap: Data-hashes van de analyses in het kader van [traceerbaarheid](
+#|   ../methodologie/reproduceerbaarheid.html#sec-traceerbaarheid).
+meta |>
+  arrange(.data$cycle) |>
+  transmute(
+    frequentie = factor(
+      .data$cycle, levels = c(TRUE, FALSE),
+      labels = c("driejaarlijks", "jaarlijks")
+    ),
+    analyse = str_replace(.data$analysis, "(.{20})", "\\1\n"),
+    status = str_replace(.data$status_fingerprint, "(.{20})", "\\1\n")
+  ) |>
+  gt() |>
+  cols_width(analyse ~ px(20), status ~ px(20))
+```
+
+```{js change-js-{{label}}}
+function filter_default() {
+  document.getElementById("ref_year").getElementsByClassName("selectized")[0].selectize.removeOption("");
+  document.getElementById("ref_year").getElementsByClassName("selectized") 
+[0].selectize.setValue("2007", false);
+  document.getElementById("ref_cycle").getElementsByClassName("selectized")[0].selectize.removeOption("");
+  document.getElementById("ref_cycle").getElementsByClassName("selectized") 
+[0].selectize.setValue("2007-2009", false);
+ }
+$(document).ready(filter_default);
+```

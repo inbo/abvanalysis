@@ -1,0 +1,126 @@
+# Overzicht van de trends
+
+```{r setup}
+library(effectclass)
+library(git2rdata)
+library(DT)
+library(tidyverse)
+threshold <- log(0.75)
+if (interactive()) {
+  root <- file.path("..", "..", "..", "abv", "results")
+} else{
+  root <- file.path("..", "..", "results")
+  this_species <- "{{species}}"
+}
+read_vc("meta", root) |>
+  filter(!.data$composite) |>
+  select("speciesgroup", "cycle", "waic", "linear") |>
+  pivot_wider(names_from = "linear", values_from = "waic") |>
+  transmute(
+    .data$speciesgroup, .data$cycle,
+    interpretatie = (.data$`FALSE` - .data$`TRUE`) |>
+      cut(
+        breaks = c(-Inf, -2, 0, Inf),
+        labels = c("niet-lineair", "mogelijk niet-lineair", "lineair")
+      )
+  ) |>
+  inner_join(
+    read_vc("meta", root) |>
+      filter(!.data$composite, .data$linear, .data$status == "converged") |>
+      select("speciesgroup", "cycle", "analysis"),
+    by = c("speciesgroup", "cycle")
+  ) |>
+  inner_join(read_vc("linear_trend", root), by = "analysis") |>
+  inner_join(
+    read_vc("linear_estimate", root) |>
+      group_by(.data$analysis) |>
+      slice_max(.data$year, n = 1) |>
+      transmute(.data$analysis, looptijd = .data$year - 1),
+    by = "analysis"
+  ) -> tmp
+tmp |>
+  mutate(
+    estimate = ifelse(.data$cycle, 1 / 3, 1) * .data$estimate,
+    lower_confidence_limit = ifelse(.data$cycle, 1 / 3, 1) *
+      .data$lower_confidence_limit,
+    upper_confidence_limit = ifelse(.data$cycle, 1 / 3, 1) *
+      .data$upper_confidence_limit,
+    jaarlijks = format_ci(
+      .data$estimate, lcl = .data$lower_confidence_limit, sign = TRUE,
+      ucl = .data$upper_confidence_limit, percent = TRUE, link = "log",
+      change = TRUE
+    ),
+    looptijd = ifelse(.data$cycle, 3, 1) * .data$looptijd,
+    klasse = classification(
+      .data$lower_confidence_limit * .data$looptijd,
+      .data$upper_confidence_limit * .data$looptijd, threshold = threshold
+    ),
+    across(
+      c("estimate", "lower_confidence_limit", "upper_confidence_limit"),
+      ~.x * .data$looptijd
+    )
+  ) |>
+  arrange(.data$klasse, desc(.data$estimate)) |>
+  transmute(
+    .data$cycle,
+    soort = str_replace_all(.data$speciesgroup, " ", "-") |>
+      str_remove_all("'") |>
+      tolower() |>
+      sprintf(
+        fmt = "<a href='%1$s.html#sec-%3$sjaarlijks-%1$s'>%2$s</a>",
+        .data$speciesgroup, ifelse(.data$cycle, "drie", "")
+      ),
+    .data$klasse, .data$interpretatie, .data$jaarlijks,
+    looptijd = format_ci(
+      .data$estimate, lcl = .data$lower_confidence_limit, sign = TRUE,
+      ucl = .data$upper_confidence_limit, percent = TRUE, link = "log",
+      change = TRUE
+    )
+  ) -> trends
+```
+
+@tbl-jaarlijkse-trends geeft een overzicht van de lineaire trends voor elke soort.
+We hebben de trends gesorteerd volgens [opdeling van de klassen](../methodologie/verwerking.html#sec-trendklasse)) en binnen de klasse volgens puntschatting van de trend.
+Hierdoor start de tabel met de soorten met de sterkste positieve trends.
+Bij de volgende soorten zal de trend minder sterk worden tot we aan de soorten met een stabiele trend komen.
+Daarna volgen de soorten met een negatieve trend waarbij de trend steeds sterker negatief wordt.
+We sluiten de tabel af met de soorten met een mogelijke of onduidelijke trend.
+De tabel bevat de trend uitgedrukt als een jaarlijkse wijziging en als een wijziging over de volledige looptijd van het meetnet.
+Verder bevat de tabel de opdeling van de trend in klassen en een indicatie of de trend [al dan niet lineair](../methodologie/verwerking.html#sec-lineairetrend) is.
+De naam van de soort is een snelkoppeling naar de detail van de soort zelf.
+We raden aan om hiervan gebruik te maken bij de interpretatie van niet-lineaire trends.
+
+```{r tbl-jaarlijkse-trends}
+#| tbl-cap: Gemiddelde wijziging in veronderstelling van een lineaire trend
+#|   gebaseerd op jaarlijkse gegevens.
+trends |>
+  filter(!.data$cycle) |>
+  select(-"cycle") |>
+  datatable(
+    escape = FALSE, filter = "bottom", rownames = NULL,
+    options = list(
+      language = list(
+        url = "//cdn.datatables.net/plug-ins/1.10.11/i18n/Dutch.json"
+      ),
+      pageLength = 25
+    )
+)
+```
+
+
+```{r tbl-driejaarlijkse-trends}
+#| tbl-cap: Gemiddelde wijziging in veronderstelling van een lineaire trend
+#|   gebaseerd op driejaarlijkse gegevens.
+trends |>
+  filter(.data$cycle) |>
+  select(-"cycle") |>
+  datatable(
+    escape = FALSE, filter = "bottom", rownames = NULL,
+    options = list(
+      language = list(
+        url = "//cdn.datatables.net/plug-ins/1.10.11/i18n/Dutch.json"
+      ),
+      pageLength = 25
+    )
+)
+```

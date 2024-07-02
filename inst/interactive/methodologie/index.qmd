@@ -1,0 +1,139 @@
+---
+title: Inzameling van de tellingen in het veld
+bibliography: ../references.bib
+---
+
+```{r setup}
+library(git2rdata)
+library(INBOtheme)
+library(tidyverse)
+if (interactive()) {
+  root <- file.path("..", "..", "..", "..", "abv", "results")
+} else{
+  root <- file.path("..", "..", "results")
+}
+strata <- read_vc("stratum", root)
+effort <- read_vc("effort", root)
+```
+
+Hier beschrijven we beknopt het veldwerk, voor de details verwijzen we naar @ABVmethode.
+
+## Steekproef {#sec-steekproef}
+
+De UTM 1 x 1 km hokken vormen de basis waaruit de steekproef getrokken is.
+Bij de start van het meetnet hebben we de hokken opgedeeld in een aantal strata.
+De regels zijn gebaseerd op het oppervlakteaandeel van een bepaald landgebruik op basis van de Biologische Waarderingkaart [@BWK].
+
+1. Landbouw: minstens 80% landbouw. `r strata$n[strata$description == "Landbouw"]` hokken.
+1. Urbaan: minstens 80% urbaan. `r strata$n[strata$description == "Urbaan"]` hokken.
+1. Bos: minstens 80% bos. `r strata$n[strata$description == "Bos"]` hokken.
+1. Suburbaan: minstens 80% suburbaan. `r strata$n[strata$description == "Suburbaan"]` hokken.
+1. Heide en duin: minstens 20% heide of duin. `r strata$n[strata$description == "Heide en duin"]` hokken.
+1. Moeras en water: minstens 20% moeras en water. `r strata$n[strata$description == "Moeras en water"]` hokken.
+
+Uit deze set trekken we een aselecte, gestratificeerde steekproef van 1200 hokken waarbij zeldzamere habitats overbemonsterd worden.
+We streven er naar om jaarlijks 300 hokken te bemonsteren in een driejarige rotatie.
+De waarnemers mochten in het eerste jaar 300 hokken kiezen uit de set van 1200.
+Deze set van hokken komen in principe opnieuw aan bod in jaren 4, 7, 10, ...
+In jaar 2 kiezen ze 300 hokken uit de overgebleven 900 hokken.
+Deze set komt opnieuw aan bod in jaren 5, 8, 11, ...
+Tenslotte kiezen de waarnemers in het derde jaar een laatste set van 300 hokken uit de laatste 900 hokken.
+Deze set hokken bemonsteren we in de jaren 3, 6, 9, 12, ...
+
+@fig-inspanning geeft de effectieve monitoringsinspanning weer.
+In deze figuur hebben we de hokken gesorteerd volgens 1) het eerste jaar met gegevens, 2) het laatste jaar met gegevens, 3) het tweede jaar met gegevens, 4) het derde jaar met gegevens, ...
+Hierdoor staan hokken met een meer gelijkende onderzoeksgeschiedenis dicht bij elkaar.
+Merk op dat de driejarige cyclus voor de meest hokken wordt gerespecteerd.
+Voor sommige hokken is de inspanning variabel, soms frequenter dan om de drie jaar, soms zit er meer tijd tussen.
+Sommige hokken werden slechts in een of twee jaar onderzocht (@fig-inspanning-hist).
+Voor het onderscheid tussen mogelijk bruikbaar en voorlopig niet bruikbaar verwijzen we naar de beschrijving van de [verwerking](verwerking.html#sec-relevant) van de gegevens.
+
+```{r fig-inspanning}
+#| fig.cap: Overzicht van de effectieve monitoringsinspanning.
+#|   Elk punt is een hok dat onderzocht is in een bepaald jaar.
+#|   De horizontale lijnen verbinden het eerste en meest recente bezoek aan
+#|   eenzelfde hok.
+#| fig.height: 10
+effort |>
+  arrange(.data$year) |>
+  group_by(.data$location) |>
+  transmute(
+    .data$year, end = max(.data$year), year2 = lead(.data$year),
+    year3 = lead(.data$year2), year4 = lead(.data$year3),
+    year5 = lead(.data$year4), year6 = lead(.data$year5),
+    year7 = lead(.data$year6)
+  ) |>
+  slice(1) |>
+  ungroup() |>
+  arrange(
+    .data$year, .data$end, .data$year2, .data$year3, .data$year4, .data$year5,
+    .data$year6, .data$year7
+  ) |>
+  rowid_to_column("hok") |>
+  transmute(
+    .data$location, hok = factor(.data$hok),
+    bruikbaar = ((.data$year - 2007) %/% 3) < ((end - 2007) %/% 3),
+    bruikbaar = factor(
+      .data$bruikbaar, levels = c(TRUE, FALSE),
+      labels = c("mogelijk", "voorlopig\nniet")
+    )
+  ) |>
+  inner_join(effort, by = "location") -> inspanning
+ggplot(inspanning, aes(x = year, y = hok, group = hok, colour = bruikbaar)) +
+  geom_line(alpha = 0.2) +
+  geom_point(alpha = 0.5, size = 4) +
+  facet_wrap(~stratum, scales = "free_y") +
+  scale_x_continuous(breaks = pretty) +
+  theme(
+    axis.title.x = element_blank(), axis.text.x = element_text(angle = 90),
+    axis.text.y = element_blank()
+  )
+```
+
+```{r fig-inspanning-hist}
+#| fig.cap: Histogram van het aantal jaren waarin een hok onderzocht is opgesplitst per stratum.
+inspanning |>
+  count(.data$stratum, .data$location, .data$bruikbaar) |>
+  ggplot(aes(x = n, fill = bruikbaar)) +
+  geom_histogram(binwidth = 1) +
+  facet_wrap(~stratum) +
+  scale_x_continuous(
+    "Aantal jaren waarin een hok onderzocht is", breaks = pretty,
+    limits = c(0, NA)
+  ) +
+  ylab("Aantal hokken")
+```
+
+## Steekproefeenheid
+
+De steekproefeenheid bestaat uit een hok van 1 x 1 km.
+Binnen dit hok worden zes punten vastgelegd in een vaste patroon (@fig-patroon).
+Indien de punten in de praktijk niet bereikbaar zijn, mag de waarnemer ze verplaatsen naar het dichtstbijzijnde bereikbare punt.
+De waarnemer documenteert deze wijziging zodat we in de toekomst steeds op dezelfde punten blijven waarnemen.
+
+```{r fig-patroon}
+#| fig.cap: Standaardlocatie van meetpunten binnen een km hok.
+#| fig.width: 2
+#| fig.height: 2
+expand.grid(
+  x = seq(1 / 4, by = 1 / 2, length = 2),
+  y = seq(1 / 6, by = 1 / 3, length = 3)
+) |>
+  ggplot(aes(x = x, y = y)) +
+  geom_rect(
+    data = tribble(~x, ~y, ~xend, ~yend, 0, 0, 1, 1),
+    aes(xmin = x, ymin = y, xmax = xend, ymax = yend),
+    fill = NA, colour = inbo_steun_blauw
+  ) +
+  geom_point() +
+  coord_fixed() +
+  theme_void()
+```
+
+## Tellingen
+
+In het jaar dat we een hok bemonsteren zal de waarnemer het hok in drie periodes bezoeken: 1 maart - 15 april, 16 april - 31 mei, 1 juni - 15 juli.
+Tussen twee opeenvolgende bezoeken moet er minstens twee weken liggen.
+Alle meetpunten van een hok worden op dezelfde dag onderzocht tussen zonsopgang en 4 uur na zonsopgang.
+Op elk meetpunt telt de waarnemer gedurende 5 minuten het aantal volwassen vogels per soort.
+Overvliegende groepen vogels worden hierbij niet meegeteld.
