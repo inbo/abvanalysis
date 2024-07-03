@@ -105,7 +105,3 @@ if (
 }
 
 quarto_render(target_folder, use_freezer = TRUE, cache = TRUE, as_job = FALSE)
-
-# render
-# fs::dir_delete(fs::path(target_folder, "_freeze"))
-# quarto_render(target_folder, use_freezer = FALSE, cache = FALSE, as_job = FALSE)

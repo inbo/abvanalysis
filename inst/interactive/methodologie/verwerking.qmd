@@ -9,7 +9,7 @@ library(tidyverse)
 conflicted::conflicts_prefer(dplyr::filter)
 if (interactive()) {
   root <- file.path("..", "..", "..", "..", "abv", "results")
-} else{
+} else {
   root <- file.path("..", "..", "results")
 }
 ```

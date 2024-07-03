@@ -17,7 +17,7 @@ if (interactive()) {
     filter(.data$composite, .data$status == "converged") |>
     slice_sample(n = 1) -> this
   this_species <- this$speciesgroup
-} else{
+} else {
   root <- file.path("..", "..", "results")
   this_species <- "{{species}}"
 }

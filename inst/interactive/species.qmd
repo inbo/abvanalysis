@@ -17,7 +17,7 @@ if (interactive()) {
     filter(!.data$composite, .data$status == "converged") |>
     slice_sample(n = 1) -> this
   this_species <- this$speciesgroup
-} else{
+} else {
   root <- file.path("..", "..", "results")
   this_species <- "{{species}}"
 }
@@ -546,7 +546,8 @@ read_vc("effort", root) |>
 
 ```{r tbl-hash-{{label}}}
 #| tbl-cap: Data-hashes van de analyses in het kader van
-#|   [traceerbaarheid](../methodologie/reproduceerbaarheid.html#sec-traceerbaarheid).
+#|   [traceerbaarheid](
+#|   ../methodologie/reproduceerbaarheid.html#sec-traceerbaarheid).
 meta |>
   arrange(.data$cycle, .data$linear) |>
   transmute(

@@ -9,7 +9,7 @@ library(INBOtheme)
 library(tidyverse)
 if (interactive()) {
   root <- file.path("..", "..", "..", "..", "abv", "results")
-} else{
+} else {
   root <- file.path("..", "..", "results")
 }
 strata <- read_vc("stratum", root)
@@ -91,7 +91,8 @@ ggplot(inspanning, aes(x = year, y = hok, group = hok, colour = bruikbaar)) +
 ```
 
 ```{r fig-inspanning-hist}
-#| fig.cap: Histogram van het aantal jaren waarin een hok onderzocht is opgesplitst per stratum.
+#| fig.cap: Histogram van het aantal jaren waarin een hok onderzocht is
+#|   opgesplitst per stratum.
 inspanning |>
   count(.data$stratum, .data$location, .data$bruikbaar) |>
   ggplot(aes(x = n, fill = bruikbaar)) +

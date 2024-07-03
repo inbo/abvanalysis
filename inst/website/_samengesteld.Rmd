@@ -132,7 +132,9 @@ jaarlijks |>
       head(n())
   ) |>
   ungroup() -> index_jaarlijks
-p <- ggplot(index_jaarlijks, aes(x = periode, y = estimate, frame = referentie)) +
+p <- ggplot(
+  index_jaarlijks, aes(x = periode, y = estimate, frame = referentie)
+) +
   annotate(
     geom = "rect", xmin = -Inf, xmax = Inf, ymin = deze_threshold,
     ymax = -deze_threshold, alpha = 0.2, fill = inbo_grijs

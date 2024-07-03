@@ -9,7 +9,7 @@ library(git2rdata)
 library(tidyverse)
 if (interactive()) {
   output_dir <- file.path("..", "..", "..", "..", "abv", "web")
-} else{
+} else {
   root <- file.path("..", "..", "results")
   output_dir <- "../data"
   dir.create(output_dir, showWarnings = FALSE)
