@@ -3,8 +3,8 @@
   optimize: yes
   NA string: NA
   sorting: analysis
-  hash: 89224bf9b0f9e572739e1475c21586442027eb6c
-  data_hash: 2a5a2509f73d2620542ba25ab3090ecf066d12fb
+  hash: e67aef470f6aed259ddfe60722fccc87abfa042e
+  data_hash: 485e6d3fc42509b00f8a4a1fd944bfed0d230b57
 analysis:
   class: character
 speciesgroup:
@@ -135,6 +135,7 @@ speciesgroup:
   - Pimpelmees
   - Porseleinhoen
   - Putter
+  - Raaf
   - Ransuil
   - Rietgors
   - Rietzanger
@@ -327,6 +328,7 @@ speciesgroup:
   - 123
   - 124
   - 125
+  - 192
   - 126
   - 127
   - 128
