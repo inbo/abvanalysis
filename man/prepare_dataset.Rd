@@ -12,6 +12,7 @@ prepare_dataset(
   push = FALSE,
   strict = TRUE,
   min_observation = 100,
+  db_scheme = NULL,
   ...
 )
 }
@@ -36,6 +37,8 @@ Defaults to \code{TRUE}.}
 \item{min_observation}{The minimum number of observations for taking a
 species into account.
 Defaults to \code{100}.}
+
+\item{db_scheme}{optional database scheme name.}
 
 \item{...}{arguments passed to \code{\link[git2rdata:commit]{git2rdata::commit()}} and \code{\link[git2rdata:push]{git2rdata::push()}}.}
 }

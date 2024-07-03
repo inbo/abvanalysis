@@ -26,5 +26,6 @@
 ^inst/rapport$
 ^inst/website$
 ^man-roxygen$
+^organisation.yml$
 ^pkgdown$
 spell_check.json

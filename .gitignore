@@ -14,6 +14,7 @@
 *_files
 .DS_Store
 .RData
+.Renviron
 .Rhistory
 .Rproj.user
 .Ruserdata
@@ -32,3 +33,4 @@ inst/website/*.yml
 inst/website/cover.txt
 libs
 output
+renv/library

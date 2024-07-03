@@ -34,7 +34,7 @@ Voor sommige hokken is de inspanning variabel, soms frequenter dan om de drie ja
 Sommige hokken werden slechts in een of twee jaar onderzocht (fig. \@ref(fig:inspanning-hist)).
 Voor het onderscheid tussen mogelijk bruikbaar en voorlopig niet bruikbaar verwijzen we naar §\@ref(s:relevant).
 
-```{r inspanning, fig.cap = "Overzicht van de effectieve monitoringsinspanning. Elk punt is een hok dat onderzocht is in een bepaald jaar. De horizontale lijnen verbinden het eerste en meest recente bezoek aan eenzelfde hok.", fig.height = 10}
+```{r inspanning, fig.cap = "Overzicht van de effectieve monitoringsinspanning. Elk punt is een hok dat onderzocht is in een bepaald jaar. De horizontale lijnen verbinden het eerste en meest recente bezoek aan eenzelfde hok.", fig.height = 9.5}
 effort %>%
   arrange(.data$year) %>%
   group_by(.data$location) %>%
@@ -388,9 +388,9 @@ De prijs die we hiervoor betalen is dat de kans dat we ten onrechte stellen dat 
 De doelstelling van de algemene broedvogelmonitoring is zo spoedig mogelijk detecteren wanneer er iets aan de hand is de broedvogels.
 Vanuit dat oogpunt is het vermijden van vals negatieve signalen (ten onrechte stellen dat er niets aan de hand is) belangrijker dan het vermijden van vals positieve signalen (ten onrechte stellen dat er iets aan de hand is).
 
-Wanneer we het interval op een figuur (bijvoorbeeld fig. \@ref(fig:trendklasse)) weergeven, vullen we het 90% interval aan met een 60% (20%; 80%) interval en een 30% (35%; 65%) interval.
+Wanneer we het interval op een figuur (bijvoorbeeld fig. \@ref(fig:trendklasse)) weergeven, vullen we het 90% interval aan met de smallere intervallen in stappen van 5%.
 @britton.fisher.ea1998InflationReportProjections waren de inspiratie voor deze manier van weergeven.
-Het 30% interval vormt het donkerste deel van het interval en geeft de meeste waarschijnlijke locatie van de werkelijke waarde weer.
+Het het donkerste deel van het interval komt overeen met het 5% interval en geeft de meeste waarschijnlijke locatie van de werkelijke waarde weer.
 Naarmate het interval lichter wordt, neemt de onzekerheid toe.
 
 ## Opdeling van de effecten in een aantal klassen {#s:trendklasse}
@@ -446,22 +446,17 @@ tribble(
 
 ```{r trendklasse, fig.cap = "(ref:trendklasse)"}
 ggplot(effect, aes(x = x_int, y = y, ymin = lcl, ymax = ucl, link_sd = s)) +
+  annotate(
+    geom = "rect", xmin = -Inf, xmax = Inf, ymin = -1,
+    ymax = 1, alpha = 0.5, fill = inbo_grijs
+  ) +
   geom_hline(yintercept = 0, linetype = 2) +
-  geom_hline(yintercept = c(-1, 1), linetype = 3) +
-  geom_rect(
-    aes(xmin = x_int - 0.4, xmax = x_int + 0.4, fill = klasse),
-    show.legend = FALSE
-  ) +
-  geom_point(size = 6, colour = inbo_hoofd) +
-  geom_text(
-    aes(label = klasse), hjust = 0.5, vjust = 0.5, colour = "white"
-  ) +
+  stat_fan(geom = "rect") +
   scale_x_continuous(breaks = effect$x_int, labels = effect$x) +
   scale_y_continuous(
     "effect", breaks = c(-1, 0, 1),
     labels = c("ondergrens", "referentie", "bovengrens")
   ) +
-  scale_fill_manual(values = kleurgradient) +
   coord_flip() +
   theme(axis.title.y = element_blank())
 ```

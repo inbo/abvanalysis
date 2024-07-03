@@ -6,10 +6,10 @@
   - stratum
   - location
   - year
-  hash: e965405754d40969c45640d8ae3089fc1cd94be4
-  data_hash: 1f19b60e4e95168a74004c704243cd6b81e7c61d
+  hash: b72ed4a64614e110e30829820399c2981bae06cc
+  data_hash: 239da4527a53b3efa1c96326e0e1a959a93e2a14
 year:
-  class: numeric
+  class: integer
 location:
   class: integer
 stratum:

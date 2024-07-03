@@ -9,7 +9,8 @@ prepare_dataset_observation(
   repo,
   end_date,
   min_observation = 100,
-  strict = TRUE
+  strict = TRUE,
+  db_scheme = ""
 )
 }
 \arguments{
@@ -28,6 +29,8 @@ Defaults to \code{100}.}
 overwrites the data and the metadata with a warning listing the changes,
 \code{strict = TRUE} returns an error and leaves the data and metadata as is.
 Defaults to \code{TRUE}.}
+
+\item{db_scheme}{optional database scheme name.}
 }
 \description{
 Read the observations and save them to git and the results database

@@ -40,6 +40,15 @@ spelling:
   - inst/website/LICENSE.md
   other:
     nl-BE:
+    - inst/interactive/composite.qmd
+    - inst/interactive/index.md
+    - inst/interactive/methodologie/index.qmd
+    - inst/interactive/methodologie/reproduceerbaarheid.qmd
+    - inst/interactive/methodologie/verwerking.qmd
+    - inst/interactive/methodologie/voorstelling.qmd
+    - inst/interactive/samenvatting.md
+    - inst/interactive/species.qmd
+    - inst/interactive/trends.qmd
     - inst/website/0_methodologie.Rmd
     - inst/website/1_samengesteld.Rmd
     - inst/website/2_trend_per_soort.Rmd

@@ -1,0 +1,322 @@
+---
+title: Reproduceerbaarheid en traceerbaarheid van de gegevensverwerking
+bibliography: ../references.bib
+---
+
+```{r setup}
+library(effectclass)
+library(git2rdata)
+library(tidyverse)
+if (interactive()) {
+  output_dir <- file.path("..", "..", "..", "..", "abv", "web")
+} else {
+  root <- file.path("..", "..", "results")
+  output_dir <- "../data"
+  dir.create(output_dir, showWarnings = FALSE)
+}
+threshold <- log(0.75)
+```
+
+## Versiebeheer
+
+De waarnemers voeren hun waarnemingen via een webapplicatie toe aan de databank.
+De analyse start met het importeren van de relevante gegevens uit de databank aan de hand van een R-script.
+De bekomen dataset bewaren we als een collectie van tekstbestanden met behulp van het `git2rdata` package [@git2rdata].
+Zowel deze code als de tekstbestanden bewaren we onze versiebeheer met [git](https://git-scm.com/).
+Git is een gratis en open source gedistribueerd versiebeheersysteem dat is ontworpen om alles van kleine tot zeer grote projecten snel en efficiëntie te beheren.
+De code zit vervat in het `abvanalysis` package [@abvanalysis], dat vrij online beschikbaar is.
+De tekstbestanden met de gegevens zijn momenteel niet publiek toegankelijk.
+De ruwe gegevens worden geaggregreerd per hok en met drie jaar vertraging publiek ontsloten via [GBIF](https://doi.org/10.15468/xj0ikb) [@vermeersch.anselin.ea2018ABVCommonBreeding].
+
+## Reproduceerbaarheid
+
+Om de reproduceerbaarheid te garanderen starten we de analyses steeds vanaf de tekstbestanden.
+Aan de hand van code in het `abvanalysis` package definiëren we hoe we de tekstbestanden omzetten naar de [verschillende analyses](verwerking.html#sec-trendberekening).
+Dit resulteert in een resem op zichzelf staande analyseobjecten van het `n2kanalysis` package [@n2kanalysis].
+Dergelijk analyseobject bevat naast de nodige gegevens en de modeldefinitie tevens de nodige metadata zoals alle gebruikte R packages, inclusief hun versie, en een verwijzing naar de voorafgaande analyses waarvan deze analyse afhangt.
+Zo verwijst de analyse van een [samengestelde index](verwerking.html#sec-samengesteld) naar de trendberekening van de [bijhorende soorten](verwerking.html#sec-trendberekening).
+De individuele trendberekeningen verwijzen naar de "analyse" die de gegevens importeerde uit de databank.
+Deze laatste bevat de nodige links naar de tekstbestanden en hun versie.
+
+## Traceerbaarheid {#sec-traceerbaarheid}
+
+De `n2kanalysis` objecten hebben elk twee data hashes.
+Elk data hash is een reeks van 40 hexadecimale^[Hexadecimaal betekent letterlijk zestientallig.
+Het is een talstelsel waarbij niet, zoals gebruikelijk, met tien cijfers wordt gewerkt, maar met zestien cijfers.
+De cijfers 0 t.e.m. 9 worden daarom uitgebreid met `a` (=10) t.e.m. `f` (=15).] cijfers die het resultaat zijn van de cryptografische [hashfunctie](https://nl.wikipedia.org/wiki/Hashfunctie) [SHA-1](https://nl.wikipedia.org/wiki/SHA-familie).
+Deze hashfunctie heeft een aantal belangrijke eigenschappen:
+
+1. Ze zetten elke invoer om naar een uitvoer met vaste lengte (40 hexadecimale cijfers).
+1. De uitvoer is stabiel: als je de hash van een bepaalde invoer opnieuw berekent krijg je steeds dezelfde uitvoer.
+1. Het is niet mogelijk om de invoer te reconstrueren op basis van de uitvoer.
+1. Eender welke kleine wijziging aan de invoer resulteert in een sterke wijziging van de uitvoer.
+1. De kans dat twee verschillende invoeren dezelfde uitvoer opleveren is zeer klein.
+
+De eerste data hash van het analyseobject is gebaseerd op alle informatie die gekend is op het moment dat we het analyseobject definiëren en die nooit zal wijzigen tijdens de analyse.
+Denk hierbij aan de definitie van de analyse, de gegevens, de soort, ...
+Gezien de eigenschappen van de hashfunctie kunnen we deze data hash gebruiken om ondubbelzinnig te verwijzen naar een specifieke analyse (inclusief de gebruikte gegevens.)
+
+De tweede data hash van het analyseobject baseren we enerzijds op de eerste data hash en anderzijds van alle onderdelen van het analyseobject die wijzigen in de loop van de analyse.
+Dit is o.a. het resultaat van de statistische analyse, de gebruikte software, ...
+De analyse opnieuw uitrekenen met software van een andere versie zal de tweede data hash aanpassen.
+
+De combinatie van deze twee data hashes laat enerzijds toe om naar een specifieke versie van de analyse te verwijzen.
+Anderzijds bieden ze een garantie over de inhoud van het analyseobject.
+In het geval van twijfel over een analyse kunnen we teruggrijpen naar de analyseobject in kwestie.
+De data hashes bewijzen dan dat we het correcte analyseobject hebben.
+
+## Downloadbaar cijfermateriaal
+
+Deze sectie bevat links naar het nodige cijfermateriaal om de figuren in dit rapport te maken.
+Om de resultaten zo toegankelijk mogelijk te maken, bieden we ze aan als [platte tekstbestanden](https://nl.wikipedia.org/wiki/Platte_tekst).
+Elke dataset bestaat uit twee bestanden:
+
+- een bestand met `.csv` extensie.
+  Dit bevat de eigenlijke resultaten als kommagescheiden platte tekstformaat.
+  Je kan dit openen met je favoriete rekenbladprogramma.
+- een bestand met `.yml` extensie.
+  Dit platte tekstbestand bevat metadata over de inhoud van het `.csv` bestand.
+  Je hebt dit bestand nodig indien de gegevens wilt inlezen met het [`git2rdata`](https://ropensci.github.io/git2rdata) package.
+  Daarnaast bevat het een data-hash waarmee je de integriteit van het databestand kan nagaan.
+  Daarom raden we aan om dit bestand toch te downloaden, ook al heb je het strikt genomen niet nodig.
+
+### Indicatoren
+
+```{r samengesteld}
+#| results: hide
+read_vc("meta", root) |>
+  filter(.data$composite, .data$status == "converged") -> indices
+indices |>
+  filter(!.data$cycle, !.data$linear) |>
+  select(indicator = "speciesgroup", "analysis") |>
+  inner_join(
+    read_vc("parent", root) |>
+      select("analysis", "parent_analysis"),
+    by = "analysis"
+  ) |>
+  inner_join(
+    read_vc("meta", root) |>
+      select("analysis", soort = "speciesgroup"),
+    by = c("parent_analysis" = "analysis")
+  ) |>
+  add_count(.data$indicator) |>
+  transmute(
+    across(c("indicator", "soort"), factor),
+    ondergrens = exp(threshold / sqrt(.data$n)) |>
+      round(4),
+    bovengrens = exp(-threshold / sqrt(.data$n)) |>
+      round(4)
+  ) -> soorten
+write_vc(
+  soorten, "samengesteld_soorten", root = "../data", optimize = FALSE,
+  sorting = c("indicator", "soort")
+)
+read_vc("composite_index", root) |>
+  inner_join(indices, by = "analysis") |>
+  inner_join(
+    soorten |>
+      distinct(.data$indicator, .data$ondergrens),
+    by = c("speciesgroup" = "indicator")
+  ) |>
+  transmute(
+    indicator = factor(.data$speciesgroup),
+    frequentie = ifelse(.data$cycle, "driejaarlijks", "jaarlijks") |>
+      factor(),
+    referentie = .data$reference,
+    naar = .data$alternative, schatting = .data$estimate,
+    lcl = .data$lower_confidence_limit, ucl = .data$upper_confidence_limit,
+    klasse = pmap(
+      list(lcl = .data$lcl, ucl = .data$ucl, threshold = .data$ondergrens),
+      classification
+    ) |>
+      map_chr(~format(.x, type = "ascii")),
+    wijziging = format_ci(
+      .data$schatting, lcl = .data$lcl, ucl = .data$ucl, link = "log",
+      percent = TRUE, sign = TRUE, change = TRUE
+    ),
+    across(c("schatting", "lcl", "ucl"), exp),
+    across(c("schatting", "lcl", "ucl"), round, 4),
+    analyse = factor(.data$analysis), status = factor(.data$status_fingerprint)
+  ) |>
+  write_vc(
+    file = "samengesteld", root = "../data", optimize = FALSE,
+    sorting = c("indicator", "frequentie", "referentie", "naar")
+  )
+```
+
+- **samengestelde indices:** [`samengesteld.csv`](../data/samengesteld.csv) en [`samengesteld.yml`](../data/samengesteld.yml).
+    - `indicator`: naam van de indicator;
+    - `frequentie`: index op basis van jaarlijkse of driejaarlijkse gegevens;
+    - `referentie`: het referentiejaartal;
+    - `naar`: het jaartal waarvoor we verhouding het referentiejaar berekenen;
+    - `schatting`: de geschatte verhouding van dit jaar t.o.v. het referentiejaar;
+    - `lcl` en `ucl`: de ondergrens en bovengrens van het 90% betrouwbaarheidsinterval rond de schatting;
+    - `klasse`: [interpretatie](voorstelling.html#sec-trendklasse) van de wijziging;
+    - `wijziging`: tekstuele beschrijving van de evolutie;
+    - `analyse`: data-hash van de analyse;
+    - `status`: data-hash van de status van de analyse
+- **soortenlijst samengestelde indices:** [`samengesteld_soorten.csv`](../data/samengesteld_soorten.csv) en [`samengesteld_soorten.yml`](../data/samengesteld_soorten.yml).
+    - `soort`: naam van de soort;
+    - `indicator`: naam van de samengestelde indicator;
+    - `ondergrens` en `bovengrens`: grenzen voor de opdeling van de effecten in [klassen](voorstelling.html#sec-trendklasse)
+
+### Individuele soorten
+
+```{r soorten}
+#| results: hide
+read_vc("estimate", root) |>
+  inner_join(read_vc("meta", root), by = "analysis") |>
+  transmute(
+    soort = .data$speciesgroup,
+    frequentie = ifelse(.data$cycle, "driejaarlijks", "jaarlijks") |>
+      factor(),
+    jaar = .data$year, schatting = .data$estimate,
+    lcl = .data$lower_confidence_limit, ucl = .data$upper_confidence_limit,
+    wijziging = format_ci(
+      .data$schatting, lcl = .data$lcl, ucl = .data$ucl, link = "log"
+    ),
+    across(c("schatting", "lcl", "ucl"), exp),
+    across(c("schatting", "lcl", "ucl"), round, 4),
+    analyse = factor(.data$analysis), status = factor(.data$status_fingerprint)
+  ) |>
+  write_vc(
+    file = "aantallen", root = "../data", optimize = FALSE,
+    sorting = c("soort", "frequentie", "jaar")
+  )
+read_vc("linear_trend", root) |>
+  inner_join(read_vc("meta", root), by = "analysis") |>
+  inner_join(
+    read_vc("linear_estimate", root) |>
+      group_by(.data$analysis) |>
+      summarise(looptijd = max(.data$year) - 1),
+    by = "analysis"
+  ) |>
+  inner_join(
+    read_vc("meta", root) |>
+      select("speciesgroup", "cycle", "linear", "waic") |>
+      pivot_wider(names_from = "linear", values_from = "waic") |>
+      transmute(
+        .data$speciesgroup, .data$cycle,
+        verloop = (.data$`FALSE` - .data$`TRUE`) |>
+          cut(
+            breaks = c(-Inf, -2, 0, Inf),
+            labels = c("niet-lineair", "mogelijk niet-lineair", "lineair")
+          )
+      ),
+    by = c("speciesgroup", "cycle")
+  ) |>
+  transmute(
+    soort = .data$speciesgroup,
+    frequentie = ifelse(.data$cycle, "driejaarlijks", "jaarlijks") |>
+      factor(),
+    jaarlijks = format_ci(
+      .data$estimate, lcl = .data$lower_confidence_limit, percent = TRUE,
+      ucl = .data$upper_confidence_limit, link = "log", change = TRUE,
+      sign = TRUE
+    ),
+    looptijd = .data$looptijd * ifelse(.data$cycle, 3, 1),
+    looptijd = format_ci(
+      .data$looptijd * .data$estimate, change = TRUE, sign = TRUE,
+      lcl = .data$looptijd * .data$lower_confidence_limit, percent = TRUE,
+      ucl = .data$looptijd * .data$upper_confidence_limit, link = "log"
+    ),
+    .data$verloop,
+    analyse = factor(.data$analysis), status = factor(.data$status_fingerprint),
+  ) |>
+  write_vc(
+    file = "lineare_trend", root = "../data", optimize = FALSE,
+    sorting = c("soort", "frequentie")
+  )
+read_vc("index", root) |>
+  inner_join(read_vc("meta", root), by = "analysis") |>
+  transmute(
+    soort = factor(.data$speciesgroup),
+    frequentie = ifelse(.data$cycle, "driejaarlijks", "jaarlijks") |>
+      factor(),
+    referentie = .data$reference,
+    naar = .data$alternative, schatting = .data$estimate,
+    lcl = .data$lower_confidence_limit, ucl = .data$upper_confidence_limit,
+    klasse = classification(
+      lcl = .data$lcl, ucl = .data$ucl, threshold = threshold
+    ) |>
+      format(type = "ascii"),
+    wijziging = format_ci(
+      .data$schatting, lcl = .data$lcl, ucl = .data$ucl, link = "log",
+      percent = TRUE, sign = TRUE, change = TRUE
+    ),
+    across(c("schatting", "lcl", "ucl"), exp),
+    across(c("schatting", "lcl", "ucl"), round, 4),
+    analyse = factor(.data$analysis), status = factor(.data$status_fingerprint)
+  ) |>
+  write_vc(
+    file = "index", root = "../data", optimize = FALSE,
+    sorting = c("soort", "frequentie", "referentie", "naar")
+  )
+read_vc("effort", root) |>
+  distinct(.data$stratum, .data$location) |>
+  count(.data$stratum, name = "onderzocht") |>
+  inner_join(
+    read_vc("stratum", root) |>
+      select(stratum = "description", totaal = "n"),
+    by = "stratum"
+  ) |>
+  inner_join(read_vc("stratum_weight", root), by = "stratum") |>
+  transmute(
+    .data$analysis, .data$stratum, gewicht = .data$weight,
+    aanwezig = .data$relevant * .data$totaal / .data$onderzocht, .data$relevant,
+    .data$onderzocht, .data$totaal, bezoeken = .data$visits,
+    punten = (
+      .data$points_1 / 6 + .data$points_2 / 3 + .data$points_3 / 2 +
+        .data$points_4 * 2 / 3 + .data$points_5 * 5 / 6 + .data$points_6
+    ) / .data$relevant
+  ) |>
+  inner_join(read_vc("meta", root), by = "analysis") |>
+  distinct(
+    soort = factor(.data$speciesgroup),
+    stratum = factor(.data$stratum), gewicht = round(.data$gewicht, 3),
+    aanwezig = round(.data$aanwezig, 1), .data$relevant, .data$onderzocht,
+    .data$totaal, .data$bezoeken
+  ) |>
+  write_vc(
+    file = "stratum_gewicht", root = "../data", optimize = FALSE,
+    sorting = c("soort", "stratum")
+  )
+```
+
+- **gemiddeld aantal op een meetpunt:** [`aantallen.csv`](../data/aantallen.csv) en [`aantallen.yml`](../data/aantallen.yml).
+    - `soort`: Nederlandse soortnaam;
+    - `frequentie`: trend op basis van jaarlijkse of driejaarlijkse gegevens;
+    - `jaar`: jaartal of startjaar van de driejaarlijkse periode;
+    - `schatting`: schatting van het gemiddeld aantal dieren op een meetpunt;
+    - `lcl` en `ucl`: de ondergrens en bovengrens van het 90% betrouwbaarheidsinterval rond de schatting;
+    - `analyse`: data-hash van de analyse;
+    - `status`: data-hash van de status van de analyse
+- **lineaire trends:** [`lineaire_trend.csv`](../data/lineaire_trend.csv) en [`lineaire_trend.yml`](../data/lineaire_trend.yml).
+    - `soort`: Nederlandse soortnaam;
+    - `frequentie`: trend op basis van jaarlijkse of driejaarlijkse gegevens;
+    - `jaarlijks`: gemiddelde [jaarlijkse wijziging](verwerking.html#sec-lineairetrend);
+    - `looptijd`: gemiddelde wijziging over de looptijd van de tijdsreeks;
+    - `klasse`: [interpretatie](voorstelling.html#sec-trendklasse) van de wijziging;
+    - `verloop`: geeft aan of de trend lineair verloopt;
+    - `analyse`: data-hash van de analyse;
+    - `status`: data-hash van de status van de analyse
+- **indices:** [`index.csv`](../data/index.csv) en [`index.yml`](../data/index.yml).
+    - `soort`: naam van de indicator;
+    - `frequentie`: index op basis van jaarlijkse of driejaarlijkse gegevens;
+    - `referentie`: het referentiejaartal;
+    - `naar`: het jaartal waarvoor we verhouding het referentiejaar berekenen;
+    - `schatting`: de geschatte verhouding van dit jaar t.o.v. het referentiejaar;
+    - `lcl` en `ucl`: de ondergrens en bovengrens van het 90% betrouwbaarheidsinterval rond de schatting;
+    - `klasse`: [interpretatie](voorstelling.html#sec-trendklasse) van de wijziging;
+    - `wijziging`: tekstuele beschrijving van de evolutie;
+    - `analyse`: data-hash van de analyse;
+    - `status`: data-hash van de status van de analyse
+- **stratumgewichten:** [`stratum_gewicht.csv`](../data/stratum_gewicht.csv) en [`stratum_gewicht.yml`](../data/stratum_gewicht.yml).
+    - `soort`: Nederlandse soortnaam;
+    - `stratum`: naam van het stratum;
+    - `gewicht`: [gewicht van het stratum](verwerking.html#sec-stratumgewicht) voor deze soort;
+    - `aanwezig`: geschatte aantal hokken van het stratum waar de soort aanwezig is;
+    - `relevant`: aantal relevante hokken voor deze soort in het stratum;
+    - `onderzocht`: aantal onderzochte hokken in het stratum;
+    - `totaal`: totaal aantal hokken in het stratum;
+    - `bezoeken`: totaal aantal bezoeken aan de meetpunten in het stratum;

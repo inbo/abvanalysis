@@ -1,37 +1,55 @@
 #' Read the species groups and save them to git and the results database
 #' @inheritParams prepare_dataset
 #' @inheritParams git2rdata::write_vc
-#' @importFrom DBI dbGetQuery dbQuoteString
+#' @importFrom DBI dbGetQuery dbQuoteLiteral dbQuoteString Id
 #' @importFrom digest sha1
 #' @importFrom dplyr %>% transmute select mutate bind_rows
 #' @importFrom purrr map_chr
 #' @importFrom rlang .data
 #' @importFrom git2rdata prune_meta rm_data write_vc
 #' @export
-prepare_dataset_species <- function(origin, repo, end_date, strict = FALSE) {
+prepare_dataset_species <- function(
+  origin, repo, end_date, strict = FALSE, db_scheme = ""
+) {
   rm_data(root = repo, path = "location", stage = TRUE)
 
   sprintf("
     WITH cte AS (
       SELECT fo.species_id
-      FROM projects_project AS pp
-      INNER JOIN fieldwork_visit AS fv ON pp.id = fv.project_id
-      INNER JOIN fieldwork_sample AS fs ON fv.id = fs.visit_id
-      INNER JOIN fieldwork_observation AS fo ON fs.id = fo.sample_id
+      FROM %s AS pp
+      INNER JOIN %s AS fv ON pp.id = fv.project_id
+      INNER JOIN %s AS fs ON fv.id = fs.visit_id
+      INNER JOIN %s AS fo ON fs.id = fo.sample_id
       WHERE
         pp.name = 'Algemene Broedvogelmonitoring (ABV)' AND
         fv.validation_status != -1 AND
         fv.start_date <= %s AND
-        fs.not_counted = FALSE
+        fs.not_counted = %s
       GROUP BY species_id
     )
 
     SELECT
       s.id, s.scientific_name, s.name AS nl, s.euring_code AS euring
     FROM cte
-    INNER JOIN species_species AS s ON cte.species_id = s.id
+    INNER JOIN %s AS s ON cte.species_id = s.id
     WHERE s.reference_inbo IS NOT NULL",
-    dbQuoteString(origin, as.character(end_date))
+    dbQuoteIdentifier(
+      origin, Id(scheme = db_scheme, table = "projects_project")
+    ),
+    dbQuoteIdentifier(
+      origin, Id(scheme = db_scheme, table = "fieldwork_visit")
+    ),
+    dbQuoteIdentifier(
+      origin, Id(scheme = db_scheme, table = "fieldwork_sample")
+    ),
+    dbQuoteIdentifier(
+      origin, Id(scheme = db_scheme, table = "fieldwork_observation")
+    ),
+    dbQuoteString(origin, as.character(end_date)),
+    ifelse(inherits(origin, "Microsoft SQL Server"), "0", "FALSE"),
+    dbQuoteIdentifier(
+      origin, Id(scheme = db_scheme, table = "species_species")
+    )
   ) %>%
     dbGetQuery(conn = origin) %>%
     mutate(
@@ -43,15 +61,20 @@ prepare_dataset_species <- function(origin, repo, end_date, strict = FALSE) {
     species, file = file.path("species", "species"), root = repo,
     sorting = "euring", stage = TRUE
   )
-  dbGetQuery(
-    origin, "
-    SELECT
+  sprintf(
+    "SELECT
       id AS external_id,
-      REGEXP_REPLACE(name, '(.*) \\(ABV\\)', '\\1') AS description
-    FROM species_group
-    WHERE REGEXP_REPLACE(name, '.* \\((.*)\\)$', '\\1') = 'ABV'
-  ") %>%
+      name AS description
+    FROM %s
+    WHERE name LIKE '%%(ABV)'
+  ",
+    dbQuoteIdentifier(
+      origin, Id(scheme = db_scheme, table = "species_group")
+    )
+  ) |>
+  dbGetQuery(conn = origin) %>%
     mutate(
+      description = gsub(" \\(.*\\)", "", .data$description),
       datafield_id = get_field_id(
         repo = repo, table_name = "species_group", field_name = "id"
       ),
@@ -64,15 +87,21 @@ prepare_dataset_species <- function(origin, repo, end_date, strict = FALSE) {
       description = .data$nl,
       .data$datafield_id
     ) -> speciesgroup2
-  dbGetQuery(
-    origin, "
-    SELECT
-      sg.id AS external_id,
-      sgs.species_id AS species_id
-    FROM species_group AS sg
-    INNER JOIN species_speciesgrouprelation AS sgs ON sg.id = sgs.group_id
-    WHERE REGEXP_REPLACE(sg.name, '.* \\((.*)\\)$', '\\1') = 'ABV'
-  ") %>%
+  sprintf(
+  "SELECT
+  sg.id AS external_id,
+  sgs.species_id AS species_id
+FROM %s AS sg
+INNER JOIN %s AS sgs ON sg.id = sgs.group_id
+WHERE sg.name LIKE '%% (ABV)'",
+    dbQuoteIdentifier(
+      origin, Id(scheme = db_scheme, table = "species_group")
+    ),
+    dbQuoteIdentifier(
+      origin, Id(scheme = db_scheme, table = "species_speciesgrouprelation")
+    )
+  ) |>
+  dbGetQuery(conn = origin) |>
     inner_join(
       speciesgroup %>%
         select(speciesgroup_id = .data$id, .data$external_id),

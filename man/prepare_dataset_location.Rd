@@ -4,7 +4,7 @@
 \alias{prepare_dataset_location}
 \title{import and store location metadata}
 \usage{
-prepare_dataset_location(origin, repo, end_date, strict = TRUE)
+prepare_dataset_location(origin, repo, end_date, strict = TRUE, db_scheme = "")
 }
 \arguments{
 \item{origin}{\code{DBI} connection to the source database}
@@ -18,6 +18,8 @@ Default to now.}
 overwrites the data and the metadata with a warning listing the changes,
 \code{strict = TRUE} returns an error and leaves the data and metadata as is.
 Defaults to \code{TRUE}.}
+
+\item{db_scheme}{optional database scheme name.}
 }
 \description{
 import and store location metadata
