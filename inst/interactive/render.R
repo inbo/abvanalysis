@@ -1,3 +1,4 @@
+library(abvanalysis)
 library(git2rdata)
 library(knitr)
 library(quarto)
@@ -6,16 +7,34 @@ conflicted::conflicts_prefer(dplyr::filter, dplyr::pull)
 n_head <- Inf
 results_folder <- "../../../abv/results"
 target_folder <- "../../../abv/quarto"
-file.path(target_folder, "_extensions") |>
+system.file("extensions", package = "abvanalysis") |>
+  dirname() -> source_folder
+file.path(
+  target_folder, "_extensions", "inboqmd-report-website", "_extensions",
+  "flandersqmd-report-website"
+) |>
   dir.create(showWarnings = FALSE, recursive = TRUE)
 
 # styling
-list.files("_extensions", full.names = TRUE) |>
-  file.copy(to = file.path(target_folder, "_extensions"), overwrite = TRUE)
-system.file("css_styles", package = "INBOmd") |>
-  file.copy(to = target_folder, recursive = TRUE, overwrite = TRUE)
-file.path(target_folder, "css_styles") |>
-  file.copy(from = "custom.css", overwrite = TRUE)
+file.path(source_folder, "extensions", "inboqmd-report-website") |>
+  list.files(recursive = TRUE) -> to_do
+file.path(source_folder, "extensions", "inboqmd-report-website", to_do) |>
+  file.copy(
+    to = file.path(
+      target_folder, "_extensions", "inboqmd-report-website", to_do
+    ),
+    overwrite = TRUE
+  )
+file.path(source_folder, "extensions", "flandersqmd-report-website") |>
+  list.files(recursive = TRUE) -> to_do
+file.path(source_folder, "extensions", "flandersqmd-report-website", to_do) |>
+  file.copy(
+    to = file.path(
+      target_folder, "_extensions", "inboqmd-report-website", "_extensions",
+      "flandersqmd-report-website", to_do
+    ),
+    overwrite = TRUE
+  )
 
 # methodology
 file.path(target_folder, "methodologie") |>
