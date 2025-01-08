@@ -6,12 +6,12 @@
 #' @importFrom dplyr %>% transmute select mutate bind_rows
 #' @importFrom purrr map_chr
 #' @importFrom rlang .data
-#' @importFrom git2rdata prune_meta rm_data write_vc
+#' @importFrom git2rdata prune_meta rm_data update_metadata write_vc
 #' @export
 prepare_dataset_species <- function(
   origin, repo, end_date, strict = FALSE, db_scheme = ""
 ) {
-  rm_data(root = repo, path = "location", stage = TRUE)
+  rm_data(root = repo, path = "species", stage = TRUE)
 
   sprintf("
     WITH cte AS (
@@ -61,6 +61,17 @@ prepare_dataset_species <- function(
     species, file = file.path("species", "species"), root = repo,
     sorting = "euring", stage = TRUE
   )
+  update_metadata(
+    file = file.path("species", "species"), root = repo, stage = TRUE,
+    name = "species", title = "Species in the Common Breeding Bird Census",
+    field_description = c(
+      id = "Unique identifier of the species",
+      scientific_name = "Scientific name of the species",
+      nl = "Dutch name of the species",
+      euring = "Euring code of the species",
+      datafield_id = "Unique identifier of the datafield"
+    )
+  )
   sprintf(
     "SELECT
       id AS external_id,
@@ -88,7 +99,7 @@ prepare_dataset_species <- function(
       .data$datafield_id
     ) -> speciesgroup2
   sprintf(
-  "SELECT
+    "SELECT
   sg.id AS external_id,
   sgs.species_id AS species_id
 FROM %s AS sg
@@ -134,11 +145,34 @@ WHERE sg.name LIKE '%% (ABV)'",
       file = file.path("species", "speciesgroup_species"), root = repo,
       sorting = c("speciesgroup_id", "parent_id"), stage = TRUE, strict = strict
     )
+  update_metadata(
+    file = file.path("species", "speciesgroup_species"), root = repo,
+    stage = TRUE, name = "speciesgroup_species",
+    title = "Species per species groups",
+    description =
+      "This table describes which species belong to which species group.",
+    field_description = c(
+      speciesgroup_id = "Unique identifier of the species group",
+      parent_id = "Unique identifier of the parent species group",
+      species = "Is this a species or a species group?"
+    )
+  )
   bind_rows(speciesgroup, speciesgroup2) %>%
     write_vc(
       file = file.path("species", "speciesgroup"), root = repo, sorting = "id",
       stage = TRUE, strict = strict
     )
+  update_metadata(
+    file = file.path("species", "speciesgroup"), root = repo, stage = TRUE,
+    name = "speciesgroup",
+    title = "Species groups in the Common Breeding Bird Census",
+    field_description = c(
+      id = "Unique identifier of the species group",
+      external_id = "External identifier of the species group",
+      description = "Name of the species group",
+      datafield_id = "Unique identifier of the datafield"
+    )
+  )
 
   prune_meta(root = repo, path = "species", stage = TRUE)
 

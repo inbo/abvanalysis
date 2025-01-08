@@ -5,11 +5,14 @@
 #' @importFrom dplyr %>% arrange count filter full_join inner_join mutate
 #' row_number transmute
 #' @importFrom rlang .data
-#' @importFrom git2rdata prune_meta read_vc rm_data write_vc
+#' @importFrom git2rdata prune_meta read_vc rm_data update_metadata write_vc
 #' @export
 prepare_dataset_location <- function(
     origin, repo, end_date, strict = TRUE, db_scheme = ""
 ) {
+  strata <- try(
+    read_vc(file.path("location", "stratum"), root = repo), silent = TRUE
+  )
   rm_data(root = repo, path = "location", stage = TRUE)
 
   # import sampling framework
@@ -19,9 +22,6 @@ prepare_dataset_location <- function(
     filter(!is.na(.data$description)) %>%
     arrange(.data$description) %>%
     mutate(description = as.character(.data$description)) -> new_strata
-  strata <- try(
-    read_vc(file.path("location", "stratum"), root = repo), silent = TRUE
-  )
   if (inherits(strata, "try-error")) {
     new_strata %>%
       mutate(id = row_number()) -> strata
@@ -43,6 +43,17 @@ prepare_dataset_location <- function(
     strata, file = file.path("location", "stratum"), root = repo,
     sorting = "description", stage = TRUE, strict = strict
   )
+  update_metadata(
+    file = file.path("location", "stratum"), root = repo, name = "stratum",
+    title = "Strata using in the Common Breeding Bird Cencus in Flanders",
+    field_description = c(
+      description = "Name of the stratum",
+      n = "Total number of squares in the stratum",
+      id = "Unique identifier of the stratum"
+    ),
+    stage = TRUE
+  )
+
   strata %>%
     select(stratum = .data$description, stratum_id = .data$id) %>%
     inner_join(
@@ -100,6 +111,17 @@ prepare_dataset_location <- function(
       file = file.path("location", "square"), root = repo,
       sorting = "description", stage = TRUE, strict = strict
     )
+  update_metadata(
+    file = file.path("location", "square"), root = repo, stage = TRUE,
+    name = "square",
+    title = "UTM squares used in the Common Breeding Bird Cencus in Flanders",
+    field_description = c(
+      description = "Name of the UTM square",
+      id = "Unique identifier of the UTM square",
+      stratum_id = "Unique identifier of the stratum",
+      datafield_id = "Unique identifier of the datafield"
+    )
+  )
 
   # import points
   sprintf("
@@ -145,6 +167,17 @@ prepare_dataset_location <- function(
       file = file.path("location", "point"), root = repo, stage = TRUE,
       sorting = "description", strict = strict
     )
+  update_metadata(
+    file = file.path("location", "point"), root = repo, stage = TRUE,
+    name = "point",
+    title = "Points used in the Common Breeding Bird Cencus in Flanders",
+    field_description = c(
+      description = "Name of the point",
+      id = "Unique identifier of the point",
+      square_id = "Unique identifier of the UTM square",
+      datafield_id = "Unique identifier of the datafield"
+    )
+  )
 
   prune_meta(root = repo, path = "location", stage = TRUE)
 

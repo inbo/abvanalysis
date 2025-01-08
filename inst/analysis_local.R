@@ -1,20 +1,15 @@
 library(abvanalysis)
 repo <- git2rdata::repository(file.path("~", "n2k", "abv"))
-origin <- RPostgreSQL::dbConnect(
-  RPostgreSQL::PostgreSQL(), host = "127.0.0.1", user = "readonly",
-  dbname = "meetnetten", port = "65432",
-  password = keyring::key_get("meetnetten", username = "readonly")
-) # postgres server
 origin <- odbc::dbConnect(
-  odbc::odbc(), driver = "ODBC Driver 17 for SQL Server",
-  server = "inbo-sql08-prd.inbo.be",
+  odbc::odbc(), driver = "ODBC Driver 18 for SQL Server",
+  server = "inbo-sql08-prd.inbo.be", Encrypt = "no",
   database = "S0008_00_Meetnetten", port = 1433, uid = "bmkreader",
   pwd = keyring::key_get("meetnetten", username = "bmkreader")
 ) # sql server
 
 prepare_dataset(
   origin = origin, repo = repo, end_date = Sys.time(), verbose = TRUE,
-  push = FALSE, strict = TRUE
+  push = FALSE, strict = FALSE, db_scheme = "staging_Meetnetten"
 )
 
 base <- file.path("~", "n2kanalysis")
