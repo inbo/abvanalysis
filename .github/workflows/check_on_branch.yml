@@ -17,6 +17,6 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: inbo/actions/check_pkg@main
+      - uses: inbo/actions/check_pkg@0.4.1
         with:
           aptget: libpoppler-cpp-dev
