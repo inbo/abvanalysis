@@ -3,7 +3,7 @@
 #' @inheritParams git2rdata::write_vc
 #' @importFrom DBI dbGetQuery dbQuoteLiteral dbQuoteString Id
 #' @importFrom digest sha1
-#' @importFrom dplyr %>% transmute select mutate bind_rows
+#' @importFrom dplyr bind_rows mutate select transmute
 #' @importFrom purrr map_chr
 #' @importFrom rlang .data
 #' @importFrom git2rdata prune_meta rm_data update_metadata write_vc
@@ -15,17 +15,17 @@ prepare_dataset_species <- function(
 
   sprintf("
     WITH cte AS (
-      SELECT fo.species_id
+      SELECT ps.species_id
       FROM %s AS pp
+      INNER JOIN %s AS ps ON pp.id = ps.project_id
       INNER JOIN %s AS fv ON pp.id = fv.project_id
       INNER JOIN %s AS fs ON fv.id = fs.visit_id
       INNER JOIN %s AS fo ON fs.id = fo.sample_id
       WHERE
         pp.name = 'Algemene Broedvogelmonitoring (ABV)' AND
         fv.validation_status != -1 AND
-        fv.start_date <= %s AND
-        fs.not_counted = %s
-      GROUP BY species_id
+        fv.start_date <= %s AND fs.not_counted = %s AND ps.is_primary = 1
+      GROUP BY ps.species_id
     )
 
     SELECT
@@ -35,6 +35,9 @@ prepare_dataset_species <- function(
     WHERE s.reference_inbo IS NOT NULL",
     dbQuoteIdentifier(
       origin, Id(scheme = db_scheme, table = "projects_project")
+    ),
+    dbQuoteIdentifier(
+      origin, Id(scheme = db_scheme, table = "projects_projectspecies")
     ),
     dbQuoteIdentifier(
       origin, Id(scheme = db_scheme, table = "fieldwork_visit")
@@ -50,8 +53,8 @@ prepare_dataset_species <- function(
     dbQuoteIdentifier(
       origin, Id(scheme = db_scheme, table = "species_species")
     )
-  ) %>%
-    dbGetQuery(conn = origin) %>%
+  ) |>
+    dbGetQuery(conn = origin) |>
     mutate(
       datafield_id = get_field_id(
         repo = repo, table_name = "species_species", field_name = "id"
@@ -83,7 +86,7 @@ prepare_dataset_species <- function(
       origin, Id(scheme = db_scheme, table = "species_group")
     )
   ) |>
-  dbGetQuery(conn = origin) %>%
+  dbGetQuery(conn = origin) |>
     mutate(
       description = gsub(" \\(.*\\)", "", .data$description),
       datafield_id = get_field_id(
@@ -91,7 +94,7 @@ prepare_dataset_species <- function(
       ),
       id = map_chr(.data$description, sha1)
     ) -> speciesgroup
-  species %>%
+  species |>
     transmute(
       external_id = .data$id,
       id = map_chr(.data$nl, sha1),
@@ -114,33 +117,33 @@ WHERE sg.name LIKE '%% (ABV)'",
   ) |>
   dbGetQuery(conn = origin) |>
     inner_join(
-      speciesgroup %>%
+      speciesgroup |>
         select(speciesgroup_id = .data$id, .data$external_id),
       by = "external_id"
-    ) %>%
+    ) |>
     inner_join(
-      speciesgroup2 %>%
+      speciesgroup2 |>
         select(species_id = .data$external_id, parent_id = .data$id),
       by = "species_id"
-    ) %>%
-    transmute(.data$speciesgroup_id, .data$parent_id, species = FALSE) %>%
+    ) |>
+    transmute(.data$speciesgroup_id, .data$parent_id, species = FALSE) |>
     bind_rows(
-      species %>%
-        select(external_id = .data$id, parent = .data$id) %>%
+      species |>
+        select(external_id = .data$id, parent = .data$id) |>
         inner_join(
-          speciesgroup2 %>%
+          speciesgroup2 |>
             select(speciesgroup_id = .data$id, .data$external_id),
           by = "external_id"
-        ) %>%
+        ) |>
         transmute(
           .data$speciesgroup_id, parent_id = as.character(.data$parent),
           species = TRUE
         )
-    ) %>%
+    ) |>
     mutate(
       speciesgroup_id = factor(.data$speciesgroup_id),
       parent_id = factor(.data$parent_id)
-    ) %>%
+    ) |>
     write_vc(
       file = file.path("species", "speciesgroup_species"), root = repo,
       sorting = c("speciesgroup_id", "parent_id"), stage = TRUE, strict = strict
@@ -157,7 +160,7 @@ WHERE sg.name LIKE '%% (ABV)'",
       species = "Is this a species or a species group?"
     )
   )
-  bind_rows(speciesgroup, speciesgroup2) %>%
+  bind_rows(speciesgroup, speciesgroup2) |>
     write_vc(
       file = file.path("species", "speciesgroup"), root = repo, sorting = "id",
       stage = TRUE, strict = strict
