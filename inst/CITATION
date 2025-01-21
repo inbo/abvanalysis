@@ -2,12 +2,12 @@ citHeader("To cite `abvanalysis` in publications please use:")
 # begin checklist entry
 bibentry(
   bibtype = "Manual",
-  title = "abvanalysis: Analysis of the Common Breeding Bird Survey. Version 0.2.4",
+  title = "abvanalysis: Analysis of the Common Breeding Bird Survey. Version 0.2.5",
   author = c( author = c(person(given = "Thierry", family = "Onkelinx"))),
-  year = 2024,
+  year = 2025,
   url = "https://github.com/inbo/abvanalysis/",
   abstract = "Read in the raw data and prepare analysis datasets.",
-  textVersion = "Onkelinx, Thierry (2024) abvanalysis: Analysis of the Common Breeding Bird Survey. Version 0.2.4. https://github.com/inbo/abvanalysis/",
+  textVersion = "Onkelinx, Thierry (2025) abvanalysis: Analysis of the Common Breeding Bird Survey. Version 0.2.5. https://github.com/inbo/abvanalysis/",
   keywords = "common breeding birds; monitoring; analysis; reproducible science",
 )
 # end checklist entry

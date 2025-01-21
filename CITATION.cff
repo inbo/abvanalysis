@@ -21,4 +21,4 @@ license: GPL-3.0
 repository-code: https://github.com/inbo/abvanalysis/
 type: software
 abstract: "Read in the raw data and prepare analysis datasets."
-version: 0.2.4
+version: 0.2.5
