@@ -18,7 +18,7 @@
 #' @inheritParams prepare_dataset
 #' @export
 #' @importFrom assertthat assert_that has_name is.count is.number is.string
-#' @importFrom dplyr %>% count distinct filter left_join mutate rename select
+#' @importFrom dplyr count distinct filter left_join mutate rename select
 #' semi_join
 #' @importFrom git2rdata is_git2rdata read_vc
 #' @importFrom rlang .data
@@ -47,9 +47,9 @@ select_relevant <- function(
     return(NULL)
   }
 
-  read_vc(file, root = repo) %>%
-    select(-.data$datafield_id) %>%
-    left_join(x = observation, by = "sample_id") %>%
+  read_vc(file, root = repo) |>
+    select(-.data$datafield_id) |>
+    left_join(x = observation, by = "sample_id") |>
     mutate(
       count = replace_na(.data$count, 0),
       cycle = 1 + (.data$year - 2007) %/% 3,
@@ -60,28 +60,28 @@ select_relevant <- function(
     return(NULL)
   }
   # require at least one observation per point
-  rawdata %>%
-    filter(.data$count > 0) %>%
-    distinct(.data$point) %>%
+  rawdata |>
+    filter(.data$count > 0) |>
+    distinct(.data$point) |>
     semi_join(x = rawdata, by = "point") -> rawdata
 
   # require observation during at least min_cycle different cycles for each
   # square
-  rawdata %>%
-    filter(.data$count > 0) %>%
-    distinct(.data$square, .data$cycle) %>%
-    count(.data$square) %>%
-    filter(.data$n >= min_cycle) %>%
+  rawdata |>
+    filter(.data$count > 0) |>
+    distinct(.data$square, .data$cycle) |>
+    count(.data$square) |>
+    filter(.data$n >= min_cycle) |>
     semi_join(x = rawdata, by = "square") -> rawdata
   if (sum(rawdata$count > 0) < min_observation) {
     return(NULL)
   }
   # require at least min_stratum locations per stratum
-  rawdata %>%
-    filter(.data$count > 0) %>%
-    distinct(.data$stratum, .data$square) %>%
-    count(.data$stratum) %>%
-    filter(.data$n >= min_stratum) %>%
+  rawdata |>
+    filter(.data$count > 0) |>
+    distinct(.data$stratum, .data$square) |>
+    count(.data$stratum) |>
+    filter(.data$n >= min_stratum) |>
     semi_join(x = rawdata, by = "stratum") -> rawdata
   if (sum(rawdata$count > 0) < min_observation) {
     return(NULL)
@@ -90,35 +90,35 @@ select_relevant <- function(
   model <- glm(count ~ 0 + period, data = rawdata, family = poisson)
   log_threshold <- max(coef(model)) + log(proportion)
   selection <- levels(rawdata$period)[coef(model) >= log_threshold]
-  rawdata %>%
-    filter(.data$period %in% selection) %>%
+  rawdata |>
+    filter(.data$period %in% selection) |>
     mutate(period = factor(.data$period)) -> rawdata
   if (sum(rawdata$count > 0) < min_observation) {
     return(NULL)
   }
   model <- glm(count ~ 0 + period, data = rawdata, family = poisson)
-  rawdata %>%
+  rawdata |>
     mutate(
       period = relevel(.data$period, which.max(coef(model)))
     ) -> rawdata
   # require observation during at least min_cycle different cycles for each
   # location
-  rawdata %>%
-    filter(.data$count > 0) %>%
-    distinct(.data$square, .data$cycle) %>%
-    count(.data$square) %>%
-    filter(.data$n >= min_cycle) %>%
+  rawdata |>
+    filter(.data$count > 0) |>
+    distinct(.data$square, .data$cycle) |>
+    count(.data$square) |>
+    filter(.data$n >= min_cycle) |>
     semi_join(x = rawdata, by = "square") -> rawdata
   if (sum(rawdata$count > 0) < min_observation) {
     return(NULL)
   }
   # require at least min_stratum locations per stratum
-  rawdata %>%
-    filter(.data$count > 0) %>%
-    distinct(.data$stratum, .data$square) %>%
-    count(.data$stratum) %>%
-    filter(.data$n >= min_stratum) %>%
-    semi_join(x = rawdata, by = "stratum") %>%
+  rawdata |>
+    filter(.data$count > 0) |>
+    distinct(.data$stratum, .data$square) |>
+    count(.data$stratum) |>
+    filter(.data$n >= min_stratum) |>
+    semi_join(x = rawdata, by = "stratum") |>
     rename(observation_id = .data$sample_id) -> rawdata
   if (sum(rawdata$count > 0) < min_observation) {
     return(NULL)

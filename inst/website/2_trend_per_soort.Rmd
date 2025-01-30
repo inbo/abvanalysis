@@ -1,14 +1,14 @@
 # (PART) Resultaten per soort {-}
 
 ```{r relevante_soort}
-meta %>%
-  filter(!.data$composite, .data$status == "converged") %>%
+meta |>
+  filter(!.data$composite, .data$status == "converged") |>
   distinct(.data$hash, .data$speciesgroup) -> relevant
 ```
 
 ```{r bewaar-soorten, eval = output_format == "html"}
-estimate %>%
-  inner_join(meta, by = "analysis") %>%
+estimate |>
+  inner_join(meta, by = "analysis") |>
   transmute(
     soort = factor(.data$speciesgroup),
     frequentie = factor(ifelse(.data$cycle, "driejaarlijks", "jaarlijks")),
@@ -21,14 +21,14 @@ estimate %>%
       ucl = .data$upper_confidence_limit, link = "log"
     ),
     .data$analysis, status = .data$status_fingerprint
-  ) %>%
-  arrange(.data$lcl) %>%
+  ) |>
+  arrange(.data$lcl) |>
   write_vc(
     file = "aantallen", root = output_dir, optimize = FALSE,
     sorting = c("soort", "frequentie", "jaar"), strict = strict
   )
-linear_trend %>%
-  inner_join(meta, by = c("hash", "analysis", "cycle")) %>%
+linear_trend |>
+  inner_join(meta, by = c("hash", "analysis", "cycle")) |>
   transmute(
     soort = factor(.data$speciesgroup),
     frequentie = factor(ifelse(.data$cycle, "driejaarlijks", "jaarlijks")),
@@ -38,13 +38,13 @@ linear_trend %>%
     .data$jaarlijks, .data$looptijd, .data$klasse,
     verloop = .data$interpretatie, .data$analysis,
     status = .data$status_fingerprint
-  ) %>%
+  ) |>
   write_vc(
     file = "lineaire_trend", root = output_dir, optimize = FALSE,
     sorting = c("soort", "frequentie"), strict = strict
   )
-index %>%
-  inner_join(meta, by = "analysis") %>%
+index |>
+  inner_join(meta, by = "analysis") |>
   transmute(
     soort = factor(.data$speciesgroup),
     frequentie = factor(ifelse(.data$cycle, "driejaarlijks", "jaarlijks")),
@@ -54,20 +54,20 @@ index %>%
     ucl = round(exp(.data$ucl), 3),
     klasse = .data$klasse, .data$interpretatie, .data$wijziging,
     .data$analysis, status = .data$status_fingerprint
-  ) %>%
+  ) |>
   write_vc(
     file = "index", root = output_dir, optimize = FALSE, strict = strict,
     sorting = c("soort", "frequentie", "referentie", "naar")
   )
-stratum %>%
-  inner_join(meta, by = "analysis") %>%
+stratum |>
+  inner_join(meta, by = "analysis") |>
   transmute(
     soort = factor(.data$speciesgroup),
     frequentie = factor(ifelse(.data$cycle, "driejaarlijks", "jaarlijks")),
     .data$stratum, gewicht = round(.data$gewicht, 3),
     aanwezig = round(.data$aanwezig, 1), .data$relevant, .data$onderzocht,
     .data$totaal, .data$bezoeken
-  ) %>%
+  ) |>
   write_vc(
     file = "stratum_gewicht", root = output_dir, optimize = FALSE,
     sorting = c("soort", "frequentie", "stratum"), strict = strict
@@ -128,17 +128,17 @@ linear_trend |>
 ```
 
 ```{r indices, results='asis', cache = FALSE, eval = TRUE}
-meta %>%
-  filter(!.data$composite, .data$status == "converged") %>%
-  arrange(.data$speciesgroup) %>%
-  distinct(.data$hash) %>%
-  pull(.data$hash) %>%
+meta |>
+  filter(!.data$composite, .data$status == "converged") |>
+  arrange(.data$speciesgroup) |>
+  distinct(.data$hash) |>
+  pull(.data$hash) |>
   sapply(
     function(id) {
       knit_expand("_soort.Rmd", id = id)
     }
-  ) %>%
+  ) |>
   paste(collapse = "\n") -> rmd
-knit(text = rmd, quiet = TRUE) %>%
+knit(text = rmd, quiet = TRUE) |>
   cat()
 ```

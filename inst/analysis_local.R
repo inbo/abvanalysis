@@ -15,9 +15,10 @@ prepare_dataset(
 base <- file.path("~", "n2kanalysis")
 project <- "abv"
 dir.create(file.path(base, project), recursive = TRUE, showWarnings = FALSE)
+base <- aws.s3::get_bucket(Sys.getenv("N2KBUCKET"), prefix = project, max = 1)
 script <- prepare_analysis(
-  repo = repo, base = base, project = project, docker = "inbobmk/rn2k:0.9",
-  dependencies = c("inbo/n2khelper@v0.5.0", "inbo/n2kanalysis@v0.3.2")
+  repo = repo, base = base, project = project, docker = "inbobmk/rn2k:dev-0.10",
+  dependencies = c("inbo/n2khelper@v0.5.0", "inbo/n2kanalysis@0.4.0")
 )
 
 writeLines(

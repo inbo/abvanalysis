@@ -2,7 +2,7 @@
 #' @inheritParams prepare_dataset
 #' @inheritParams git2rdata::write_vc
 #' @importFrom DBI dbGetQuery dbQuoteIdentifier dbQuoteString Id
-#' @importFrom dplyr %>% arrange count filter full_join inner_join mutate
+#' @importFrom dplyr arrange count filter full_join inner_join mutate
 #' row_number transmute
 #' @importFrom rlang .data
 #' @importFrom git2rdata prune_meta read_vc rm_data update_metadata write_vc
@@ -17,18 +17,18 @@ prepare_dataset_location <- function(
 
   # import sampling framework
   sampling_frame <- read_vc("sampling_frame", repo)
-  sampling_frame %>%
-    count(description = .data$Stratum) %>%
-    filter(!is.na(.data$description)) %>%
-    arrange(.data$description) %>%
+  sampling_frame |>
+    count(description = .data$Stratum) |>
+    filter(!is.na(.data$description)) |>
+    arrange(.data$description) |>
     mutate(description = as.character(.data$description)) -> new_strata
   if (inherits(strata, "try-error")) {
-    new_strata %>%
+    new_strata |>
       mutate(id = row_number()) -> strata
   } else {
-    strata %>%
-      full_join(new_strata, by = "description") %>%
-      arrange(.data$id) %>%
+    strata |>
+      full_join(new_strata, by = "description") |>
+      arrange(.data$id) |>
       transmute(
         .data$description,
         n = ifelse(is.na(.data$id), .data$n.y, .data$n.x),
@@ -54,16 +54,16 @@ prepare_dataset_location <- function(
     stage = TRUE
   )
 
-  strata %>%
-    select(stratum = .data$description, stratum_id = .data$id) %>%
+  strata |>
+    select(stratum = .data$description, stratum_id = .data$id) |>
     inner_join(
-      sampling_frame %>%
+      sampling_frame |>
         transmute(
           description = sprintf("ABV_%s", .data$ExternalCode),
           stratum = .data$Stratum
         ),
       by = c("stratum")
-    ) %>%
+    ) |>
     select(-.data$stratum) -> strata
 
   # import UTM squares
@@ -99,14 +99,14 @@ prepare_dataset_location <- function(
     dbQuoteIdentifier(
       origin, Id(scheme = db_scheme, table = "locations_location")
     )
-  ) %>%
-    dbGetQuery(conn = origin) %>%
-    inner_join(strata, by = "description") %>%
+  ) |>
+    dbGetQuery(conn = origin) |>
+    inner_join(strata, by = "description") |>
     mutate(
       datafield_id = get_field_id(
         repo = repo, table_name = "locations_location", field_name = "id"
       )
-    ) %>%
+    ) |>
     write_vc(
       file = file.path("location", "square"), root = repo,
       sorting = "description", stage = TRUE, strict = strict
@@ -156,13 +156,13 @@ prepare_dataset_location <- function(
     dbQuoteIdentifier(
       origin, Id(scheme = db_scheme, table = "locations_location")
     )
-  ) %>%
-    dbGetQuery(conn = origin) %>%
+  ) |>
+    dbGetQuery(conn = origin) |>
     mutate(
       datafield_id = get_field_id(
         repo = repo, table_name = "locations_location", field_name = "id"
       )
-    ) %>%
+    ) |>
     write_vc(
       file = file.path("location", "point"), root = repo, stage = TRUE,
       sorting = "description", strict = strict

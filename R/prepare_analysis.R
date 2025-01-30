@@ -92,7 +92,7 @@ prepare_analysis <- function(
     transmute(
       species_group_id = .data$speciesgroup_id,
       species = sprintf("%05i", .data$external_id),
-      family = as.character(.data$family) %>%
+      family = as.character(.data$family) |>
         replace_na("poisson"),
     ) |>
     arrange(.data$species_group_id) -> speciesgroup
@@ -135,7 +135,7 @@ prepare_analysis <- function(
       location_group = "Vlaanderen", species_group = .data$species_group_id,
       .data$frequency, .data$type, .data$fingerprint,
       data = map(.data$models, select, parent = "fingerprint")
-    ) %>%
+    ) |>
     unnest(cols = "data") -> meta_composite
   meta_composite |>
     select(-"fingerprint", fingerprint = "parent") |>

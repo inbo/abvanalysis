@@ -3,7 +3,7 @@
 #' @export
 #' @importFrom git2rdata prune_meta rm_data update_metadata write_vc
 #' @importFrom DBI dbGetQuery dbQuoteIdentifier dbQuoteString Id
-#' @importFrom dplyr %>% inner_join rename semi_join select group_by filter
+#' @importFrom dplyr inner_join rename semi_join select group_by filter
 #' mutate pull
 #' @importFrom tidyr nest
 #' @importFrom purrr map2 map_int
@@ -81,7 +81,7 @@ END"
           CAST(EXTRACT(YEAR FROM fv.start_date) || '-7-16' AS TIMESTAMP)"
           )
   ) |>
-    dbGetQuery(conn = origin) %>%
+    dbGetQuery(conn = origin) |>
     mutate(
       datafield_id = get_field_id(
         repo = repo, table_name = "fieldwork_sample", field_name = "id"
@@ -146,20 +146,20 @@ END"
       fv.start_date <=
           CAST(EXTRACT(YEAR FROM fv.start_date) || '-7-16' AS TIMESTAMP)"
     )
-  ) %>%
+  ) |>
     dbGetQuery(conn = origin) -> counts
-  counts %>%
-    semi_join(observations, by = c("sample_id" = "id")) %>%
+  counts |>
+    semi_join(observations, by = c("sample_id" = "id")) |>
     mutate(
       count = as.integer(count),
       datafield_id = get_field_id(
         repo = repo, table_name = "fieldwork_sample", field_name = "id"
       )
-    ) %>%
-    group_by(.data$species_id) %>%
-    nest() %>%
-    mutate(n = map_int(.data$data, nrow)) %>%
-    filter(.data$n >= min_observation) %>%
+    ) |>
+    group_by(.data$species_id) |>
+    nest() |>
+    mutate(n = map_int(.data$data, nrow)) |>
+    filter(.data$n >= min_observation) |>
     inner_join(
       file.path("species", "species") |>
         read_vc(root = repo) |>

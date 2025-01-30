@@ -203,7 +203,7 @@ bscols(
     id = "ref_year", label = "Referentiejaar", sharedData = index_year,
     group = ~reference, multiple = FALSE
   )
-) %>%
+) |>
   `class<-`(c(class(.), "htmlwidget"))
 ```
 
@@ -345,7 +345,7 @@ bscols(
     id = "ref_cycle", label = "Referentieperiode", sharedData = index_cycle,
     group = ~reference, multiple = FALSE
   )
-) %>%
+) |>
   `class<-`(c(class(.), "htmlwidget"))
 ```
 

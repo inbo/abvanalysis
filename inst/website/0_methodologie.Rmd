@@ -35,22 +35,22 @@ Sommige hokken werden slechts in een of twee jaar onderzocht (fig. \@ref(fig:ins
 Voor het onderscheid tussen mogelijk bruikbaar en voorlopig niet bruikbaar verwijzen we naar §\@ref(s:relevant).
 
 ```{r inspanning, fig.cap = "Overzicht van de effectieve monitoringsinspanning. Elk punt is een hok dat onderzocht is in een bepaald jaar. De horizontale lijnen verbinden het eerste en meest recente bezoek aan eenzelfde hok.", fig.height = 9.5}
-effort %>%
-  arrange(.data$year) %>%
-  group_by(.data$location) %>%
+effort |>
+  arrange(.data$year) |>
+  group_by(.data$location) |>
   transmute(
     .data$year, end = max(.data$year), year2 = lead(.data$year),
     year3 = lead(.data$year2), year4 = lead(.data$year3),
     year5 = lead(.data$year4), year6 = lead(.data$year5),
     year7 = lead(.data$year6)
-  ) %>%
-  slice(1) %>%
-  ungroup() %>%
+  ) |>
+  slice(1) |>
+  ungroup() |>
   arrange(
     .data$year, .data$end, .data$year2, .data$year3, .data$year4, .data$year5,
     .data$year6, .data$year7
-  ) %>%
-  rowid_to_column("hok") %>%
+  ) |>
+  rowid_to_column("hok") |>
   transmute(
     .data$location, hok = factor(.data$hok),
     bruikbaar = ((.data$year - 2007) %/% 3) < ((end - 2007) %/% 3),
@@ -58,7 +58,7 @@ effort %>%
       .data$bruikbaar, levels = c(TRUE, FALSE),
       labels = c("mogelijk", "voorlopig\nniet")
     )
-  ) %>%
+  ) |>
   inner_join(effort, by = "location") -> inspanning
 ggplot(inspanning, aes(x = year, y = hok, group = hok, colour = bruikbaar)) +
   geom_line(alpha = 0.2) +
@@ -73,8 +73,8 @@ ggplot(inspanning, aes(x = year, y = hok, group = hok, colour = bruikbaar)) +
 ```
 
 ```{r inspanning-hist, fig.cap = "Histogram van het aantal jaren waarin een hok onderzocht is opgesplitst per stratum."}
-inspanning %>%
-  count(stratum, location, bruikbaar) %>%
+inspanning |>
+  count(stratum, location, bruikbaar) |>
   ggplot(aes(x = n, fill = bruikbaar)) +
   geom_histogram(binwidth = 1) +
   facet_wrap(~stratum) +
@@ -96,7 +96,7 @@ De waarnemer documenteert deze wijziging zodat we in de toekomst steeds op dezel
 expand.grid(
   x = seq(1 / 4, by = 1 / 2, length = 2),
   y = seq(1 / 6, by = 1 / 3, length = 3)
-) %>%
+) |>
   ggplot(aes(x = x, y = y)) +
   geom_rect(
     data = tribble(~x, ~y, ~xend, ~yend, 0, 0, 1, 1),
@@ -149,14 +149,14 @@ Het negeren van een of twee irrelevante periodes kan er voor zorgen dat een hok 
 [^geometrisch]: Het meetkundig gemiddelde of geometrisch gemiddelde van $n$ getallen wordt verkregen door de getallen met elkaar te vermenigvuldigen en vervolgens van het product de n^de^ machtswortel te nemen. $$m=\left(\prod _{i=1}^{n}a_{i}\right)^{1/n}$$
 
 ```{r potentieel, fig.cap = "Aantal onderzochte hokken per stratum en per jaar waarbij we enkel rekening houden met hokken die in minstens twee verschillende driejarige cycli onderzocht zijn."}
-inspanning %>%
-  mutate(cyclus = (year - 2007) %/% 3) %>%
-  distinct(location, cyclus) %>%
-  count(location) %>%
-  filter(n >= 2) %>%
-  semi_join(x = inspanning, by = "location") %>%
-  count(year, stratum, name = "hokken") %>%
-  mutate(stratum = reorder(stratum, -hokken)) %>%
+inspanning |>
+  mutate(cyclus = (year - 2007) %/% 3) |>
+  distinct(location, cyclus) |>
+  count(location) |>
+  filter(n >= 2) |>
+  semi_join(x = inspanning, by = "location") |>
+  count(year, stratum, name = "hokken") |>
+  mutate(stratum = reorder(stratum, -hokken)) |>
   ggplot(aes(x = year, y = hokken, colour = stratum)) +
   geom_line() +
   scale_x_continuous(breaks = pretty) +
@@ -436,7 +436,7 @@ tribble(
   "mogelijke toename", "`?+`", "$L < l < R$ en $B < b$",
   "mogelijke afname",  "`?-`", "$l < L$ en $R < b < B$",
   "onduidelijk",       "`?`",  "$l < L$ en $B < b$"
-) %>%
+) |>
   kable(
     caption = "(ref:regels)", format = "pandoc", escape = FALSE, align = "lcc"
   )
