@@ -3,8 +3,8 @@
 #' @param formula the formula for the trend component
 #' @export
 #' @importFrom assertthat assert_that has_name is.string
-#' @importFrom dplyr across bind_cols bind_rows distinct group_by inner_join
-#' mutate rename select summarise
+#' @importFrom dplyr across bind_cols bind_rows distinct everything group_by
+#' inner_join mutate rename select summarise
 #' @importFrom rlang :=
 #' @importFrom stats model.matrix
 get_linear_lincomb <- function(
@@ -28,7 +28,7 @@ get_linear_lincomb <- function(
   (as.data.frame(mm) * all_weight$weight) |>
     mutate(ID = sprintf("linear_estimate_%02i", all_weight[[time_var]])) |>
     group_by(.data$ID) |>
-    summarise(across(.fns = sum)) -> mm
+    summarise(across(.cols = everything(), .fns = sum)) -> mm
   stratum_weights |>
     mutate("{time_var}" := 1) -> trend_weight # nolint: object_name_linter.
   mm_trend <- model.matrix(object = formula, trend_weight)
@@ -38,7 +38,7 @@ get_linear_lincomb <- function(
     mm_trend$`(Intercept)` <- 0
   }
   mm_trend |>
-    summarise(across(.fns = sum)) |>
+    summarise(across(.cols = everything(), .fns = sum)) |>
     mutate(ID = "linear_trend") |>
     bind_rows(mm) -> weights
   w_names <- weights$ID
