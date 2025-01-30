@@ -110,7 +110,9 @@ prepare_analysis <- function(
   display(verbose, "Prepare model composite")
 
   base_analysis |>
-    inner_join(raw_speciesgroup_species, by = "parent_id") |>
+    inner_join(
+      raw_speciesgroup_species, by = "parent_id", relationship = "many-to-many"
+    ) |>
     select(-"parent_id", -"species", species_group_id = "speciesgroup_id") |>
     mutate(species_group_id = as.character(.data$species_group_id)) |>
     nest(

@@ -48,7 +48,7 @@ select_relevant <- function(
   }
 
   read_vc(file, root = repo) |>
-    select(-.data$datafield_id) |>
+    select(-"datafield_id") |>
     left_join(x = observation, by = "sample_id") |>
     mutate(
       count = replace_na(.data$count, 0),

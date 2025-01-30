@@ -118,21 +118,21 @@ WHERE sg.name LIKE '%% (ABV)'",
   dbGetQuery(conn = origin) |>
     inner_join(
       speciesgroup |>
-        select(speciesgroup_id = .data$id, .data$external_id),
+        select(speciesgroup_id = "id", "external_id"),
       by = "external_id"
     ) |>
     inner_join(
       speciesgroup2 |>
-        select(species_id = .data$external_id, parent_id = .data$id),
+        select(species_id = "external_id", parent_id = "id"),
       by = "species_id"
     ) |>
     transmute(.data$speciesgroup_id, .data$parent_id, species = FALSE) |>
     bind_rows(
       species |>
-        select(external_id = .data$id, parent = .data$id) |>
+        select(external_id = "id", parent = "id") |>
         inner_join(
           speciesgroup2 |>
-            select(speciesgroup_id = .data$id, .data$external_id),
+            select(speciesgroup_id = "id", "external_id"),
           by = "external_id"
         ) |>
         transmute(

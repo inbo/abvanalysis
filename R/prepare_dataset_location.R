@@ -3,7 +3,7 @@
 #' @inheritParams git2rdata::write_vc
 #' @importFrom DBI dbGetQuery dbQuoteIdentifier dbQuoteString Id
 #' @importFrom dplyr arrange count filter full_join inner_join mutate
-#' row_number transmute
+#' row_number select transmute
 #' @importFrom rlang .data
 #' @importFrom git2rdata prune_meta read_vc rm_data update_metadata write_vc
 #' @export
@@ -55,7 +55,7 @@ prepare_dataset_location <- function(
   )
 
   strata |>
-    select(stratum = .data$description, stratum_id = .data$id) |>
+    select(stratum = "description", stratum_id = "id") |>
     inner_join(
       sampling_frame |>
         transmute(
@@ -64,7 +64,7 @@ prepare_dataset_location <- function(
         ),
       by = c("stratum")
     ) |>
-    select(-.data$stratum) -> strata
+    select(-"stratum") -> strata
 
   # import UTM squares
   sprintf("

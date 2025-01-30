@@ -327,7 +327,7 @@ read_relevant <- function(base, project, verbose = TRUE) {
         squares = n(), visits = sum(.data$visits), .groups = "drop"
       ) -> tmp
     tmp |>
-      select(-.data$visits) |>
+      select(-"visits") |>
       complete(
         .data$tmp, points = 1:6, fill = list(squares = 0)
       ) |>
@@ -348,7 +348,7 @@ read_relevant <- function(base, project, verbose = TRUE) {
         weight = str_remove(.data$tmp, ".*_") |>
           as.numeric()
       ) |>
-      select(-.data$tmp)
+      select(-"tmp")
   }) |>
     mutate(analysis = factor(.data$analysis))
 }

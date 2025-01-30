@@ -51,13 +51,13 @@ get_nonlinear_lincomb <- function(
     stratum = strata, to_s = strata
   ) |>
     filter(.data$from < .data$to, .data$stratum == .data$to_s) |>
-    select(-.data$to_s) |>
+    select(-"to_s") |>
     inner_join(time_steps, by = c(from = time_var)) |>
     mutate(rowname = paste0("index_", .data$label, "_")) |>
-    select(-.data$label) |>
+    select(-"label") |>
     inner_join(time_steps, by = c(to = time_var)) |>
     mutate(rowname = paste0(.data$rowname, .data$label)) |>
-    select(-.data$label) |>
+    select(-"label") |>
     pivot_longer(
       c("from", "to"), names_to = "direction", values_to = time_var
     ) |>
@@ -86,8 +86,8 @@ get_nonlinear_lincomb <- function(
   ) |>
     map(.x = stratum_weights$weight, .f = `*`) |>
     do.call(what = "cbind") -> trend_coef
-  select(year_effect, -.data$label) |>
-    bind_rows(select(indices, -.data$rowname)) |>
+  select(year_effect, -"label") |>
+    bind_rows(select(indices, -"rowname")) |>
     as.matrix() |>
     `row.names<-`(
       c(sprintf("estimate_%i", year_effect$label), indices$rowname)
