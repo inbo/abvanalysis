@@ -16,8 +16,8 @@
 #' left_join mutate pull select transmute
 #' @importFrom git2rdata verify_vc
 #' @importFrom methods slot
-#' @importFrom n2kanalysis display get_file_fingerprint n2k_manifest
-#' store_manifest_yaml
+#' @importFrom n2kanalysis display get_file_fingerprint manifest_yaml_to_bash
+#' n2k_manifest store_manifest_yaml
 #' @importFrom purrr map map_chr pmap_dfr
 #' @importFrom rlang .data
 #' @importFrom tidyr complete nest replace_na unnest
@@ -142,91 +142,12 @@ prepare_analysis <- function(
   meta_composite |>
     select(-"fingerprint", fingerprint = "parent") |>
     bind_rows(meta_composite) |>
-    nest(data = c("fingerprint", "parent")) |>
-    mutate(manifest = map(.data$data, n2k_manifest)) -> manifest_composite
-
-  base_analysis |>
-    anti_join(meta_composite, by = c("fingerprint" = "parent")) |>
-    transmute(.data$parent_id, .data$fingerprint, parent = NA_character_) |>
-    nest(data = c("fingerprint", "parent")) |>
-    pull(.data$data) |>
-    map(n2k_manifest) |>
-    c(manifest_composite$manifest) |>
-    map(
-      store_manifest_yaml, base = base, project = project, docker = docker,
+    n2k_manifest() |>
+    store_manifest_yaml(
+      base = base, project = project, docker = docker,
       dependencies = dependencies
-    )
-
-  manifest_composite |>
-    transmute(manifest = map(.data$manifest, slot, "Manifest")) |>
-    unnest(cols = .data$manifest) |>
-    mutate(parent = !is.na(.data$parent)) |>
-    distinct(.data$fingerprint, .data$parent) |>
-    arrange(.data$parent, .data$fingerprint) |>
-    pull(.data$fingerprint) -> models
-
-  manifests <- map_chr(manifest_composite$manifest, get_file_fingerprint)
-
-  args <- ", dependencies = FALSE, upgrade = \\\"never\\\", keep_source = FALSE"
-  docker_hash <- sha1(manifests)
-  sprintf(
-    "Rscript -e 'remotes::install_github(\\\"%s\\\"%s)'", dependencies, args
-  ) -> deps
-  sprintf(
-    "#!/bin/bash
-echo \"FROM %s
-RUN %s\" > Dockerfile
-docker build --pull --tag rn2k:%s .
-rm Dockerfile",
-    docker, paste(deps, collapse = " \\\n&&  "), docker_hash
-  ) -> init
-
-  if (inherits(base, "s3_bucket")) {
-    sprintf(
-      "echo \"model %i of %i\"
-docker run %s --name=%s rn2k:%s ./fit_model_aws.sh -b %s -p %s -m %s
-date
-docker stop --time 14400 %s
-date",
-      seq_along(models), length(models), "--rm -d --env-file ./env.list",
-      models, docker_hash, attr(base, "Name"), project, models, models
-    ) -> model_scripts
-
-    sprintf(
-      "echo \"manifest %i of %i\"
-docker run %s --name=%s rn2k:%s ./fit_model_aws.sh -b %s -p %s -m %s
-date
-docker stop --time 14400 %s
-date",
-      seq_along(manifests), length(manifests), "--rm -d --env-file ./env.list",
-      manifests, docker_hash, attr(base, "Name"), project,
-      paste0(manifests, ".manifest"), manifests
-    ) -> manifest_scripts
-  } else {
-    base <- normalizePath(base, winslash = "/")
-    if (missing(volume)) {
-      volume <- paste(base, base, "rw", sep = ":")
-    }
-    sprintf(
-      "echo \"model %i of %i\"
-docker run %s --name=%s -v %s rn2k:%s ./fit_model_file.sh -b %s -p %s -m %s
-date
-docker stop --time 14400 %s
-date",
-      seq_along(models), length(models), "--rm -d", models, volume, docker_hash,
-      base, project, models, models
-    ) -> model_scripts
-
-    sprintf(
-      "echo \"manifest %i of %i\"
-docker run %s --name=%s -v %s rn2k:%s ./fit_model_file.sh -b %s -p %s -m %s
-date
-docker stop --time 14400 %s
-date",
-      seq_along(manifests), length(manifests), "--rm -d", manifests, volume,
-      docker_hash, base, project, paste0(manifests, ".manifest"), manifests
-    ) -> manifest_scripts
-  }
-
-  return(list(init = init, models = model_scripts, manifest = manifest_scripts))
+    ) -> yaml
+  manifest_yaml_to_bash(
+    base = base, project = project, hash = basename(yaml)
+  )
 }
