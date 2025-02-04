@@ -8,21 +8,21 @@
 #' @export
 #' @importFrom dplyr count inner_join mutate select
 #' @importFrom git2rdata read_vc write_vc
-#' @importFrom n2kanalysis get_result
+#' @importFrom n2kanalysis get_result read_manifest
 #' @importFrom rlang .data
 #' @importFrom stats qnorm
 #' @importFrom stringr str_detect str_replace
 #' @importFrom utils file_test
 retrieve_results <- function(
-    base, project, source_repo, target_repo, verbose = TRUE, strict = TRUE
+  base, project, source_repo, target_repo, verbose = TRUE, strict = TRUE
 ) {
-  target_rds <- file.path(base, paste(project, "results.rds", sep = "_"))
-  if (file_test("-f", target_rds)) {
-    results <- readRDS(target_rds)
-  } else {
-    results <- get_result(file.path(base, project), verbose = verbose)
-    saveRDS(results, target_rds)
+  target_rds <- file.path(target_repo$path, "..", "inst", "results.rds")
+  if (!file_test("-f", target_rds)) {
+    read_manifest(base = base, project = project) |>
+      get_result(base = base, project = project, verbose = verbose) |>
+      saveRDS(file = target_rds)
   }
+  results <- readRDS(target_rds)
 
   read_vc(file.path("location", "stratum"), root = source_repo) |>
     write_vc(
