@@ -117,9 +117,8 @@ prepare_analysis <- function(
     mutate(species_group_id = as.character(.data$species_group_id)) |>
     nest(
       models = c(
-        .data$fingerprint, .data$status_fingerprint, .data$status,
-        .data$result_datasource, .data$first_imported_year,
-        .data$last_imported_year, .data$analysis_date
+        "fingerprint", "status_fingerprint", "status", "result_datasource",
+        "first_imported_year", "last_imported_year", "analysis_date"
       )
     ) |>
     arrange(.data$species_group_id, .data$frequency, .data$type) -> composite
@@ -145,7 +144,7 @@ prepare_analysis <- function(
     n2k_manifest() |>
     store_manifest_yaml(
       base = base, project = project, docker = docker,
-      dependencies = dependencies
+      dependencies = dependencies, overwrite = TRUE
     ) -> yaml
   manifest_yaml_to_bash(
     base = base, project = project, hash = basename(yaml)
