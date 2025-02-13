@@ -16,7 +16,8 @@
 retrieve_results <- function(
   base, project, source_repo, target_repo, verbose = TRUE, strict = TRUE
 ) {
-  target_rds <- file.path(target_repo$path, "..", "inst", "results.rds")
+  file.path(target_repo$path, "..", "inst", "results.rds") |>
+    normalizePath() -> target_rds
   if (!file_test("-f", target_rds)) {
     read_manifest(base = base, project = project) |>
       get_result(base = base, project = project, verbose = verbose) |>
@@ -24,14 +25,16 @@ retrieve_results <- function(
   }
   results <- readRDS(target_rds)
 
-  read_vc(file.path("location", "stratum"), root = source_repo) |>
+  file.path("location", "stratum") |>
+    read_vc(root = source_repo) |>
     write_vc(
       file = file.path("inst", "results", "stratum"), root = target_repo,
       sorting = "description", strict = strict
     )
 
   # overview of the effort
-  read_vc(file.path("observation", "visit"), root = source_repo) |>
+  file.path("observation", "visit") |>
+    read_vc(root = source_repo) |>
     inner_join(
       read_vc(file.path("location", "point"), root = source_repo),
       by = c("point_id" = "id")
@@ -52,6 +55,15 @@ retrieve_results <- function(
     write_vc(
       file = file.path("inst", "results", "effort"), root = target_repo,
       sorting = c("stratum", "location", "year"), strict = strict
+    )
+  file.path("inst", "results", "effort") |>
+    update_metadata(
+      root = target_repo, name = "effort", title = "Sampling effort",
+      field_description = c(
+        year = "year of the survey", location = "identifier of the location",
+        stratum = "name of the stratum",
+        visits = "number of visited point locations"
+      )
     )
 
   # analysis metadata
@@ -88,14 +100,41 @@ retrieve_results <- function(
       file = file.path("inst", "results", "meta"), root = target_repo,
       sorting = "analysis", strict = strict
     )
+  file.path("inst", "results", "meta") |>
+    update_metadata(
+      root = target_repo, name = "meta", title = "Metadata on the analyses",
+      field_description = c(
+        analysis = "Unique identifier of the analysis",
+        speciesgroup = "Name of the species or species group",
+        composite = "TRUE indicates a species group, FALSE a species",
+        cycle = "TRUE indicates a three year cycle, FALSE yearly cycle",
+        linear = "TRUE indicates a linear trend, FALSE a nonlinear trend",
+        family = "Statistical distribution used in the analysis",
+        status_fingerprint = "Status fingerprint of the analysis",
+        status = "Status of the analysis",
+        waic = "Wantabe-Akaike Information Criterion"
+      )
+    )
+
   results@AnalysisRelation |>
-    mutate(
-      analysis = factor(.data$analysis), parent = factor(.data$parent_analysis)
+    transmute(
+      analysis = factor(.data$analysis), parent = .data$parent_analysis
     ) |>
     write_vc(
       file = file.path("inst", "results", "parent"), root = target_repo,
       sorting = c("analysis", "parent"), strict = strict
     )
+  file.path("inst", "results", "parent") |>
+    update_metadata(
+      file = file.path("inst", "results", "parent"), root = target_repo,
+      name = "parent", title = "Parent-child links between analyses",
+      description = "Lists only analyses with at least one parent",
+      field_description = c(
+        analysis = "Identifier of the child analysis.",
+        parent = "Identifier of the parent analysis."
+      )
+    )
+
   # differences among year or cycle
   results@Contrast |>
     filter(str_detect(.data$description, "^index")) |>
@@ -122,6 +161,19 @@ retrieve_results <- function(
       file = file.path("inst", "results", "index"), root = target_repo,
       sorting = c("analysis", "reference", "alternative"), strict = strict
     )
+  file.path("inst", "results", "index") |>
+    update_metadata(
+      root = target_repo, name = "index", title = "Estimated indices",
+      field_description = c(
+        analysis = "Identifier of the analysis",
+        reference = "Year or period used as reference",
+        alternative = "Year of period compared with the reference",
+        estimate = "Estimate of the different on the log-scale",
+        lower_confidence_limit = "5% quantile of the distribution of the index",
+        upper_confidence_limit = "95% quantile of the distribution of the index"
+      )
+    )
+
   # estimated average count per year or cycle
   results@Contrast |>
     filter(str_detect(.data$description, "^estimate")) |>
@@ -146,6 +198,21 @@ retrieve_results <- function(
       file = file.path("inst", "results", "estimate"), root = target_repo,
       sorting = c("analysis", "year"), strict = strict
     )
+  file.path("inst", "results", "estimate") |>
+    update_metadata(
+      root = target_repo, name = "estimate",
+      title = "Estimate average number of bird per point",
+      field_description = c(
+        analysis = "Identifier of the analysis",
+        year = "Year or period of the estimate",
+        estimate = "Estimate on the log-scale",
+        lower_confidence_limit =
+          "5% quantile of the distribution on the log-scale",
+        upper_confidence_limit =
+          "95% quantile of the distribution on the log-scale"
+      )
+    )
+
   # trend in moving window
   results@Contrast |>
     filter(str_detect(.data$description, "^trend")) |>
@@ -172,6 +239,22 @@ retrieve_results <- function(
       file = file.path("inst", "results", "moving_trend"), root = target_repo,
       sorting = c("analysis", "window", "midpoint"), strict = strict
     )
+  file.path("inst", "results", "moving_trend") |>
+    update_metadata(
+      root = target_repo, name = "moving_trend",
+      title = "Trend for different moving windows",
+      field_description = c(
+        analysis = "Identifier of the analysis",
+        midpoint = "Year in the middle of the interval",
+        window = "Width of the interval as a number of years",
+        estimate = "Estimate on the log-scale",
+        lower_confidence_limit =
+          "5% quantile of the distribution on the log-scale",
+        upper_confidence_limit =
+          "95% quantile of the distribution on the log-scale"
+      )
+    )
+
   # linear trend
   results@Contrast |>
     filter(str_detect(.data$description, "^linear_trend")) |>
@@ -191,6 +274,20 @@ retrieve_results <- function(
       file = file.path("inst", "results", "linear_trend"), root = target_repo,
       sorting = "analysis", strict = strict
     )
+  file.path("inst", "results", "linear_trend") |>
+    update_metadata(
+      root = target_repo, name = "linear_trend",
+      title = "Slope of the linear trend",
+      field_description = c(
+        analysis = "Identifier of the analysis",
+        estimate = "Estimate on the log-scale",
+        lower_confidence_limit =
+          "5% quantile of the distribution on the log-scale",
+        upper_confidence_limit =
+          "95% quantile of the distribution on the log-scale"
+      )
+    )
+
   # estimate along linear trend
   results@Contrast |>
     filter(str_detect(.data$description, "^linear_estimate")) |>
@@ -214,6 +311,20 @@ retrieve_results <- function(
     write_vc(
       file = file.path("inst", "results", "linear_estimate"),
       root = target_repo, sorting = c("analysis", "year"), strict = strict
+    )
+  file.path("inst", "results", "linear_estimate") |>
+    update_metadata(
+      root = target_repo, name = "linear_estimate",
+      title = "Estimates along a linear trend",
+      field_description = c(
+        analysis = "Identifier of the analysis",
+        year = "Year of estimate, centered to the start of the analysis",
+        estimate = "Estimate on the log-scale",
+        lower_confidence_limit =
+          "5% quantile of the distribution on the log-scale",
+        upper_confidence_limit =
+          "95% quantile of the distribution on the log-scale"
+      )
     )
 
   # composite index
@@ -252,6 +363,22 @@ retrieve_results <- function(
       file = file.path("inst", "results", "composite_index"), strict = strict,
       root = target_repo, sorting = c("analysis", "reference", "alternative")
     )
+  file.path("inst", "results", "composite_index") |>
+    update_metadata(
+      root = target_repo, name = "composite_index",
+      title = "Indices by species group",
+      field_description = c(
+        analysis = "Identifier of the analysis",
+        reference = "Year or period used as reference",
+        alternative = "year or period to compare with the reference",
+        estimate = "Estimate on the log-scale",
+        lower_confidence_limit =
+          "5% quantile of the distribution on the log-scale",
+        upper_confidence_limit =
+          "95% quantile of the distribution on the log-scale"
+      )
+    )
+
   # trend in moving window
   results@Parameter |>
     filter(str_detect(.data$description, "^trend")) |>
@@ -286,11 +413,31 @@ retrieve_results <- function(
       root = target_repo, sorting = c("analysis", "window", "midpoint"),
       strict = strict
     )
+  file.path("inst", "results", "composite_moving_trend") |>
+    update_metadata(
+      root = target_repo, name = "composite_moving_trend",
+      title  = "Moving trend for the composite indices",
+      field_description = c(
+        analysis = "Identifier of the analysis",
+        midpoint = "Year in the middle of the interval",
+        window = "Width of the interval as a number of years",
+        estimate = "Estimate on the log-scale",
+        lower_confidence_limit =
+          "5% quantile of the distribution on the log-scale",
+        upper_confidence_limit =
+          "95% quantile of the distribution on the log-scale"
+      )
+    )
+
   # stratum weights
   read_relevant(base = base, project = project, verbose = verbose) |>
     write_vc(
       file = file.path("inst", "results", "stratum_weight"),
       root = target_repo, sorting = c("analysis", "stratum"), strict = strict
+    )
+  file.path("inst", "results", "stratum_weight") |>
+    update_metadata(
+      root = target_repo, name = "stratum_weight"
     )
   return(invisible(NULL))
 }
