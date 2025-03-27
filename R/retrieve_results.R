@@ -429,7 +429,6 @@ retrieve_results <- function(
       )
     )
 
-  # stratum weights
   read_relevant(base = base, project = project, verbose = verbose) |>
     write_vc(
       file = file.path("inst", "results", "stratum_weight"),

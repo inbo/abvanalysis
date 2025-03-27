@@ -24,7 +24,7 @@ read_relevant.character <- function(base, project, verbose = TRUE) {
 #' @importFrom purrr map_dfr
 #' @importFrom stringr str_subset
 #' @importFrom rlang .data
-read_relevant.manifest <- function(base, project, verbose = TRUE) {
+read_relevant.s3_bucket <- function(base, project, verbose = TRUE) {
   read_manifest(base = base, project = project) |>
     slot("Manifest") |>
     filter(is.na(.data$parent)) -> todo
@@ -39,7 +39,7 @@ read_relevant.manifest <- function(base, project, verbose = TRUE) {
     mutate(analysis = factor(.data$analysis))
 }
 
-#' @importFrom dplyr count group_by inner_join mutate select summarise
+#' @importFrom dplyr count group_by inner_join mutate n select summarise
 #' @importFrom n2kanalysis get_data get_file_fingerprint
 #' @importFrom stringr str_remove
 #' @importFrom rlang .data
