@@ -1,17 +1,21 @@
 ..generic:
-  git2rdata: 0.4.0
+  git2rdata: 0.5.1
   optimize: yes
   NA string: NA
   sorting:
   - stratum
   - location
   - year
-  hash: b72ed4a64614e110e30829820399c2981bae06cc
-  data_hash: 239da4527a53b3efa1c96326e0e1a959a93e2a14
+  hash: a389a963790e3e523740b2f1c8d98f8a6b10052c
+  data_hash: 46762dd2b07dd99619bdef354b8c4242d2710d45
+  name: effort
+  title: Sampling effort
 year:
   class: integer
+  description: year of the survey
 location:
   class: integer
+  description: identifier of the location
 stratum:
   class: factor
   labels:
@@ -29,5 +33,7 @@ stratum:
   - 5
   - 6
   ordered: no
+  description: name of the stratum
 visits:
   class: integer
+  description: number of visited point locations
