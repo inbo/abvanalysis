@@ -2,7 +2,7 @@
 title: "{{species}}"
 ---
 
-```{r setup-{{label}}}
+```{r setup}
 library(crosstalk)
 library(effectclass)
 library(git2rdata)
@@ -11,31 +11,31 @@ library(gt)
 library(plotly)
 library(tidyverse)
 conflicted::conflicts_prefer(dplyr::filter, dplyr::pull, plotly::layout)
+root <- system.file("results", package = "abvanalysis")
 if (interactive()) {
-  root <- file.path("..", "..", "..", "abv", "results")
   read_vc("meta", root) |>
     filter(.data$composite, .data$status == "converged") |>
     slice_sample(n = 1) -> this
   this_species <- this$speciesgroup
 } else {
-  root <- file.path("..", "..", "results")
   this_species <- "{{species}}"
 }
 threshold <- log(0.75)
 ```
 
-```{r load-data-{{label}}}
+```{r load-data}
 read_vc("meta", root) |>
   filter(.data$speciesgroup == this_species, , !.data$linear) |>
   select("analysis", "cycle", "status_fingerprint") -> meta
 paste0(
   "Wijzigingen tussen jaren voor %s. ",
   "De band geeft het [90%% geloofwaardigheidsinterval]",
-  "(../methodologie/voorstelling.html#sec-onzekerheid). ",
+  "(../methodologie/voorstelling.html#sec-onzekerheid) in stappen van 30%%. ",
   "De [referentielijnen]",
   "(../methodologie/voorstelling.html#sec-trendklasse) ",
   "zorgen voor de opdeling van de wijzigingen in [klassen]",
-  "(../methodologie/voorstelling.html#sec-trendklasse)."
+  "(../methodologie/voorstelling.html#sec-trendklasse). ",
+  "Beweeg met de muis over de grafiek om de indeling zichtbaar te maken."
 ) |>
   sprintf(as.character(this_species)) -> caption_year_index
 paste0(
@@ -45,14 +45,15 @@ paste0(
   "De [referentielijnen]",
   "(../methodologie/voorstelling.html#sec-trendklasse) ",
   "zorgen voor de opdeling van de wijzigingen in [klassen]",
-  "(../methodologie/voorstelling.html#sec-trendklasse)."
+  "(../methodologie/voorstelling.html#sec-trendklasse) in stappen van 30%%. ",
+  "Beweeg met de muis over de grafiek om de indeling zichtbaar te maken."
 ) |>
   sprintf(as.character(this_species)) -> caption_cycle_index
 meta |>
   filter(!.data$cycle) |>
   semi_join(x = read_vc("parent", root), by = "analysis") |>
   semi_join(
-    x = read_vc("meta", root), by = c("analysis" = "parent_analysis")
+    x = read_vc("meta", root), by = c("analysis" = "parent")
   ) |>
   pull(.data$speciesgroup) |>
   as.character() |>
@@ -70,7 +71,7 @@ De aangepaste grenswaarden zijn `r sprintf("%+.1f%%", 100 * exp(threshold) - 100
 
 ## Analyse per jaar
 
-```{r fig-year-change-{{label}}}
+```{r fig-year-change}
 #| warning: false
 #| fig-cap: !expr caption_year_index
 meta |>
@@ -128,7 +129,7 @@ voordien |>
         wijziging = "", interpretatie = "referentie"
       )
   ) -> jaarlijks
-range(jaarlijks$alternative) + c(-1, 1) -> bereik_x
+range(jaarlijks$reference) + c(-1, 1) -> bereik_x
 jaarlijks |>
   mutate(alternative = .data$alternative - 0.49999) |>
   bind_rows(
@@ -175,10 +176,13 @@ change_breaks(n = 5, extra = c(-threshold, threshold))(
 bscols(
   widths = c(10, 2),
   plot_ly(index_year, x = ~alternative, y = ~estimate) |>
-    add_fan(sd = ~sd, text = ~wijziging) |>
+    add_fan(
+      sd = ~sd, text = ~wijziging, hoverinfo = "text", step = 0.3,
+      name = "index", showlegend = FALSE
+    ) |>
     add_text(
       x = ~ref_x, y = ~ref_y, text = ~ref_text, textposition = ~textposition,
-      color = I(inbo_hoofd), hoverinfo = "none"
+      color = I(inbo_hoofd), hoverinfo = "none", showlegend = FALSE
     ) |>
     config(
       displaylogo = FALSE,
@@ -187,7 +191,7 @@ bscols(
       )
     ) |>
     layout(
-      title = this_species,
+      title = this_species, hovermode = "x unified",
       xaxis = list(title = list(font = list(size = 0)), range = bereik_x),
       yaxis = list(
         title = list(font = list(size = 0)), zerolinewidth = 1,
@@ -203,13 +207,13 @@ bscols(
     id = "ref_year", label = "Referentiejaar", sharedData = index_year,
     group = ~reference, multiple = FALSE
   )
-) |>
+) %>%
   `class<-`(c(class(.), "htmlwidget"))
 ```
 
 ## Analyse per driejarige cyclus
 
-```{r fig-cycle-change-{{label}}}
+```{r fig-cycle-change}
 #| warning: false
 #| fig-cap: !expr caption_cycle_index
 meta |>
@@ -317,10 +321,13 @@ change_breaks(n = 5, extra = c(-threshold, threshold))(
 bscols(
   widths = c(10, 2),
   plot_ly(index_cycle, x = ~alternative, y = ~estimate) |>
-    add_fan(sd = ~sd, text = ~wijziging) |>
+    add_fan(
+      sd = ~sd, text = ~wijziging, hoverinfo = "text", step = 0.3,
+      name = "index", showlegend = FALSE
+    ) |>
     add_text(
       x = ~ref_x, y = ~ref_y, text = ~ref_text, textposition = ~textposition,
-      color = I(inbo_hoofd), hoverinfo = "none"
+      color = I(inbo_hoofd), hoverinfo = "none", showlegend = FALSE
     ) |>
     config(
       displaylogo = FALSE,
@@ -329,7 +336,7 @@ bscols(
       )
     ) |>
     layout(
-      title = this_species,
+      title = this_species, hovermode = "x unified",
       xaxis = list(title = list(font = list(size = 0)), range = bereik_x),
       yaxis = list(
         title = list(font = list(size = 0)), zerolinewidth = 1,
@@ -345,13 +352,15 @@ bscols(
     id = "ref_cycle", label = "Referentieperiode", sharedData = index_cycle,
     group = ~reference, multiple = FALSE
   )
-) |>
+) %>%
   `class<-`(c(class(.), "htmlwidget"))
 ```
 
 ## Kenmerken van de analyses
 
-```{r tbl-hash-{{label}}}
+Het cijfermateriaal om de figuren te reproduceren is beschikbaar via de [download pagina](../methodologie/reproduceerbaarheid.html#downloadbaar-cijfermateriaal).
+
+```{r tbl-hash}
 #| tbl-cap: Data-hashes van de analyses in het kader van [traceerbaarheid](
 #|   ../methodologie/reproduceerbaarheid.html#sec-traceerbaarheid).
 meta |>
@@ -368,7 +377,7 @@ meta |>
   cols_width(analyse ~ px(20), status ~ px(20))
 ```
 
-```{js change-js-{{label}}}
+```{js change-js}
 function filter_default() {
   document.getElementById("ref_year").getElementsByClassName("selectized")[0].selectize.removeOption("");
   document.getElementById("ref_year").getElementsByClassName("selectized") 

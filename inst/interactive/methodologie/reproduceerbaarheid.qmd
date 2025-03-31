@@ -7,10 +7,10 @@ bibliography: ../references.bib
 library(effectclass)
 library(git2rdata)
 library(tidyverse)
+root <- system.file("results", package = "abvanalysis")
 if (interactive()) {
   output_dir <- file.path("..", "..", "..", "..", "abv", "web")
 } else {
-  root <- file.path("..", "..", "results")
   output_dir <- "../data"
   dir.create(output_dir, showWarnings = FALSE)
 }
@@ -91,13 +91,13 @@ indices |>
   select(indicator = "speciesgroup", "analysis") |>
   inner_join(
     read_vc("parent", root) |>
-      select("analysis", "parent_analysis"),
+      select("analysis", "parent"),
     by = "analysis"
   ) |>
   inner_join(
     read_vc("meta", root) |>
       select("analysis", soort = "speciesgroup"),
-    by = c("parent_analysis" = "analysis")
+    by = c("parent" = "analysis")
   ) |>
   add_count(.data$indicator) |>
   transmute(

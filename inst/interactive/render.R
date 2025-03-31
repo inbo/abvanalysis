@@ -1,53 +1,29 @@
 library(abvanalysis)
 library(git2rdata)
+library(keyring)
 library(knitr)
 library(quarto)
 library(tidyverse)
 conflicted::conflicts_prefer(dplyr::filter, dplyr::pull)
 n_head <- Inf
-results_folder <- "../../../abv/results"
-target_folder <- "../../../abv/quarto"
-system.file("extensions", package = "abvanalysis") |>
-  dirname() -> source_folder
-file.path(
-  target_folder, "_extensions", "inboqmd-report-website", "_extensions",
-  "flandersqmd-report-website"
-) |>
-  dir.create(showWarnings = FALSE, recursive = TRUE)
-
-# styling
-file.path(source_folder, "extensions", "inboqmd-report-website") |>
-  list.files(recursive = TRUE) -> to_do
-file.path(source_folder, "extensions", "inboqmd-report-website", to_do) |>
-  file.copy(
-    to = file.path(
-      target_folder, "_extensions", "inboqmd-report-website", to_do
-    ),
-    overwrite = TRUE
-  )
-file.path(source_folder, "extensions", "flandersqmd-report-website") |>
-  list.files(recursive = TRUE) -> to_do
-file.path(source_folder, "extensions", "flandersqmd-report-website", to_do) |>
-  file.copy(
-    to = file.path(
-      target_folder, "_extensions", "inboqmd-report-website", "_extensions",
-      "flandersqmd-report-website", to_do
-    ),
-    overwrite = TRUE
-  )
+results_folder <- system.file("results", package = "abvanalysis")
+source_folder <- system.file("interactive", package = "abvanalysis")
+target_folder <- key_get("quarto_folder", keyring = "abv")
+dir.create(target_folder, showWarnings = FALSE, recursive = TRUE)
 
 # methodology
 file.path(target_folder, "methodologie") |>
   dir.create(showWarnings = FALSE, recursive = TRUE)
-list.files(pattern = "\\.(bib|md)", full.names = TRUE) |>
+list.files(source_folder, pattern = "\\.(bib|md)", full.names = TRUE) |>
   file.copy(to = target_folder, overwrite = TRUE)
-list.files("methodologie", pattern = "\\.qmd", full.names = TRUE) |>
+file.path(source_folder, "methodologie") |>
+  list.files(pattern = "\\.qmd", full.names = TRUE) |>
   file.copy(to = file.path(target_folder, "methodologie"), overwrite = TRUE)
 
 # species
 file.path(target_folder, "soort") |>
   dir.create(showWarnings = FALSE, recursive = TRUE)
-list.files(pattern = "trends.qmd", full.names = TRUE) |>
+list.files(source_folder, pattern = "trends.qmd", full.names = TRUE) |>
   file.copy(
     to = file.path(target_folder, "soort", "index.qmd"), overwrite = TRUE
   )
@@ -66,9 +42,8 @@ for (i in seq_len(nrow(species))) {
   file.path(target_folder, species$output_file[i]) |>
     dirname() |>
     dir.create(showWarnings = FALSE)
-  knit_expand(
-    "species.qmd", species = species$species[i], label = species$label[i]
-  ) |>
+  file.path(source_folder, "species.qmd") |>
+    knit_expand(species = species$species[i], label = species$label[i]) |>
     writeLines(file.path(target_folder, species$output_file[i]))
 }
 
@@ -88,14 +63,14 @@ for (i in seq_len(nrow(composite))) {
   file.path(target_folder, composite$output_file[i]) |>
     dirname() |>
     dir.create(showWarnings = FALSE)
-  knit_expand(
-    "composite.qmd", species = composite$species[i], label = composite$label[i]
-  ) |>
+  file.path(source_folder, "composite.qmd") |>
+    knit_expand(species = composite$species[i], label = composite$label[i]) |>
     writeLines(file.path(target_folder, composite$output_file[i]))
 }
 
 # toc
-readLines("_quarto.yml") |>
+file.path(source_folder, "_quarto.yml") |>
+  readLines() |>
   c(
     "    - section: \"Indicatoren\"", "      contents:",
     sprintf(
@@ -114,13 +89,20 @@ readLines("_quarto.yml") |>
 
 if (
   !file_test("-f", file.path(target_folder, "cover.png")) &&
-  file_test("-f", "../website/cover.pdf")
+  file_test("-f", system.file("website/cover.pdf", package = "abvanalysis"))
 ) {
   requireNamespace("pdftools")
   pdftools::pdf_convert(
-    "../website/cover.pdf", format = "png", pages = 1, dpi = 770 * 25.4 / 210,
+    system.file("website/cover.pdf", package = "abvanalysis"), format = "png",
+    pages = 1, dpi = 770 * 25.4 / 210,
     filenames = file.path(target_folder, "cover.png")
   )
 }
 
-quarto_render(target_folder, use_freezer = TRUE, cache = TRUE, as_job = FALSE)
+old_wd <- getwd()
+on.exit(setwd(old_wd), add = TRUE)
+setwd(target_folder)
+system2(
+  "quarto", c("install extension inbo/flandersqmd-website@draft", "--no-prompt")
+)
+quarto_render(".", use_freezer = TRUE, cache = TRUE, as_job = FALSE)

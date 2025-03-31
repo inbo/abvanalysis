@@ -6,10 +6,8 @@ library(git2rdata)
 library(DT)
 library(tidyverse)
 threshold <- log(0.75)
+root <- system.file("results", package = "abvanalysis")
 if (interactive()) {
-  root <- file.path("..", "..", "..", "abv", "results")
-} else {
-  root <- file.path("..", "..", "results")
   this_species <- "{{species}}"
 }
 read_vc("meta", root) |>
@@ -100,7 +98,7 @@ trends |>
     escape = FALSE, filter = "bottom", rownames = NULL,
     options = list(
       language = list(
-        url = "//cdn.datatables.net/plug-ins/1.10.11/i18n/Dutch.json"
+        url = "https://cdn.datatables.net/plug-ins/1.10.11/i18n/Dutch.json"
       ),
       pageLength = 25
     )
@@ -118,7 +116,7 @@ trends |>
     escape = FALSE, filter = "bottom", rownames = NULL,
     options = list(
       language = list(
-        url = "//cdn.datatables.net/plug-ins/1.10.11/i18n/Dutch.json"
+        url = "https://cdn.datatables.net/plug-ins/1.10.11/i18n/Dutch.json"
       ),
       pageLength = 25
     )

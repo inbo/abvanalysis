@@ -1,4 +1,7 @@
-# Samenvatting
+---
+title: Samenvatting
+toc: false
+---
 
 Dit rapport publiceert de meest recente analyses op basis van het telwerk voor het project "Algemene Broedvogelmonitoring Vlaanderen" of kortweg ABV.
 Dit project is een gezamenlijk initiatief van het Instituut voor Natuur- en Bosonderzoek (INBO) en Natuurpunt Studie in samenwerking met de lokale vogelwerkgroepen. 

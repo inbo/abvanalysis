@@ -7,11 +7,7 @@ bibliography: ../references.bib
 library(git2rdata)
 library(INBOtheme)
 library(tidyverse)
-if (interactive()) {
-  root <- file.path("..", "..", "..", "..", "abv", "results")
-} else {
-  root <- file.path("..", "..", "results")
-}
+root <- system.file("results", package = "abvanalysis")
 strata <- read_vc("stratum", root)
 effort <- read_vc("effort", root)
 ```

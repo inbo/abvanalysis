@@ -2,7 +2,7 @@
 title: "{{species}}"
 ---
 
-```{r setup-{{label}}}
+```{r setup}
 library(crosstalk)
 library(effectclass)
 library(git2rdata)
@@ -11,14 +11,13 @@ library(gt)
 library(plotly)
 library(tidyverse)
 conflicted::conflicts_prefer(dplyr::filter, plotly::layout)
+root <- system.file("results", package = "abvanalysis")
 if (interactive()) {
-  root <- file.path("..", "..", "..", "abv", "results")
   read_vc("meta", root) |>
     filter(!.data$composite, .data$status == "converged") |>
     slice_sample(n = 1) -> this
   this_species <- this$speciesgroup
 } else {
-  root <- file.path("..", "..", "results")
   this_species <- "{{species}}"
 }
 threshold <- log(0.75)
@@ -33,7 +32,7 @@ trend_tekst <- function(x) {
 }
 ```
 
-```{r load-data-{{label}}}
+```{r load-data}
 read_vc("meta", root) |>
   filter(.data$speciesgroup == this_species) |>
   select("analysis", "cycle", "linear", "status_fingerprint", "waic") -> meta
@@ -41,34 +40,38 @@ paste0(
   "Evolutie van het gemodelleerde gemiddeld aantal waargenomen dieren op een ",
   "meetpunt per jaar voor %s tijdens de referentieperiode. ",
   "De band geeft het [90%% geloofwaardigheidsinterval]",
-  "(../methodologie/voorstelling.html#sec-onzekerheid)."
+  "(../methodologie/voorstelling.html#sec-onzekerheid) in stappen van 5%%. ",
+  "Beweeg met de muis over de grafiek om de cijfers zichtbaar te maken."
 ) |>
   sprintf(as.character(this_species)) -> caption_year_estimate
 paste0(
   "Evolutie van het gemodelleerde gemiddeld aantal waargenomen dieren op een ",
   "meetpunt per driejarige cyclus voor %s tijdens de referentieperiode. ",
   "De band geeft het [90%% geloofwaardigheidsinterval]",
-  "(../methodologie/voorstelling.html#sec-onzekerheid)."
+  "(../methodologie/voorstelling.html#sec-onzekerheid) in stappen van 5%%. ",
+  "Beweeg met de muis over de grafiek om de cijfers zichtbaar te maken."
 ) |>
   sprintf(as.character(this_species)) -> caption_cycle_estimate
 paste0(
   "Wijzigingen tussen jaren voor %s. ",
   "De band geeft het [90%% geloofwaardigheidsinterval]",
-  "(../methodologie/voorstelling.html#sec-onzekerheid). ",
+  "(../methodologie/voorstelling.html#sec-onzekerheid) in stappen van 30%%. ",
   "De [referentielijnen]",
   "(../methodologie/voorstelling.html#sec-trendklasse) ",
   "zorgen voor de opdeling van de wijzigingen in [klassen]",
-  "(../methodologie/voorstelling.html#sec-trendklasse)."
+  "(../methodologie/voorstelling.html#sec-trendklasse). ",
+  "Beweeg met de muis over de grafiek om de indeling zichtbaar te maken."
 ) |>
   sprintf(as.character(this_species)) -> caption_year_index
 paste0(
   "Wijzigingen tussen driejarige cycli voor %s. ",
   "De band geeft het [90%% geloofwaardigheidsinterval]",
-  "(../methodologie/voorstelling.html#sec-onzekerheid). ",
+  "(../methodologie/voorstelling.html#sec-onzekerheid) in stappen van 30%%. ",
   "De [referentielijnen]",
   "(../methodologie/voorstelling.html#sec-trendklasse) ",
   "zorgen voor de opdeling van de wijzigingen in [klassen]",
-  "(../methodologie/voorstelling.html#sec-trendklasse)."
+  "(../methodologie/voorstelling.html#sec-trendklasse). ",
+  "Beweeg met de muis over de grafiek om de indeling zichtbaar te maken."
 ) |>
   sprintf(as.character(this_species)) -> caption_cycle_index
 paste0(
@@ -144,12 +147,12 @@ meta |>
   ) -> trend_cycle
 ```
 
-## Analyse per jaar {#sec-jaarlijks-{{label}}}
+## Analyse per jaar {#sec-jaarlijks}
 
 Op basis van jaarlijkse gegevens zien we gemiddeld `r trend_tekst(trend_year$tekst)` `r trend_year$jaarlijks` per jaar of `r trend_year$looptijd` over de volledige looptijd van het meetnet.
 Deze trend is `r interpretatie$interpretatie[!interpretatie$cycle]`.
 
-```{r fig-year-estimate-{{label}}}
+```{r fig-year-estimate}
 #| fig-cap: !expr caption_year_estimate
 meta |>
   filter(!.data$cycle) |>
@@ -166,15 +169,16 @@ meta |>
     sd = .data$sd / 2 / qnorm(0.95)
   ) -> estimate_year
 plot_ly(estimate_year, x = ~year, y = ~estimate) |>
-  add_fan(sd = ~sd, link = "log", text = ~display) |>
+  add_fan(
+    sd = ~sd, link = "log", text = ~display, hoverinfo = "text", name = "index"
+  ) |>
   layout(
     xaxis = list(title = ""),
     yaxis = list(
       title = "gemiddeld aantal dieren per meetpunt",
       range = c(0, 1.1 * exp(max(estimate_year$upper_confidence_limit)))
     ),
-    title = this_species,
-    hoverlabel = list(bgcolor = inbo_lichtblauw, bordercolor = inbo_steun_blauw)
+    title = this_species, hovermode = "x unified"
   ) |>
   config(
     modeBarButtonsToRemove = list(
@@ -185,12 +189,13 @@ plot_ly(estimate_year, x = ~year, y = ~estimate) |>
   )
 ```
 
-```{r fig-year-change-{{label}}}
+```{r fig-year-change}
 #| warning: false
 #| fig-cap: !expr caption_year_index
 meta |>
   filter(!.data$cycle) |>
   semi_join(x = read_vc("index", root), by = "analysis") |>
+  select(-"analysis") |>
   mutate(
     interpretatie = classification(
       .data$lower_confidence_limit, .data$upper_confidence_limit,
@@ -232,18 +237,27 @@ nadien |>
       ucl = .data$upper_confidence_limit, percent = TRUE, sign = TRUE,
       change = TRUE, link = "log"
     )
-  ) -> voordien
+  ) |>
+  select(-"old") -> voordien
 voordien |>
   bind_rows(
     nadien,
     nadien |>
       distinct(.data$reference) |>
       mutate(
-        alternative = .data$reference, estimate = 0, lcl = 0, ucl = 0,
-        wijziging = "", interpretatie = "referentie"
+        alternative = .data$reference, estimate = 0, wijziging = "",
+        interpretatie = "referentie"
       )
   ) -> jaarlijks
-range(jaarlijks$alternative) + c(-1, 1) -> bereik_x
+range(jaarlijks$reference) + c(-1, 1) -> bereik_x
+c(
+  jaarlijks$lower_confidence_limit, threshold,
+  jaarlijks$upper_confidence_limit, -threshold
+) |>
+  range(na.rm = TRUE) -> bereik
+change_breaks(n = 5, extra = c(-threshold, threshold))(
+  bereik
+) -> deze_breaks
 jaarlijks |>
   mutate(alternative = .data$alternative - 0.49999) |>
   bind_rows(
@@ -254,11 +268,10 @@ jaarlijks |>
   arrange(.data$reference, .data$alternative) |>
   transmute(
     .data$reference, .data$alternative, .data$estimate,
-    .data$lower_confidence_limit, .data$upper_confidence_limit,
     sd = .data$upper_confidence_limit - .data$lower_confidence_limit,
     sd = .data$sd / 2 / qnorm(0.95),
     wijziging = sprintf(
-      "%.0f t.o.v. %i\n%s\n%s", round(.data$alternative), .data$reference,
+      "%.0f t.o.v. %i\n%s\n%s", .data$alternative, .data$reference,
       .data$wijziging, .data$interpretatie
     ) |>
       str_replace_all(".*\n\nreferentie", "referentie"),
@@ -273,27 +286,22 @@ jaarlijks |>
     ref_text = c(
       "toestand in", "belangrijke afname t.o.v.", "belangrijke toename t.o.v."
     ) |>
-      paste(.data$reference),
-    textposition = c("top left", "bottom left") |>
-      rep(n()) |>
-      head(n())
+      paste(head(.data$reference, 3)) |>
+      c(rep("", n() - 3)),
+    textposition = c("top left", "bottom left", "top left") |>
+      c(rep("", n() - 3))
   ) |>
   SharedData$new(key = ~key) -> index_year
-c(
-  index_year$data(withFilter = FALSE)$lower_confidence_limit, threshold,
-  index_year$data(withFilter = FALSE)$upper_confidence_limit, -threshold
-) |>
-  range(na.rm = TRUE) -> bereik
-change_breaks(n = 5, extra = c(-threshold, threshold))(
-  bereik
-) -> deze_breaks
 bscols(
   widths = c(10, 2),
-  plot_ly(index_year, x = ~alternative, y = ~estimate) |>
-    add_fan(sd = ~sd, text = ~wijziging) |>
+  plot_ly(index_year, x = ~alternative, y = ~estimate, text = ~wijziging) |>
+    add_fan(
+      sd = ~sd, text = ~wijziging, name = "index", step = 0.3,
+      showlegend = FALSE
+    ) |>
     add_text(
       x = ~ref_x, y = ~ref_y, text = ~ref_text, textposition = ~textposition,
-      color = I(inbo_hoofd), hoverinfo = "none"
+      color = I(inbo_hoofd), hoverinfo = "none", showlegend = FALSE
     ) |>
     config(
       displaylogo = FALSE,
@@ -312,23 +320,24 @@ bscols(
         type = "rect", x0 = 0, x1 = 1, xref = "paper", y0 = threshold,
         y1 = -threshold, line = list(width = 0), opacity = 0.1,
         fillcolor = "black", layer = "below"
-      )
+      ),
+      hovermode = "x unified"
     ),
   filter_select(
     id = "ref_year", label = "Referentiejaar", sharedData = index_year,
     group = ~reference, multiple = FALSE
   )
-) |>
+) %>%
   `class<-`(c(class(.), "htmlwidget"))
 ```
 
-## Analyse per driejarige cyclus {#sec-driejaarlijks-{{label}}}
+## Analyse per driejarige cyclus {#sec-driejaarlijks}
 
 Op basis van jaarlijkse gegevens zien we gemiddeld `r trend_tekst(trend_cycle$tekst)` `r trend_cycle$jaarlijks` per jaar of `r trend_cycle$looptijd` over de volledige looptijd van het meetnet.
 Deze trend is `r interpretatie$interpretatie[interpretatie$cycle]`.
 
-```{r fig-cycle-estimate-{{label}}}
-#| fig-cap: !expr caption_year_estimate
+```{r fig-cycle-estimate}
+#| fig-cap: !expr caption_cycle_estimate
 meta |>
   filter(.data$cycle) |>
   semi_join(x = read_vc("estimate", root), by = "analysis") |>
@@ -351,7 +360,9 @@ estimate_cycle |>
       mutate(year = .data$year + 1.49999)
   ) |>
   plot_ly(x = ~year, y = ~estimate) |>
-  add_fan(sd = ~sd, link = "log", text = ~display) |>
+  add_fan(
+    sd = ~sd, link = "log", text = ~display, hoverinfo = "text", name = "index"
+  ) |>
   layout(
     xaxis = list(
       title = "", tickvals = estimate_cycle$year,
@@ -361,8 +372,7 @@ estimate_cycle |>
       title = "gemiddeld aantal dieren per meetpunt",
       range = c(0, 1.1 * exp(max(estimate_cycle$upper_confidence_limit)))
     ),
-    title = this_species,
-    hoverlabel = list(bgcolor = inbo_lichtblauw, bordercolor = inbo_steun_blauw)
+    title = this_species, hovermode = "x unified"
   ) |>
   config(
     modeBarButtonsToRemove = list(
@@ -373,7 +383,7 @@ estimate_cycle |>
   )
 ```
 
-```{r fig-cycle-change-{{label}}}
+```{r fig-cycle-change}
 #| warning: false
 #| fig-cap: !expr caption_cycle_index
 meta |>
@@ -481,10 +491,13 @@ change_breaks(n = 5, extra = c(-threshold, threshold))(
 bscols(
   widths = c(10, 2),
   plot_ly(index_cycle, x = ~alternative, y = ~estimate) |>
-    add_fan(sd = ~sd, text = ~wijziging) |>
+    add_fan(
+      sd = ~sd, text = ~wijziging, hoverinfo = "text", step = 0.3,
+      name = "index", showlegend = FALSE
+    ) |>
     add_text(
       x = ~ref_x, y = ~ref_y, text = ~ref_text, textposition = ~textposition,
-      color = I(inbo_hoofd), hoverinfo = "none"
+      color = I(inbo_hoofd), hoverinfo = "none", showlegend = FALSE
     ) |>
     config(
       displaylogo = FALSE,
@@ -493,7 +506,7 @@ bscols(
       )
     ) |>
     layout(
-      title = this_species,
+      title = this_species, hovermode = "x unified",
       xaxis = list(title = list(font = list(size = 0)), range = bereik_x),
       yaxis = list(
         title = list(font = list(size = 0)), zerolinewidth = 1,
@@ -509,13 +522,15 @@ bscols(
     id = "ref_cycle", label = "Referentieperiode", sharedData = index_cycle,
     group = ~reference, multiple = FALSE
   )
-) |>
+) %>%
   `class<-`(c(class(.), "htmlwidget"))
 ```
 
 ## Kenmerken van de analyses
 
-```{r tbl-strata-{{label}}}
+Het cijfermateriaal om de figuren te reproduceren is beschikbaar via de [download pagina](../methodologie/reproduceerbaarheid.html#downloadbaar-cijfermateriaal).
+
+```{r tbl-strata}
 #| tbl-cap: !expr caption_strata
 read_vc("effort", root) |>
   distinct(.data$stratum, .data$location) |>
@@ -544,7 +559,7 @@ read_vc("effort", root) |>
   gt()
 ```
 
-```{r tbl-hash-{{label}}}
+```{r tbl-hash}
 #| tbl-cap: Data-hashes van de analyses in het kader van
 #|   [traceerbaarheid](
 #|   ../methodologie/reproduceerbaarheid.html#sec-traceerbaarheid).
@@ -563,7 +578,7 @@ meta |>
   cols_width(analyse ~ px(20), status ~ px(20))
 ```
 
-```{js change-js-{{label}}}
+```{js change-js}
 function filter_default() {
   document.getElementById("ref_year").getElementsByClassName("selectized")[0].selectize.removeOption("");
   document.getElementById("ref_year").getElementsByClassName("selectized") 
