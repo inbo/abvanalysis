@@ -40,7 +40,7 @@ Deze indicator is gebaseerd op volgende `r length(deze_soorten)` soorten: `r pas
 De indicator bestaat uit `r length(deze_soorten)` soorten.
 De aangepaste grenswaarden zijn `r sprintf("%+.1f%%", exp(deze_threshold) * 100 - 100)` en `r sprintf("%+.1f%%", exp(-deze_threshold) * 100 - 100)`.
 
-(ref:{{id}}-index) Wijzigingen t.o.v. de start van het meetnet voor `r soort_naam`. Zie §\@ref(s:onzekerheid) voor een verklaring van de intervallen en §\@ref(s:trendklasse) voor uitleg over de symbolen en referentielijnen.
+(ref:{{id}}-index) Wijzigingen t.o.v. de start van het meetnet voor `r soort_naam`. Zie §\@ref(s:onzekerheid) voor een verklaring van de intervallen en §\@ref(s:trendklasse) voor uitleg over de referentielijnen.
 
 ```{r {{id}}-wijziging-jaar-statisch, fig.cap = "(ref:{{id}}-index)", eval = nrow(deze_wijziging) > 0 && (interactive() || opts_knit$get("rmarkdown.pandoc.to") != "html"), warning = FALSE}
 deze_wijziging |>
@@ -166,7 +166,7 @@ ggplotly(p) |>
     )
 ```
 
-(ref:{{id}}-index-cyclus) Wijzigingen per driejarige cyclus voor `r soort_naam`. Zie §\@ref(s:onzekerheid) voor een verklaring van de intervallen en §\@ref(s:trendklasse) voor uitleg over de symbolen en referentielijnen.
+(ref:{{id}}-index-cyclus) Wijzigingen per driejarige cyclus voor `r soort_naam`. Zie §\@ref(s:onzekerheid) voor een verklaring van de intervallen en §\@ref(s:trendklasse) voor uitleg over de referentielijnen.
 
 ```{r {{id}}-wijziging-cyclus-statisch, fig.cap = "(ref:{{id}}-index-cyclus)", eval = nrow(deze_wijziging) > 0 && (interactive() || opts_knit$get("rmarkdown.pandoc.to") != "html"), warning = FALSE}
 deze_wijziging |>
@@ -201,7 +201,7 @@ ggplot(cyclus, aes(x = periode, y = estimate)) +
   scale_y_continuous(breaks = deze_breaks, labels = change_labels)
 ```
 
-(ref:{{id}}-raster) Paarsgewijze vergelijking tussen jaren voor `r soort_naam`.
+(ref:{{id}}-raster) Paarsgewijze vergelijking tussen jaren voor `r soort_naam`.  Uitleg van de symbolen in tabel \@ref(tab:regels).
 
 ```{r {{id}}-wijziging-jaar-alles2, fig.cap = "(ref:{{id}}-raster)", eval = output_format != "html" && nrow(deze_wijziging) > 0}
 deze_wijziging |>
@@ -227,7 +227,7 @@ deze_wijziging |>
   )
 ```
 
-(ref:{{id}}-raster3) Paarsgewijze vergelijking tussen driejarige cycli voor `r soort_naam`.
+(ref:{{id}}-raster3) Paarsgewijze vergelijking tussen driejarige cycli voor `r soort_naam`. Uitleg van de symbolen in tabel \@ref(tab:regels).
 
 ```{r {{id}}-wijziging-jaar-alles3, fig.cap = "(ref:{{id}}-raster3)", eval = output_format != "html" && nrow(deze_wijziging) > 0}
 deze_wijziging |>

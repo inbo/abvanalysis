@@ -47,7 +47,7 @@ effort |>
   slice(1) |>
   ungroup() |>
   arrange(
-    .data$year, .data$end, .data$year2, .data$year3, .data$year4, .data$year5,
+    .data$end, .data$year, .data$year2, .data$year3, .data$year4, .data$year5,
     .data$year6, .data$year7
   ) |>
   rowid_to_column("hok") |>
@@ -148,7 +148,7 @@ Het negeren van een of twee irrelevante periodes kan er voor zorgen dat een hok 
 
 [^geometrisch]: Het meetkundig gemiddelde of geometrisch gemiddelde van $n$ getallen wordt verkregen door de getallen met elkaar te vermenigvuldigen en vervolgens van het product de n^de^ machtswortel te nemen. $$m=\left(\prod _{i=1}^{n}a_{i}\right)^{1/n}$$
 
-```{r potentieel, fig.cap = "Aantal onderzochte hokken per stratum en per jaar waarbij we enkel rekening houden met hokken die in minstens twee verschillende driejarige cycli onderzocht zijn."}
+```{r potentieel, fig.cap = "Aantal onderzochte hokken per stratum en per jaar waarbij we enkel rekening houden met hokken die in minstens twee verschillende driejarige cycli onderzocht zijn.", message = FALSE}
 inspanning |>
   mutate(cyclus = (year - 2007) %/% 3) |>
   distinct(location, cyclus) |>
