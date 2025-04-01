@@ -26,12 +26,15 @@ Imports:
     tibble,
     tidyr
 Suggests: 
+    DT,
     effectclass,
+    gt,
     INBOmd,
     INBOtheme,
     knitr,
     pander,
     plotly,
+    quarto,
     rmarkdown,
     scales,
     tidyverse
