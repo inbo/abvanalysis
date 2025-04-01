@@ -1,5 +1,6 @@
 ---
 title: English abstract
+lang: en-GB
 ---
 
 This report publishes the most recent analyses based on the census work carried out for the project "Common Breeding Bird Survey Flanders".
