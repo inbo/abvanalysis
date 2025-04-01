@@ -8,7 +8,7 @@
 #' @importFrom git2rdata prune_meta read_vc rm_data update_metadata write_vc
 #' @export
 prepare_dataset_location <- function(
-    origin, repo, end_date, strict = TRUE, db_scheme = ""
+  origin, repo, end_date, strict = TRUE, db_scheme = ""
 ) {
   strata <- try(
     read_vc(file.path("location", "stratum"), root = repo), silent = TRUE

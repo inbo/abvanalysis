@@ -125,8 +125,8 @@ prepare_analysis_dataset <- function(
       hyper = list(theta = list(prior = \"pc.prec\", param = c(1, 0.01))))",
     "f(point, model = \"iid\",
       hyper = list(theta = list(prior = \"pc.prec\", param = c(1, 0.01))))"[
-        length(levels(dataset$point)) > 2 * length(levels(dataset$square))
-      ]
+      length(levels(dataset$point)) > 2 * length(levels(dataset$square))
+    ]
   )
 
   # analysis on data by year
@@ -178,8 +178,9 @@ prepare_analysis_dataset <- function(
       stratum_weights = stratum_weights, time_var = "cyear",
       label_var = "label", stratum_var = "stratum"
     ) -> lin_comb
-  c(base_effects,
-  "f(cyear, model = \"rw1\", replicate = as.integer(stratum),
+  c(
+    base_effects,
+    "f(cyear, model = \"rw1\", replicate = as.integer(stratum),
     hyper = list(theta = list(prior = \"pc.prec\", param = c(0.5, 0.01))))"
   ) |>
     paste(collapse = " + ") |>

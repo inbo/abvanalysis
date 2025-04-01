@@ -102,7 +102,7 @@ trends |>
       ),
       pageLength = 25
     )
-)
+  )
 ```
 
 
@@ -120,5 +120,5 @@ trends |>
       ),
       pageLength = 25
     )
-)
+  )
 ```

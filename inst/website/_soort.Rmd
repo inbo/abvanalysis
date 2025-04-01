@@ -68,8 +68,8 @@ Deze trend is `r deze_lineair$interpretatie[!deze_lineair$cycle]`.
 dit_aantal |>
   filter(!.data$cycle) |>
   mutate(
-    sd = (.data$upper_confidence_limit - .data$lower_confidence_limit) / 2
-      / qnorm(0.95),
+    sd = (.data$upper_confidence_limit - .data$lower_confidence_limit) / 2 /
+      qnorm(0.95),
     estimate = exp(.data$estimate),
     aantal = sprintf("%s in %i", .data$text_median, .data$year)
   ) |>
@@ -147,8 +147,8 @@ Deze trend is `r deze_lineair$interpretatie[deze_lineair$cycle]`.
 dit_aantal |>
   filter(.data$cycle) |>
   mutate(
-    sd = (.data$upper_confidence_limit - .data$lower_confidence_limit) / 2
-      / qnorm(0.95),
+    sd = (.data$upper_confidence_limit - .data$lower_confidence_limit) / 2 /
+      qnorm(0.95),
     estimate = exp(.data$estimate)
   ) -> cyclus_aantal
 ggplot(cyclus_aantal, aes(x = year, y = estimate)) +

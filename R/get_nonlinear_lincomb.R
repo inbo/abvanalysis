@@ -13,7 +13,7 @@
 #' @importFrom stats setNames
 #' @importFrom tidyr  expand_grid pivot_longer pivot_wider
 get_nonlinear_lincomb <- function(
-    dataset, stratum_weights, time_var, label_var, stratum_var
+  dataset, stratum_weights, time_var, label_var, stratum_var
 ) {
   assert_that(is.string(time_var), is.string(stratum_var), is.string(label_var))
   assert_that(

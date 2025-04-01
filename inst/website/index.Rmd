@@ -137,8 +137,8 @@ lapply(
   do.call(what = c) -> existing_citation
 cite_package <- function(x) {
   citation(ifelse(x == "R", "base", x)) |>
-  toBibtex() |>
-  str_replace("Manual\\{,", paste0("Manual\\{", x, ","))
+    toBibtex() |>
+    str_replace("Manual\\{,", paste0("Manual\\{", x, ","))
 }
 package_list |>
   map(cite_package) |>

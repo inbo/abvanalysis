@@ -89,7 +89,7 @@ file.path(source_folder, "_quarto.yml") |>
 
 if (
   !file_test("-f", file.path(target_folder, "cover.png")) &&
-  file_test("-f", system.file("website/cover.pdf", package = "abvanalysis"))
+    file_test("-f", system.file("website/cover.pdf", package = "abvanalysis"))
 ) {
   requireNamespace("pdftools")
   pdftools::pdf_convert(

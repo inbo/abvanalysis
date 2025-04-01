@@ -86,7 +86,7 @@ prepare_dataset_species <- function(
       origin, Id(scheme = db_scheme, table = "species_group")
     )
   ) |>
-  dbGetQuery(conn = origin) |>
+    dbGetQuery(conn = origin) |>
     mutate(
       description = gsub(" \\(.*\\)", "", .data$description),
       datafield_id = get_field_id(
@@ -115,7 +115,7 @@ WHERE sg.name LIKE '%% (ABV)'",
       origin, Id(scheme = db_scheme, table = "species_speciesgrouprelation")
     )
   ) |>
-  dbGetQuery(conn = origin) |>
+    dbGetQuery(conn = origin) |>
     inner_join(
       speciesgroup |>
         select(speciesgroup_id = "id", "external_id"),

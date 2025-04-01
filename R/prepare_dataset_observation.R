@@ -28,14 +28,14 @@ prepare_dataset_observation <- function(
       fv.start_date <= %s AND
       fs.not_counted = %s AND
       %s",
-          ifelse(
-            inherits(origin, "Microsoft SQL Server"),
-            "YEAR(fv.start_date)",
-            "EXTRACT(YEAR FROM fv.start_date)"
-          ),
-          ifelse(
-            inherits(origin, "Microsoft SQL Server"),
-            "CASE
+    ifelse(
+      inherits(origin, "Microsoft SQL Server"),
+      "YEAR(fv.start_date)",
+      "EXTRACT(YEAR FROM fv.start_date)"
+    ),
+    ifelse(
+      inherits(origin, "Microsoft SQL Server"),
+      "CASE
   WHEN
     fv.start_date < CAST(
       CAST(YEAR(fv.start_date) AS VARCHAR) + '-04-16' AS DATETIME
@@ -48,38 +48,38 @@ prepare_dataset_observation <- function(
     THEN 2
   ELSE 3
 END",
-            "CASE
+      "CASE
   WHEN fv.start_date <
     CAST(EXTRACT(YEAR FROM fv.start_date) || '-04-16' AS TIMESTAMP) THEN 1
   WHEN fv.start_date <
     CAST(EXTRACT(YEAR FROM fv.start_date) || '-06-01' AS TIMESTAMP) THEN 2
   ELSE 3
 END"
-          ),
-          dbQuoteIdentifier(
-            origin, Id(scheme = db_scheme, table = "projects_project")
-          ),
-          dbQuoteIdentifier(
-            origin, Id(scheme = db_scheme, table = "fieldwork_visit")
-          ),
-          dbQuoteIdentifier(
-            origin, Id(scheme = db_scheme, table = "fieldwork_sample")
-          ),
-          dbQuoteString(origin, as.character(end_date)),
-          ifelse(inherits(origin, "Microsoft SQL Server"), "0", "FALSE"),
-          ifelse(
-            inherits(origin, "Microsoft SQL Server"),
-            "CAST(
+    ),
+    dbQuoteIdentifier(
+      origin, Id(scheme = db_scheme, table = "projects_project")
+    ),
+    dbQuoteIdentifier(
+      origin, Id(scheme = db_scheme, table = "fieldwork_visit")
+    ),
+    dbQuoteIdentifier(
+      origin, Id(scheme = db_scheme, table = "fieldwork_sample")
+    ),
+    dbQuoteString(origin, as.character(end_date)),
+    ifelse(inherits(origin, "Microsoft SQL Server"), "0", "FALSE"),
+    ifelse(
+      inherits(origin, "Microsoft SQL Server"),
+      "CAST(
       CAST(YEAR(fv.start_date) AS VARCHAR) + '-3-1' AS DATETIME
     ) <= fv.start_date AND
     fv.start_date <= CAST(
       CAST(YEAR(fv.start_date) AS VARCHAR) + '-7-16' AS DATETIME
     )",
-            "CAST(EXTRACT(YEAR FROM fv.start_date) || '-3-1' AS TIMESTAMP) <=
+      "CAST(EXTRACT(YEAR FROM fv.start_date) || '-3-1' AS TIMESTAMP) <=
         fv.start_date AND
       fv.start_date <=
           CAST(EXTRACT(YEAR FROM fv.start_date) || '-7-16' AS TIMESTAMP)"
-          )
+    )
   ) |>
     dbGetQuery(conn = origin) |>
     mutate(

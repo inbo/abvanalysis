@@ -104,7 +104,7 @@ linear_trend |>
     `wijziging over de looptijd` = .data$looptijd
   ) |>
   kable(
-     caption = "(ref:driejaarlijkse-trends)", format = "pipe", escape = FALSE
+    caption = "(ref:driejaarlijkse-trends)", format = "pipe", escape = FALSE
   )
 ```
 

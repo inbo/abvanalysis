@@ -148,22 +148,22 @@ p <- ggplot(
   theme(axis.title = element_blank()) +
   scale_y_continuous(breaks = deze_breaks, labels = change_labels)
 ggplotly(p) |>
-    animation_opts(frame = 1000, transition = 0, redraw = TRUE) |>
-    animation_slider(
-      font = list(color = "black"),
-      currentvalue = list(
-        prefix = "geselecteerd referentiejaar: ",
-        font = list(color = inbo_hoofd), xanchor = "center"
-      )
-    ) |>
-    animation_button(label = "\u25B6") |>
-    plotly::config(
-      modeBarButtonsToRemove = list(
-        "lasso2d", "select2d", "autoScale2d", "hoverClosestCartesian",
-        "hoverCompareCartesian", "toggleSpikelines"
-      ),
-      displaylogo = FALSE
+  animation_opts(frame = 1000, transition = 0, redraw = TRUE) |>
+  animation_slider(
+    font = list(color = "black"),
+    currentvalue = list(
+      prefix = "geselecteerd referentiejaar: ",
+      font = list(color = inbo_hoofd), xanchor = "center"
     )
+  ) |>
+  animation_button(label = "\u25B6") |>
+  plotly::config(
+    modeBarButtonsToRemove = list(
+      "lasso2d", "select2d", "autoScale2d", "hoverClosestCartesian",
+      "hoverCompareCartesian", "toggleSpikelines"
+    ),
+    displaylogo = FALSE
+  )
 ```
 
 (ref:{{id}}-index-cyclus) Wijzigingen per driejarige cyclus voor `r soort_naam`. Zie §\@ref(s:onzekerheid) voor een verklaring van de intervallen en §\@ref(s:trendklasse) voor uitleg over de referentielijnen.
