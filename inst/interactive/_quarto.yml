@@ -22,6 +22,7 @@ format:
 flandersqmd:
   title: "Trends op basis van de Algemene Broedvogelmonitoring Vlaanderen (ABV)"
   subtitle: "Technisch achtergrondrapport voor de periode 2007-2024"
+  shorttitle: "abv-trends-2007-2024"
   author:
     - name:
         given: Thierry
@@ -64,9 +65,10 @@ flandersqmd:
   level: 2
   funder: Research Institute for Nature and Forest (INBO)
   rightsholder: Research Institute for Nature and Forest (INBO)
+  publisher: Instituut voor Natuur- en Bosonderzoek (INBO)
   community: inbo
   keywords: natuurindicator; trend; broedvogel; citizen science
-  publication_type: report
+  publication_type: publication-report
   reportnr: 8
   year: 2025
   doi: 10.21436/inbor.119461371
@@ -92,11 +94,11 @@ website:
       - text: Samenvatting
         file: samenvatting.md
       - text: Methodologie
-        file: methodologie/index.qmd
+        file: methodologie/inzameling.qmd
       - text: Samengestelde indices
         file: index/bos.qmd
       - text: Trends per soort
-        file: soort/index.qmd
+        file: soort/trends.qmd
     tools:
       - icon: download
         href: onkelinx_etal_2025_abv.pdf
@@ -120,10 +122,9 @@ website:
     - samenvatting.md
     - abstract.md
     - section: "Methodologie"
-      file: methodologie/index.qmd
       contents:
       - text: "Inzameling van de tellingen in het veld"
-        file: methodologie/index.qmd
+        file: methodologie/inzameling.qmd
       - text: "Verwerking van de gegevens"
         file: methodologie/verwerking.qmd
       - text: "Voorstelling van de gegevens"

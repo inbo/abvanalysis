@@ -25,7 +25,7 @@ file.path(target_folder, "soort") |>
   dir.create(showWarnings = FALSE, recursive = TRUE)
 list.files(source_folder, pattern = "trends.qmd", full.names = TRUE) |>
   file.copy(
-    to = file.path(target_folder, "soort", "index.qmd"), overwrite = TRUE
+    to = file.path(target_folder, "soort", "trends.qmd"), overwrite = TRUE
   )
 read_vc("meta", results_folder) |>
   filter(.data$status == "converged", !.data$composite) |>
@@ -77,9 +77,9 @@ file.path(source_folder, "_quarto.yml") |>
       "      - text: \"%s\"\n        file: %s", composite$speciesgroup,
       composite$output_file
     ),
-    "    - section: \"Soorten\"",  "      file: soort/index.qmd",
+    "    - section: \"Soorten\"",
     "      contents:",
-    "      - text: \"Overzicht\"\n        file: soort/index.qmd",
+    "      - text: \"Overzicht\"\n        file: soort/trends.qmd",
     sprintf(
       "      - text: \"%s\"\n        file: %s", species$speciesgroup,
       species$output_file
@@ -87,22 +87,23 @@ file.path(source_folder, "_quarto.yml") |>
   ) |>
   writeLines(file.path(target_folder, "_quarto.yml"))
 
+old_wd <- getwd()
+on.exit(setwd(old_wd), add = TRUE)
+setwd(target_folder)
 if (
   !file_test("-f", file.path(target_folder, "cover.png")) &&
     file_test("-f", system.file("website/cover.pdf", package = "abvanalysis"))
 ) {
   requireNamespace("pdftools")
+  system.file("website/cover.pdf", package = "abvanalysis") |>
+    file.copy("cover.pdf")
   pdftools::pdf_convert(
-    system.file("website/cover.pdf", package = "abvanalysis"), format = "png",
-    pages = 1, dpi = 770 * 25.4 / 210,
-    filenames = file.path(target_folder, "cover.png")
+    "cover.pdf", format = "png", pages = 1, dpi = 770 * 25.4 / 210,
+    filenames = "cover.png"
   )
+  file.remove("cover.pdf")
 }
 
-old_wd <- getwd()
-on.exit(setwd(old_wd), add = TRUE)
-setwd(target_folder)
-system2(
-  "quarto", c("install extension inbo/flandersqmd-website@draft", "--no-prompt")
-)
-quarto_render(".", use_freezer = TRUE, cache = TRUE, as_job = FALSE)
+"quarto" |>
+  system2(c("install extension inbo/flandersqmd-website@draft", "--no-prompt"))
+INBOmd::inbo_website(".")

@@ -49,6 +49,7 @@ spelling:
     - inst/interactive/samenvatting.md
     - inst/interactive/species.qmd
     - inst/interactive/trends.qmd
+    - inst/interactive/vbp_species.qmd
     - inst/website/0_methodologie.Rmd
     - inst/website/1_samengesteld.Rmd
     - inst/website/2_trend_per_soort.Rmd
