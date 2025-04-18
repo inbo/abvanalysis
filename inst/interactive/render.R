@@ -104,6 +104,5 @@ if (
   file.remove("cover.pdf")
 }
 
-"quarto" |>
-  system2(c("install extension inbo/flandersqmd-website@draft", "--no-prompt"))
+quarto_add_extension("inbo/flandersqmd-website@draft", no_prompt = TRUE)
 INBOmd::inbo_website(".")

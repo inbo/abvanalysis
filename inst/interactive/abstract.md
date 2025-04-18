@@ -1,6 +1,7 @@
+::: {lang=en-GB}
+
 ---
 title: English abstract
-lang: en-GB
 ---
 
 This report publishes the most recent analyses based on the census work carried out for the project "Common Breeding Bird Survey Flanders".
@@ -18,3 +19,5 @@ the second part presents a number of indicators based on trends of several types
 the third part describes the time series of individual species.
 In parts two and three, we limit ourselves to a standardised representation of the most relevant analysis results without an ecological interpretation.
 For an ecological interpretation of the results we refer to other publications such as [INBO Vogelnieuws](https://www.vlaanderen.be/inbo/publicaties/vogelnieuws).
+
+:::
