@@ -126,27 +126,22 @@ meta |>
   ) -> trend_year
 meta |>
   filter(.data$cycle) |>
-  semi_join(x = read_vc("linear_estimate", root), by = "analysis") |>
-  tail(-1) |>
-  nrow() -> looptijd
-meta |>
-  filter(.data$cycle) |>
   semi_join(x = read_vc("linear_trend", root), by = "analysis") |>
   transmute(
     tekst = classification(
-      .data$lower_confidence_limit * looptijd,
-      .data$upper_confidence_limit * looptijd, threshold = threshold
+      .data$lower_confidence_limit * looptijd / 3,
+      .data$upper_confidence_limit * looptijd / 3, threshold = threshold
     ),
     tekst = class_labels(lang = "nl")[.data$tekst],
     jaarlijks = format_ci(
-      .data$estimate, lcl = .data$lower_confidence_limit, sign = TRUE,
-      ucl = .data$upper_confidence_limit, percent = TRUE, link = "log",
+      .data$estimate / 3, lcl = .data$lower_confidence_limit / 3, sign = TRUE,
+      ucl = .data$upper_confidence_limit / 3, percent = TRUE, link = "log",
       change = TRUE
     ),
     looptijd = format_ci(
-      looptijd * .data$estimate, lcl = looptijd * .data$lower_confidence_limit,
-      ucl = looptijd * .data$upper_confidence_limit, percent = TRUE,
-      sign = TRUE, link = "log", change = TRUE
+      looptijd * .data$estimate / 3, sign = TRUE, link = "log", change = TRUE,
+      lcl = looptijd * .data$lower_confidence_limit / 3,
+      ucl = looptijd * .data$upper_confidence_limit / 3, percent = TRUE
     )
   ) -> trend_cycle
 ```

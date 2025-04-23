@@ -112,6 +112,15 @@ write_vc(
   sorting = c("indicator", "soort")
 )
 read_vc("composite_index", root) |>
+  rename(old = "reference", reference = "alternative") |>
+  rename(alternative = "old") |>
+  mutate(
+    estimate = -.data$estimate, old = -.data$lower_confidence_limit,
+    lower_confidence_limit = -.data$upper_confidence_limit,
+    upper_confidence_limit = .data$old
+  ) |>
+  select(-"old") |>
+  bind_rows(read_vc("composite_index", root)) |>
   inner_join(indices, by = "analysis") |>
   inner_join(
     soorten |>
@@ -135,11 +144,10 @@ read_vc("composite_index", root) |>
       percent = TRUE, sign = TRUE, change = TRUE
     ),
     across(c("schatting", "lcl", "ucl"), exp),
-    across(c("schatting", "lcl", "ucl"), round, 4),
     analyse = factor(.data$analysis), status = factor(.data$status_fingerprint)
   ) |>
   write_vc(
-    file = "samengesteld", root = "../data", optimize = FALSE,
+    file = "samengesteld", root = "../data", optimize = FALSE, digits = 4,
     sorting = c("indicator", "frequentie", "referentie", "naar")
   )
 ```
@@ -171,16 +179,16 @@ read_vc("estimate", root) |>
     frequentie = ifelse(.data$cycle, "driejaarlijks", "jaarlijks") |>
       factor(),
     jaar = .data$year, schatting = .data$estimate,
-    lcl = .data$lower_confidence_limit, ucl = .data$upper_confidence_limit,
+    lcl = .data$lower_confidence_limit,
+    ucl = .data$upper_confidence_limit,
     wijziging = format_ci(
       .data$schatting, lcl = .data$lcl, ucl = .data$ucl, link = "log"
     ),
     across(c("schatting", "lcl", "ucl"), exp),
-    across(c("schatting", "lcl", "ucl"), round, 4),
     analyse = factor(.data$analysis), status = factor(.data$status_fingerprint)
   ) |>
   write_vc(
-    file = "aantallen", root = "../data", optimize = FALSE,
+    file = "aantallen", root = "../data", optimize = FALSE, digits = 4,
     sorting = c("soort", "frequentie", "jaar")
   )
 read_vc("linear_trend", root) |>
@@ -191,6 +199,9 @@ read_vc("linear_trend", root) |>
       summarise(looptijd = max(.data$year) - 1),
     by = "analysis"
   ) |>
+  group_by(.data$speciesgroup) |>
+  mutate(looptijd = max(.data$looptijd)) |>
+  ungroup() |>
   inner_join(
     read_vc("meta", root) |>
       select("speciesgroup", "cycle", "linear", "waic") |>
@@ -205,29 +216,39 @@ read_vc("linear_trend", root) |>
       ),
     by = c("speciesgroup", "cycle")
   ) |>
+  mutate(period = ifelse(.data$cycle, 3, 1)) |>
   transmute(
     soort = .data$speciesgroup,
     frequentie = ifelse(.data$cycle, "driejaarlijks", "jaarlijks") |>
       factor(),
     jaarlijks = format_ci(
-      .data$estimate, lcl = .data$lower_confidence_limit, percent = TRUE,
-      ucl = .data$upper_confidence_limit, link = "log", change = TRUE,
-      sign = TRUE
+      .data$estimate / .data$period, link = "log", change = TRUE, sign = TRUE,
+      lcl = .data$lower_confidence_limit / .data$period, percent = TRUE,
+      ucl = .data$upper_confidence_limit / .data$period
     ),
-    looptijd = .data$looptijd * ifelse(.data$cycle, 3, 1),
     looptijd = format_ci(
-      .data$looptijd * .data$estimate, change = TRUE, sign = TRUE,
-      lcl = .data$looptijd * .data$lower_confidence_limit, percent = TRUE,
-      ucl = .data$looptijd * .data$upper_confidence_limit, link = "log"
+      .data$looptijd * .data$estimate / .data$period, change = TRUE,
+      lcl = .data$looptijd * .data$lower_confidence_limit / .data$period,
+      ucl = .data$looptijd * .data$upper_confidence_limit / .data$period,
+       sign = TRUE, link = "log", percent = TRUE
     ),
     .data$verloop,
     analyse = factor(.data$analysis), status = factor(.data$status_fingerprint),
   ) |>
   write_vc(
-    file = "lineare_trend", root = "../data", optimize = FALSE,
+    file = "lineare_trend", root = "../data", optimize = FALSE, digits = 4,
     sorting = c("soort", "frequentie")
   )
 read_vc("index", root) |>
+  rename(old = "reference", reference = "alternative") |>
+  rename(alternative = "old") |>
+  mutate(
+    estimate = -.data$estimate, old = -.data$lower_confidence_limit,
+    lower_confidence_limit = -.data$upper_confidence_limit,
+    upper_confidence_limit = .data$old
+  ) |>
+  select(-"old") |>
+  bind_rows(read_vc("index", root)) |>
   inner_join(read_vc("meta", root), by = "analysis") |>
   transmute(
     soort = factor(.data$speciesgroup),
@@ -245,11 +266,10 @@ read_vc("index", root) |>
       percent = TRUE, sign = TRUE, change = TRUE
     ),
     across(c("schatting", "lcl", "ucl"), exp),
-    across(c("schatting", "lcl", "ucl"), round, 4),
     analyse = factor(.data$analysis), status = factor(.data$status_fingerprint)
   ) |>
   write_vc(
-    file = "index", root = "../data", optimize = FALSE,
+    file = "index", root = "../data", optimize = FALSE, digits = 4,
     sorting = c("soort", "frequentie", "referentie", "naar")
   )
 read_vc("effort", root) |>
@@ -279,7 +299,7 @@ read_vc("effort", root) |>
   ) |>
   write_vc(
     file = "stratum_gewicht", root = "../data", optimize = FALSE,
-    sorting = c("soort", "stratum")
+    sorting = c("soort", "stratum"),
   )
 ```
 
