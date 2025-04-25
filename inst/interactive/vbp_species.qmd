@@ -50,42 +50,38 @@ paste0(
   "Evolutie van het gemodelleerde gemiddeld aantal waargenomen dieren op een ",
   "meetpunt per jaar voor %s tijdens de referentieperiode. ",
   "De band geeft het [90%% geloofwaardigheidsinterval]",
-  "(https://inbo.github.io/abv-rapport/2023/methodologie/",
-  "voorstelling.html#sec-onzekerheid) in stappen van 5%%."
+  "({{url}}/methodologie/voorstelling.html#sec-onzekerheid){target=\"_blank\"}",
+  " in stappen van 5%%."
 ) |>
   sprintf(as.character(this_species)) -> caption_year_estimate
 paste0(
   "Evolutie van het gemodelleerde gemiddeld aantal waargenomen dieren op een ",
   "meetpunt per driejarige cyclus voor %s tijdens de referentieperiode. ",
   "De band geeft het [90%% geloofwaardigheidsinterval]",
-  "(https://inbo.github.io/abv-rapport/2023/methodologie/",
-  "voorstelling.html#sec-onzekerheid) in stappen van 5%%."
+  "({{url}}/methodologie/voorstelling.html#sec-onzekerheid){target=\"_blank\"}",
+  " in stappen van 5%%."
 ) |>
   sprintf(as.character(this_species)) -> caption_cycle_estimate
 paste0(
   "Wijzigingen tussen jaren voor %s. ",
   "De band geeft het [90%% geloofwaardigheidsinterval]",
-  "(https://inbo.github.io/abv-rapport/2023/methodologie/",
-  "voorstelling.html#sec-onzekerheid) in stappen van 5%%. ",
+  "({{url}}/methodologie/voorstelling.html#sec-onzekerheid){target=\"_blank\"}",
+  " in stappen van 5%%. ",
   "De [referentielijnen]",
-  "(https://inbo.github.io/abv-rapport/2023/methodologie/",
-  "voorstelling.html#sec-trendklasse) ",
+  "({{url}}/methodologie/voorstelling.html#sec-trendklasse){target=\"_blank\"} ",
   "zorgen voor de opdeling van de wijzigingen in [klassen]",
-  "(https://inbo.github.io/abv-rapport/2023/methodologie/",
-  "voorstelling.html#sec-trendklasse)."
+  "({{url}}/methodologie/voorstelling.html#sec-trendklasse){target=\"_blank\"}."
 ) |>
   sprintf(as.character(this_species)) -> caption_year_index
 paste0(
   "Wijzigingen tussen driejarige cycli voor %s. ",
   "De band geeft het [90%% geloofwaardigheidsinterval]",
-  "(https://inbo.github.io/abv-rapport/2023/methodologie/",
-  "voorstelling.html#sec-onzekerheid) in stappen van 5%%. ",
+  "({{url}}/methodologie/voorstelling.html#sec-onzekerheid){target=\"_blank\"}",
+  " in stappen van 5%%. ",
   "De [referentielijnen]",
-  "(https://inbo.github.io/abv-rapport/2023/methodologie/",
-  "voorstelling.html#sec-trendklasse) ",
-  "zorgen voor de opdeling van de wijzigingen in [klassen]",
-  "(https://inbo.github.io/abv-rapport/2023/methodologie/",
-  "voorstelling.html#sec-trendklasse)."
+  "({{url}}/methodologie/voorstelling.html#sec-trendklasse){target=\"_blank\"}",
+  " zorgen voor de opdeling van de wijzigingen in [klassen]",
+  "({{url}}/methodologie/voorstelling.html#sec-trendklasse){target=\"_blank\"}."
 ) |>
   sprintf(as.character(this_species)) -> caption_cycle_index
 meta |>
@@ -146,8 +142,8 @@ meta |>
   ) -> trend_cycle
 ```
 
-Onderstaande grafieken zijn als [interactieve grafieken]({{url}}/soort/{{label}}.html) beschikbaar in de online versie het [rapport]({{url}}) over de toestand van de Algemene Broedvogels in Vlaanderen.
-In die versie kan je tevens het nodige cijfermateriaal [downloaden]({{url}}/methodologie/reproduceerbaarheid.html#downloadbaar-cijfermateriaal) om deze figuren te reproduceren.
+Onderstaande grafieken zijn als [interactieve grafieken]({{url}}/soort/{{label}}.html){target="_blank"} beschikbaar in de online versie het [rapport]({{url}}){target="_blank"} over de toestand van de Algemene Broedvogels in Vlaanderen.
+In die versie kan je tevens het nodige cijfermateriaal [downloaden]({{url}}/methodologie/reproduceerbaarheid.html#downloadbaar-cijfermateriaal){target="_blank"} om deze figuren te reproduceren.
 
 ## Analyse per jaar
 
