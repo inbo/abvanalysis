@@ -24,7 +24,7 @@ prepare_dataset_species <- function(
       WHERE
         pp.name = 'Algemene Broedvogelmonitoring (ABV)' AND
         fv.validation_status != -1 AND
-        fv.start_date <= %s AND fs.not_counted = %s AND ps.is_primary = 1
+        fv.start_date <= %s AND fs.not_counted = %s
       GROUP BY ps.species_id
     )
 
@@ -62,7 +62,7 @@ prepare_dataset_species <- function(
     ) -> species
   write_vc(
     species, file = file.path("species", "species"), root = repo,
-    sorting = "euring", stage = TRUE
+    sorting = "euring", strict = FALSE
   )
   update_metadata(
     file = file.path("species", "species"), root = repo, stage = TRUE,

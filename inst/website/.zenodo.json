@@ -1,0 +1,56 @@
+{
+  "description": "<p>Dit rapport publiceert de meest recente analyses op basis van het telwerk voor het project “Algemene Broedvogelmonitoring Vlaanderen” of kortweg ABV. Dit project is een gezamenlijk initiatief van het Instituut voor Natuur- en Bosonderzoek (INBO) en Natuurpunt Studie in samenwerking met de lokale vogelwerkgroepen. De samenwerking tussen deze organisaties staat garant voor een goede ondersteuning van en communicatie naar het vrijwilligersnetwerk door Natuurpunt Studie, en een degelijke professionele wetenschappelijke ondersteuning en dataverwerking door het INBO. Sinds 2016 maakt het integraal deel uit van het project Soortenmeetnetten, dat door INBO en Agentschap Natuur en Bos (ANB) wordt gefinancierd.<\/p> <p>Het project werd opgestart in 2007 en heeft als doelstelling het beschrijven van aantalsontwikkelingen van een set van ca. 80 algemene broedvogelsoorten in Vlaanderen. Zowel jaarlijkse schommelingen als meerjarige trends zijn daarbij interessante resultaten in functie van lokaal, regionaal en internationaal beleid.<\/p> <p>Dit rapport is bedoeld als een technisch achtergrondrapport. Het bestaat uit drie delen: het eerste deel beschrijft de methodiek van de verwerking en de weergave van de resultaten; het tweede deel geeft een aantal indicatoren gebaseerd op trends van meerdere soorten; het derde deel beschrijft de tijdreeks van individuele soorten. We beperken ons in delen twee en drie tot een gestandaardiseerde weergave van de meest relevante cijfers zonder ecologische interpretatie. Voor een ecologische interpretatie van de resultaten verwijzen we naar andere publicaties zoals <a href=\"https://www.vlaanderen.be/inbo/publicaties/vogelnieuws\">INBO Vogelnieuws<\/a>.<\/p>",
+  "title": "Trends op basis van de Algemene Broedvogelmonitoring Vlaanderen (ABV). Technisch achtergrondrapport voor de periode 2007-2024.",
+  "shorttitle": "ABV-trends-2007-2024",
+  "upload_type": "publication",
+  "embargo_date": "2025-03-20",
+  "access_right": "embargoed",
+  "publication_date": "2025-03-20",
+  "license": "CC-BY-4.0",
+  "language": "nld",
+  "doi": "10.21436/inbor.119461371",
+  "keywords": [
+    "natuurindicator; trend; broedvogel; citizen science"
+  ],
+  "publication_type": "publication-report",
+  "publisher": "Research Institute for Nature and Forest (INBO)",
+  "contributors": [
+    {
+      "name": "Onkelinx, Thierry",
+      "affiliation": "Research Institute for Nature and Forest (INBO)",
+      "orcid": "0000-0001-8804-4216",
+      "type": "contactperson"
+    },
+    {
+      "name": "Research Institute for Nature and Forest (INBO)",
+      "type": "rightsholder"
+    }
+  ],
+  "creators": [
+    {
+      "name": "Onkelinx, Thierry",
+      "affiliation": "Research Institute for Nature and Forest (INBO)",
+      "orcid": "0000-0001-8804-4216"
+    },
+    {
+      "name": "Dochy, Olivier",
+      "affiliation": "Research Institute for Nature and Forest (INBO)",
+      "orcid": "0009-0002-2822-5634"
+    },
+    {
+      "name": "Vermeersch, Glenn",
+      "affiliation": "Research Institute for Nature and Forest (INBO)",
+      "orcid": "0000-0002-9176-8917"
+    },
+    {
+      "name": "Devos, Koen",
+      "affiliation": "Research Institute for Nature and Forest (INBO)",
+      "orcid": "0000-0001-7265-6349"
+    }
+  ],
+  "communities": [
+    {
+      "identifier": "inbo"
+    }
+  ]
+}
