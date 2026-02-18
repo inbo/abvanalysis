@@ -184,6 +184,7 @@ prepare_analysis <- function(
 
   display(verbose, "Prepare manifests")
 
+
   composite |>
     transmute(
       location_group = "Vlaanderen",
@@ -194,8 +195,8 @@ prepare_analysis <- function(
       data = map(.data$models, select, parent = "fingerprint")
     ) |>
     unnest(cols = "data") -> meta_composite
-  meta_composite |>
-    select(-"fingerprint", fingerprint = "parent") |>
+  base_analysis |>
+    select("fingerprint") |>
     bind_rows(meta_composite) |>
     n2k_manifest() |>
     store_manifest_yaml(
