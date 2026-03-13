@@ -15,6 +15,7 @@ if (interactive()) {
   dir.create(output_dir, showWarnings = FALSE)
 }
 threshold <- log(0.75)
+format <- knitr::opts_knit$get("rmarkdown.pandoc.to")
 ```
 
 ## Versiebeheer
@@ -84,6 +85,7 @@ Elke dataset bestaat uit twee bestanden:
 
 ```{r samengesteld}
 #| results: hide
+#| eval: !expr format == "html"
 read_vc("meta", root) |>
   filter(.data$composite, .data$status == "converged") -> indices
 indices |>
@@ -109,7 +111,7 @@ indices |>
   ) -> soorten
 write_vc(
   soorten, "samengesteld_soorten", root = "../data", optimize = FALSE,
-  sorting = c("indicator", "soort")
+  sorting = c("indicator", "soort"), strict = FALSE
 )
 read_vc("composite_index", root) |>
   rename(old = "reference", reference = "alternative") |>
@@ -148,30 +150,51 @@ read_vc("composite_index", root) |>
   ) |>
   write_vc(
     file = "samengesteld", root = "../data", optimize = FALSE, digits = 4,
-    sorting = c("indicator", "frequentie", "referentie", "naar")
+    sorting = c("indicator", "frequentie", "referentie", "naar"), strict = FALSE
   )
 ```
 
-- **samengestelde indices:** [`samengesteld.csv`](../data/samengesteld.csv) en [`samengesteld.yml`](../data/samengesteld.yml).
-    - `indicator`: naam van de indicator;
-    - `frequentie`: index op basis van jaarlijkse of driejaarlijkse gegevens;
-    - `referentie`: het referentiejaartal;
-    - `naar`: het jaartal waarvoor we verhouding het referentiejaar berekenen;
-    - `schatting`: de geschatte verhouding van dit jaar t.o.v. het referentiejaar;
-    - `lcl` en `ucl`: de ondergrens en bovengrens van het 90% betrouwbaarheidsinterval rond de schatting;
-    - `klasse`: [interpretatie](voorstelling.html#sec-trendklasse) van de wijziging;
-    - `wijziging`: tekstuele beschrijving van de evolutie;
-    - `analyse`: data-hash van de analyse;
-    - `status`: data-hash van de status van de analyse
-- **soortenlijst samengestelde indices:** [`samengesteld_soorten.csv`](../data/samengesteld_soorten.csv) en [`samengesteld_soorten.yml`](../data/samengesteld_soorten.yml).
-    - `soort`: naam van de soort;
-    - `indicator`: naam van de samengestelde indicator;
-    - `ondergrens` en `bovengrens`: grenzen voor de opdeling van de effecten in [klassen](voorstelling.html#sec-trendklasse)
+
+```{r}
+#| label: link-html
+#| eval: !expr format == "html"
+lineair <- "[jaarlijkse wijziging](verwerking.html#sec-lineairetrend)"
+interpretatie <- "[interpretatie](voorstelling.html#sec-trendklasse)"
+stratum <- "[gewicht van het stratum](verwerking.html#sec-stratumgewicht)"
+```
+```{r}
+#| label: link-pdf
+#| eval: !expr format != "html"
+lineair <- "jaarlijkse wijziging (§[@-sec-lineairetrend])"
+interpretatie <- "interpretatie (§[@-sec-trendklasse])"
+stratum <- "gewicht van het stratum (§[@-sec-stratumgewicht])"
+```
+
+
+#### Samengestelde indices
+
+- `indicator`: naam van de indicator;
+- `frequentie`: index op basis van jaarlijkse of driejaarlijkse gegevens;
+- `referentie`: het referentiejaartal;
+- `naar`: het jaartal waarvoor we verhouding het referentiejaar berekenen;
+- `schatting`: de geschatte verhouding van dit jaar t.o.v. het referentiejaar;
+- `lcl` en `ucl`: de ondergrens en bovengrens van het 90% betrouwbaarheidsinterval rond de schatting;
+- `klasse`: `r interpretatie` van de wijziging;
+- `wijziging`: tekstuele beschrijving van de evolutie;
+- `analyse`: data-hash van de analyse;
+- `status`: data-hash van de status van de analyse
+
+#### Soortenlijst samengestelde indices
+
+- `soort`: naam van de soort;
+- `indicator`: naam van de samengestelde indicator;
+- `ondergrens` en `bovengrens`: grenzen voor de `r interpretatie` van de effecten in klassen.
 
 ### Individuele soorten
 
 ```{r soorten}
 #| results: hide
+#| eval: !expr format == "html"
 read_vc("estimate", root) |>
   inner_join(read_vc("meta", root), by = "analysis") |>
   transmute(
@@ -189,7 +212,7 @@ read_vc("estimate", root) |>
   ) |>
   write_vc(
     file = "aantallen", root = "../data", optimize = FALSE, digits = 4,
-    sorting = c("soort", "frequentie", "jaar")
+    sorting = c("soort", "frequentie", "jaar"), strict = FALSE
   )
 read_vc("linear_trend", root) |>
   inner_join(read_vc("meta", root), by = "analysis") |>
@@ -237,7 +260,7 @@ read_vc("linear_trend", root) |>
   ) |>
   write_vc(
     file = "lineare_trend", root = "../data", optimize = FALSE, digits = 4,
-    sorting = c("soort", "frequentie")
+    sorting = c("soort", "frequentie"), strict = FALSE
   )
 read_vc("index", root) |>
   rename(old = "reference", reference = "alternative") |>
@@ -270,7 +293,7 @@ read_vc("index", root) |>
   ) |>
   write_vc(
     file = "index", root = "../data", optimize = FALSE, digits = 4,
-    sorting = c("soort", "frequentie", "referentie", "naar")
+    sorting = c("soort", "frequentie", "referentie", "naar"), strict = FALSE
   )
 read_vc("effort", root) |>
   distinct(.data$stratum, .data$location) |>
@@ -299,44 +322,86 @@ read_vc("effort", root) |>
   ) |>
   write_vc(
     file = "stratum_gewicht", root = "../data", optimize = FALSE,
-    sorting = c("soort", "stratum"),
+    sorting = c("soort", "stratum"), strict = FALSE
   )
 ```
 
-- **gemiddeld aantal op een meetpunt:** [`aantallen.csv`](../data/aantallen.csv) en [`aantallen.yml`](../data/aantallen.yml).
-    - `soort`: Nederlandse soortnaam;
-    - `frequentie`: trend op basis van jaarlijkse of driejaarlijkse gegevens;
-    - `jaar`: jaartal of startjaar van de driejaarlijkse periode;
-    - `schatting`: schatting van het gemiddeld aantal dieren op een meetpunt;
-    - `lcl` en `ucl`: de ondergrens en bovengrens van het 90% betrouwbaarheidsinterval rond de schatting;
-    - `analyse`: data-hash van de analyse;
-    - `status`: data-hash van de status van de analyse
-- **lineaire trends:** [`lineaire_trend.csv`](../data/lineaire_trend.csv) en [`lineaire_trend.yml`](../data/lineaire_trend.yml).
-    - `soort`: Nederlandse soortnaam;
-    - `frequentie`: trend op basis van jaarlijkse of driejaarlijkse gegevens;
-    - `jaarlijks`: gemiddelde [jaarlijkse wijziging](verwerking.html#sec-lineairetrend);
-    - `looptijd`: gemiddelde wijziging over de looptijd van de tijdsreeks;
-    - `klasse`: [interpretatie](voorstelling.html#sec-trendklasse) van de wijziging;
-    - `verloop`: geeft aan of de trend lineair verloopt;
-    - `analyse`: data-hash van de analyse;
-    - `status`: data-hash van de status van de analyse
-- **indices:** [`index.csv`](../data/index.csv) en [`index.yml`](../data/index.yml).
-    - `soort`: naam van de indicator;
-    - `frequentie`: index op basis van jaarlijkse of driejaarlijkse gegevens;
-    - `referentie`: het referentiejaartal;
-    - `naar`: het jaartal waarvoor we verhouding het referentiejaar berekenen;
-    - `schatting`: de geschatte verhouding van dit jaar t.o.v. het referentiejaar;
-    - `lcl` en `ucl`: de ondergrens en bovengrens van het 90% betrouwbaarheidsinterval rond de schatting;
-    - `klasse`: [interpretatie](voorstelling.html#sec-trendklasse) van de wijziging;
-    - `wijziging`: tekstuele beschrijving van de evolutie;
-    - `analyse`: data-hash van de analyse;
-    - `status`: data-hash van de status van de analyse
-- **stratumgewichten:** [`stratum_gewicht.csv`](../data/stratum_gewicht.csv) en [`stratum_gewicht.yml`](../data/stratum_gewicht.yml).
-    - `soort`: Nederlandse soortnaam;
-    - `stratum`: naam van het stratum;
-    - `gewicht`: [gewicht van het stratum](verwerking.html#sec-stratumgewicht) voor deze soort;
-    - `aanwezig`: geschatte aantal hokken van het stratum waar de soort aanwezig is;
-    - `relevant`: aantal relevante hokken voor deze soort in het stratum;
-    - `onderzocht`: aantal onderzochte hokken in het stratum;
-    - `totaal`: totaal aantal hokken in het stratum;
-    - `bezoeken`: totaal aantal bezoeken aan de meetpunten in het stratum;
+#### Gemiddeld aantal op een meetpunt
+
+- `soort`: Nederlandse soortnaam;
+- `frequentie`: trend op basis van jaarlijkse of driejaarlijkse gegevens;
+- `jaar`: jaartal of startjaar van de driejaarlijkse periode;
+- `schatting`: schatting van het gemiddeld aantal dieren op een meetpunt;
+- `lcl` en `ucl`: de ondergrens en bovengrens van het 90% betrouwbaarheidsinterval rond de schatting;
+- `analyse`: data-hash van de analyse;
+- `status`: data-hash van de status van de analyse
+
+#### Lineaire trends
+
+- `soort`: Nederlandse soortnaam;
+- `frequentie`: trend op basis van jaarlijkse of driejaarlijkse gegevens;
+- `jaarlijks`: gemiddelde `r lineair`;
+- `looptijd`: gemiddelde wijziging over de looptijd van de tijdsreeks;
+- `klasse`: `r interpretatie` van de wijziging;
+- `verloop`: geeft aan of de trend lineair verloopt;
+- `analyse`: data-hash van de analyse;
+- `status`: data-hash van de status van de analyse
+
+#### Indices
+
+- `soort`: naam van de indicator;
+- `frequentie`: index op basis van jaarlijkse of driejaarlijkse gegevens;
+- `referentie`: het referentiejaartal;
+- `naar`: het jaartal waarvoor we verhouding het referentiejaar berekenen;
+- `schatting`: de geschatte verhouding van dit jaar t.o.v. het referentiejaar;
+- `lcl` en `ucl`: de ondergrens en bovengrens van het 90% betrouwbaarheidsinterval rond de schatting;
+- `klasse`: `r interpretatie` van de wijziging;
+- `wijziging`: tekstuele beschrijving van de evolutie;
+- `analyse`: data-hash van de analyse;
+- `status`: data-hash van de status van de analyse
+
+#### Stratumgewichten
+
+- `soort`: Nederlandse soortnaam;
+- `stratum`: naam van het stratum;
+- `gewicht`: `r stratum` voor deze soort;
+- `aanwezig`: geschatte aantal hokken van het stratum waar de soort aanwezig is;
+- `relevant`: aantal relevante hokken voor deze soort in het stratum;
+- `onderzocht`: aantal onderzochte hokken in het stratum;
+- `totaal`: totaal aantal hokken in het stratum;
+- `bezoeken`: totaal aantal bezoeken aan de meetpunten in het stratum;
+
+### Download bestanden
+
+::: {.content-visible when-format="html"}
+
+| informatie | gegevens | metadata |
+| ---------- | -------- | -------- |
+| samengestelde indices | [`samengesteld.csv`](../data/samengesteld.csv) | [`samengesteld.yml`](../data/samengesteld.yml) |
+| soortenlijst samengestelde indices | [`samengesteld_soorten.csv`](../data/samengesteld_soorten.csv) | [`samengesteld_soorten.yml`](../data/samengesteld_soorten.yml) |
+
+: Downloadbare bestanden met resultaten per samengestelde index {#tbl-download-composite}
+
+| informatie | gegevens | metadata |
+| ---------- | -------- | -------- |
+| gemiddeld aantal op een meetpunt| [`aantallen.csv`](../data/aantallen.csv) |  [`aantallen.yml`](../data/aantallen.yml) | 
+| lineaire trends| [`lineaire_trend.csv`](../data/lineaire_trend.csv) | [`lineaire_trend.yml`](../data/lineaire_trend.yml) |
+| indices | [`index.csv`](../data/index.csv) | [`index.yml`](../data/index.yml) |
+| stratumgewichten| [`stratum_gewicht.csv`](../data/stratum_gewicht.csv) | [`stratum_gewicht.yml`](../data/stratum_gewicht.yml) |
+
+: Downloadbare bestanden met resultaten per soort {#tbl-download-species}
+
+:::
+
+::: {.content-visible when-format="pdf"}
+
+```{r}
+readLines("../_quarto.yml") |>
+  grepv(pattern = "doi:") |>
+  gsub(pattern = ".*doi:\\s*", replacement = "https://doi.org/") -> doi
+```
+
+De downloadbare bestanden zijn beschikbaar in de online versie.
+Deze kan u bereiken via [`r doi`](`r doi`).
+
+:::

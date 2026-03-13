@@ -21,8 +21,8 @@ format:
 
 flandersqmd:
   title: "Trends op basis van de Algemene Broedvogelmonitoring Vlaanderen (ABV)"
-  subtitle: "Technisch achtergrondrapport voor de periode 2007-2024"
-  shorttitle: "abv-trends-2007-2024"
+  subtitle: "Technisch achtergrondrapport voor de periode 2007-2025"
+  shorttitle: "abv-trends-2007-2025"
   author:
     - name:
         given: Thierry
@@ -63,28 +63,39 @@ flandersqmd:
         - Instituut voor Natuur- en Bosonderzoek (INBO)
   entity: INBO
   level: 2
-  funder: Research Institute for Nature and Forest (INBO)
-  rightsholder: Research Institute for Nature and Forest (INBO)
+  funder:
+    - name:
+        given: Instituut voor Natuur- en Bosonderzoek (INBO)
+      email: info@inbo.be
+      ror: 00j54wy13
+  rightsholder:
+    - name:
+        given: Instituut voor Natuur- en Bosonderzoek (INBO)
+      email: info@inbo.be
+      ror: 00j54wy13
   publisher: Instituut voor Natuur- en Bosonderzoek (INBO)
+  license: CC-BY-4.0
   community: inbo
   keywords: natuurindicator; trend; broedvogel; citizen science
   publication_type: publication-report
-  reportnr: 8
-  year: 2025
-  doi: 10.21436/inbor.119461371
-  depotnr: D/2025/3241/066
+  reportnr: 14
+  year: 2026
+  doi: 10.21436/inbor.141312967
+  depotnr: D/2026/3241/066
   bibliography: references.bib
   link-citations: TRUE
   site: bookdown::bookdown_site
   cooperation:
     - Natuurpunt Studie vzw
     - Coxiestraat 11, 2800 Mechelen
-    - https://www.natuurpunt.be
-  cooperation_logo: natuurpunt.png
-  cover: cover.png
-  coverphoto: https://img4.vildaphoto.net/asset/l/35950.jpg
-  coverdescription: Mannetje roodborsttapuit _Saxicola rubicola_ zittend op een houten paal. (© Yves Adams, Vildaphoto)
-  embargo: 2025-03-20
+  cooperationurl: https://www.natuurpunt.be
+  cooperationlogo: natuurpunt.png
+  coverphoto: https://img3.vildaphoto.net/asset/l/186414.jpg
+  coverdescription: Halsbandparkiet _Psittacula krameri_ zittend op een tak. (© Yves Adams, Vildaphoto)
+  embargo: 2026-03-20
+  floatbarrier: section
+  hyphenation:
+    - do-cu-men-teert
 
 website:
   navbar:

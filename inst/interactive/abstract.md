@@ -1,4 +1,4 @@
-::: {lang=en-GB}
+:::: {lang=en-GB}
 
 ---
 title: English abstract
@@ -20,4 +20,12 @@ the third part describes the time series of individual species.
 In parts two and three, we limit ourselves to a standardised representation of the most relevant analysis results without an ecological interpretation.
 For an ecological interpretation of the results we refer to other publications such as [INBO Vogelnieuws](https://www.vlaanderen.be/inbo/publicaties/vogelnieuws).
 
+:::
+
+::: {.content-visible when-format="pdf"}
+\clearpage
+\phantomsection
+\addcontentsline{toc}{chapter}{\contentsname}
+\setcounter{tocdepth}{2}
+\tableofcontents
 :::

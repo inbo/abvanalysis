@@ -1,0 +1,368 @@
+---
+title: "{{species}}"
+---
+
+```{r setup}
+library(effectclass)
+library(git2rdata)
+library(INBOtheme)
+library(kableExtra)
+library(knitr)
+library(tidyverse)
+conflicted::conflicts_prefer(dplyr::filter, dplyr::pull)
+update_geom_defaults("point", list(size = 2))
+update_geom_defaults("text", list(size = 3))
+theme_set(theme_inbo(base_size = 8))
+root <- system.file("results", package = "abvanalysis")
+if (interactive()) {
+  read_vc("meta", root) |>
+    filter(.data$composite, .data$status == "converged") |>
+    slice_sample(n = 1) -> this
+  this_species <- this$speciesgroup
+} else {
+  this_species <- "{{species}}"
+}
+threshold <- log(0.75)
+c(rev(traffic_palette(7)), "grey65", "grey35", "grey50") |>
+  setNames(
+    c("++", "+", "+~", "~", "-~", "-", "--", "?+", "?-", "?")
+  ) -> kleurgradient
+kleurgradient[4] <- inbo_steun_blauw
+periode_labels <- function(x) {
+  sprintf("%i - %i", x + 2007, x + 2009)
+}
+cycle_breaks <- function(x) {
+  round(min(x)):round(max(x))
+}
+```
+
+```{r load-data}
+read_vc("meta", root) |>
+  filter(.data$speciesgroup == this_species, , !.data$linear) |>
+  select("analysis", "cycle", "status_fingerprint") -> meta
+meta |>
+  filter(!.data$cycle) |>
+  semi_join(x = read_vc("parent", root), by = "analysis") |>
+  semi_join(
+    x = read_vc("meta", root),
+    by = c("analysis" = "parent")
+  ) |>
+  pull(.data$speciesgroup) |>
+  as.character() |>
+  sort() -> specieslist
+str_replace_all(specieslist, " ", "-") |>
+  tolower() |>
+  sprintf(fmt = "[%2$s](../soort/%1$s.html)", specieslist) -> specieslist
+threshold <- threshold / sqrt(length(specieslist))
+meta |>
+  inner_join(x = read_vc("composite_index", root), by = "analysis") |>
+  group_by(.data$cycle) |>
+  slice_max(.data$alternative, n = 1, with_ties = TRUE) |>
+  filter(.data$reference %in% range(.data$reference)) |>
+  mutate(
+    estimate = ifelse(.data$cycle, 1 / 3, 1) * .data$estimate,
+    lcl = ifelse(.data$cycle, 1 / 3, 1) * .data$lower_confidence_limit,
+    ucl = ifelse(.data$cycle, 1 / 3, 1) * .data$upper_confidence_limit,
+    klasse = classification(.data$lcl, .data$ucl, threshold),
+    wijziging = format_ci(
+      exp(.data$estimate) - 1,
+      lcl = exp(.data$lcl) - 1,
+      ucl = exp(.data$ucl) - 1,
+      percent = TRUE,
+      sign = TRUE
+    )
+  ) |>
+  inner_join(
+    tribble(
+  ~tekst                  , ~y   , "stabiel"          ,  0   , "toename"       ,  1   , "afname" , -1 , "sterke toename" , 1.5 ,
+  "sterke afname"     , -1.5 , "matige toename"   ,  0.5 , "matige afname" , -0.5 ,
+  "mogelijke toename" ,  0.5 , "mogelijke afname" , -0.5 , "onduidelijk"   ,  0
+) |>
+  mutate(
+    s = c(rep(0.25, 7), 0.5, 0.5, 1),
+    lcl = qnorm(0.05, .data$y, .data$s),
+    ucl = qnorm(0.95, .data$y, .data$s)
+  ) |>
+    transmute(.data$tekst, klasse = classification(.data$lcl, .data$ucl, 1)),
+    by = "klasse"
+  ) |>
+  mutate(
+    .data$cycle,
+    verschil = sprintf(
+      "De toestand in %s verschilt met %s t.o.v. %s (%s).",
+      ifelse(
+        .data$cycle,
+        sprintf("de periode %i-%i", .data$alternative, .data$alternative + 2),
+        .data$alternative
+      ),
+      .data$wijziging,
+      ifelse(
+        .data$cycle,
+        sprintf("de periode %i-%i", .data$reference, .data$reference + 2),
+        .data$reference
+      ),
+      .data$tekst
+    )
+  ) |>
+  summarise(
+    verschil = paste(.data$verschil, collapse = "\n"), .groups = "drop"
+  ) -> dit_verschil
+```
+
+## Samenstelling van de index
+
+Deze index is gebaseerd op volgende `r length(specieslist)` soorten: `r paste(specieslist, collapse = ", ")`.
+De aangepaste grenswaarden zijn `r sprintf("%+.1f%%", 100 * exp(threshold) - 100)` en  `r sprintf("%+.1f%%", 100 * exp(-threshold) - 100)`.
+
+## Analyse per jaar {#sec-jaar-{{label}}}
+
+`r dit_verschil$verschil[!dit_verschil$cycle]`
+
+```{r}
+#| label: fig-year-change
+#| warning: false
+#| fig-cap: Wijzigingen t.o.v. het referentiejaar 2007 voor {{species}}.
+#|   De band geeft het 90% geloofwaardigheidsinterval (§[-@sec-onzekerheid]) in
+#|   stappen van 5%.
+#|   De referentielijnen (§[-@sec-trendklasse]) zorgen voor de opdeling van de
+#|   wijzigingen in klassen.
+#|   Gebruik deze figuur om de wijzigingen t.o.v. het referentiejaar 2007 in te
+#|   schatten.
+meta |>
+  filter(!.data$cycle) |>
+  semi_join(x = read_vc("composite_index", root), by = "analysis") -> nadien
+nadien |>
+  mutate(
+    old = .data$reference,
+    reference = .data$alternative,
+    alternative = .data$old,
+    estimate = -.data$estimate,
+    old = .data$lower_confidence_limit,
+    lower_confidence_limit = -.data$upper_confidence_limit,
+    upper_confidence_limit = -.data$old
+  ) |>
+  bind_rows(nadien) |>
+  mutate(
+    interpretatie = classification(
+      .data$lower_confidence_limit,
+      .data$upper_confidence_limit,
+      threshold = threshold
+    )
+  ) -> jaarlijks
+nadien |>
+  filter(.data$reference == min(.data$reference)) -> oldest_ref
+change_breaks(n = 4, extra = c(threshold, -threshold))(
+  c(oldest_ref$lower_confidence_limit, oldest_ref$upper_confidence_limit)
+) -> deze_breaks
+oldest_ref |>
+  mutate(sd = (.data$upper_confidence_limit - .data$estimate) / qnorm(0.975)) |>
+  ggplot(aes(x = alternative, y = estimate)) +
+  annotate(
+    geom = "rect",
+    xmin = -Inf,
+    xmax = Inf,
+    ymin = threshold,
+    ymax = -threshold,
+    alpha = 0.2,
+    fill = inbo_grijs
+  ) +
+  geom_hline(yintercept = 0) +
+  stat_fan(aes(link_sd = sd), geom = "rect") +
+  annotate(
+    geom = "text",
+    x = Inf,
+    y = 0,
+    hjust = 1,
+    vjust = -0.1,
+    label = "toestand in 2007",
+    colour = inbo_hoofd
+  ) +
+  annotate(
+    geom = "text",
+    x = Inf,
+    y = threshold,
+    hjust = 1,
+    vjust = 1,
+    label = "belangrijke afname t.o.v. 2007",
+    colour = inbo_hoofd
+  ) +
+  annotate(
+    geom = "text",
+    x = Inf,
+    y = -threshold,
+    hjust = 1,
+    vjust = 0,
+    label = "belangrijke toename t.o.v. 2007",
+    colour = inbo_hoofd
+  ) +
+  theme(axis.title = element_blank()) +
+  scale_y_continuous(breaks = deze_breaks, labels = change_labels)
+```
+
+```{r}
+#| label: fig-year-matrix
+#| fig.cap: Interpretatie van het verschil van een bepaald jaar (kolom) t.o.v.
+#|   een bepaald referentiejaar (rij) voor {{species}}.
+#|   Uitleg van de symbolen in tabel @tbl-regels.
+#|   Gebruik deze figuur om het verschil tussen twee jaren in te schatten.
+#|   Zie §[-@sec-paarsgewijs] voor meer uitleg over deze figuur.
+ggplot(jaarlijks, aes(x = alternative, y = reference, label = interpretatie)) +
+  geom_point(aes(colour = interpretatie), size = 4, show.legend = FALSE) +
+  scale_y_continuous("referentie") +
+  scale_colour_manual(values = kleurgradient) +
+  geom_text(
+    aes(label = interpretatie),
+    hjust = 0.5,
+    vjust = 0.5,
+    colour = "white",
+    size = 2
+  ) +
+  coord_fixed() +
+  theme(
+    axis.title.x = element_blank(),
+    axis.text.x = element_text(angle = 90, vjust = 0.5)
+  )
+```
+
+## Analyse per driejarige cyclus {#sec-cyclus-{{label}}}
+
+`r dit_verschil$verschil[dit_verschil$cycle]`
+
+```{r}
+#| label: fig-cyle-change
+#| warning: false
+#| fig-cap: Wijzigingen t.o.v. de referentieperiode 2007-2009 voor {{species}}.
+#|   De band geeft het 90% geloofwaardigheidsinterval (§[-@sec-onzekerheid]) in
+#|   stappen van 5%.
+#|   De referentielijnen (§[-@sec-trendklasse]) zorgen voor de opdeling van de
+#|   wijzigingen in klassen.
+#|   Gebruik deze figuur om de wijzigingen t.o.v. het referentiejaar 2007 in te
+#|   schatten.
+meta |>
+  filter(.data$cycle) |>
+  semi_join(x = read_vc("composite_index", root), by = "analysis") |>
+  mutate(across(c("reference", "alternative"), function(x) {
+    (x - 2007) %/% 3
+  })) -> nadien
+nadien |>
+  mutate(
+    old = .data$reference,
+    reference = .data$alternative,
+    alternative = .data$old,
+    estimate = -.data$estimate,
+    old = .data$lower_confidence_limit,
+    lower_confidence_limit = -.data$upper_confidence_limit,
+    upper_confidence_limit = -.data$old
+  ) |>
+  bind_rows(nadien) |>
+  mutate(
+    interpretatie = classification(
+      .data$lower_confidence_limit,
+      .data$upper_confidence_limit,
+      threshold = threshold
+    )
+  ) -> jaarlijks
+nadien |>
+  filter(.data$reference == min(.data$reference)) -> oldest_ref
+change_breaks(n = 4, extra = c(threshold, -threshold))(
+  c(oldest_ref$lower_confidence_limit, oldest_ref$upper_confidence_limit)
+) -> deze_breaks
+oldest_ref |>
+  mutate(sd = (.data$upper_confidence_limit - .data$estimate) / qnorm(0.975)) |>
+  ggplot(aes(x = alternative, y = estimate)) +
+  annotate(
+    geom = "rect",
+    xmin = -Inf,
+    xmax = Inf,
+    ymin = threshold,
+    ymax = -threshold,
+    alpha = 0.2,
+    fill = inbo_grijs
+  ) +
+  geom_hline(yintercept = 0) +
+  stat_fan(aes(link_sd = sd), geom = "rect") +
+  annotate(
+    geom = "text",
+    x = Inf,
+    y = 0,
+    hjust = 1,
+    vjust = -0.1,
+    label = "toestand in 2007-2009",
+    colour = inbo_hoofd
+  ) +
+  annotate(
+    geom = "text",
+    x = Inf,
+    y = threshold,
+    hjust = 1,
+    vjust = 1,
+    label = "belangrijke afname t.o.v. 2007-2009",
+    colour = inbo_hoofd
+  ) +
+  annotate(
+    geom = "text",
+    x = Inf,
+    y = -threshold,
+    hjust = 1,
+    vjust = 0,
+    label = "belangrijke toename t.o.v. 2007-2009",
+    colour = inbo_hoofd
+  ) +
+  theme(axis.title = element_blank()) +
+  scale_x_continuous(breaks = cycle_breaks, labels = periode_labels) +
+  scale_y_continuous(breaks = deze_breaks, labels = change_labels)
+```
+
+```{r}
+#| label: fig-cycle-matrix
+#| fig.cap: Interpretatie van het verschil van een bepaalde periode (kolom)
+#|   t.o.v. een bepaald referentiejaar (rij) voor {{species}}.
+#|   Uitleg van de symbolen in tabel @tbl-regels.
+#|   Gebruik deze figuur om het verschil tussen twee periodes in te schatten.
+#|   Zie §[-@sec-paarsgewijs] voor meer uitleg over deze figuur.
+ggplot(jaarlijks, aes(x = alternative, y = reference, label = interpretatie)) +
+  geom_point(aes(colour = interpretatie), size = 4, show.legend = FALSE) +
+  scale_x_continuous(breaks = cycle_breaks, labels = periode_labels) +
+  scale_y_continuous(
+    "referentie",
+    breaks = cycle_breaks,
+    labels = periode_labels
+  ) +
+  scale_colour_manual(values = kleurgradient) +
+  geom_text(
+    aes(label = interpretatie),
+    hjust = 0.5,
+    vjust = 0.5,
+    colour = "white",
+    size = 2
+  ) +
+  coord_fixed() +
+  theme(
+    axis.title.x = element_blank(),
+    axis.text.x = element_text(angle = 90, vjust = 0.5)
+  )
+```
+
+## Kenmerken van de analyses
+
+Het cijfermateriaal om de figuren te reproduceren is beschikbaar via de [download pagina](../methodologie/reproduceerbaarheid.html#downloadbaar-cijfermateriaal).
+
+```{r tbl-hash}
+#| tbl-cap: Data-hashes van de analyses in het kader van traceerbaarheid
+#|   (§[-@sec-traceerbaarheid]).
+meta |>
+  arrange(.data$cycle) |>
+  transmute(
+    frequentie = factor(
+      .data$cycle,
+      levels = c(TRUE, FALSE),
+      labels = c("driejaarlijks", "jaarlijks")
+    ),
+    analyse = str_replace(.data$analysis, "(.{20})", "\\1 "),
+    status = str_replace(.data$status_fingerprint, "(.{20})", "\\1 ")
+  ) |>
+  kable(format = "pipe") |>
+  column_spec(1, width = "15mm") |>
+  column_spec(2, width = "35mm") |>
+  column_spec(3, width = "35mm")
+```

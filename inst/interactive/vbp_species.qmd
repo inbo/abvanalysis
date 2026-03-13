@@ -17,7 +17,7 @@ library(git2rdata)
 library(INBOtheme)
 library(tidyverse)
 library(knitr)
-conflicted::conflicts_prefer(dplyr::filter)
+conflicted::conflicts_prefer(dplyr::filter, effectclass::class_labels)
 opts_chunk$set(dev = "svg", echo = FALSE, message = FALSE)
 root <- system.file("results", package = "abvanalysis")
 if (interactive()) {
@@ -106,18 +106,27 @@ meta |>
   transmute(
     tekst = classification(
       .data$lower_confidence_limit * looptijd,
-      .data$upper_confidence_limit * looptijd, threshold = threshold
+      .data$upper_confidence_limit * looptijd,
+      threshold = threshold
     ),
     tekst = class_labels(lang = "nl")[.data$tekst],
     jaarlijks = format_ci(
-      .data$estimate, lcl = .data$lower_confidence_limit, sign = TRUE,
-      ucl = .data$upper_confidence_limit, percent = TRUE, link = "log",
+      .data$estimate,
+      lcl = .data$lower_confidence_limit,
+      sign = TRUE,
+      ucl = .data$upper_confidence_limit,
+      percent = TRUE,
+      link = "log",
       change = TRUE
     ),
     looptijd = format_ci(
-      looptijd * .data$estimate, lcl = looptijd * .data$lower_confidence_limit,
-      ucl = looptijd * .data$upper_confidence_limit, percent = TRUE,
-      sign = TRUE, link = "log", change = TRUE
+      looptijd * .data$estimate,
+      lcl = looptijd * .data$lower_confidence_limit,
+      ucl = looptijd * .data$upper_confidence_limit,
+      percent = TRUE,
+      sign = TRUE,
+      link = "log",
+      change = TRUE
     )
   ) -> trend_year
 meta |>
@@ -126,18 +135,27 @@ meta |>
   transmute(
     tekst = classification(
       .data$lower_confidence_limit * looptijd / 3,
-      .data$upper_confidence_limit * looptijd / 3, threshold = threshold
+      .data$upper_confidence_limit * looptijd / 3,
+      threshold = threshold
     ),
     tekst = class_labels(lang = "nl")[.data$tekst],
     jaarlijks = format_ci(
-      .data$estimate / 3, lcl = .data$lower_confidence_limit / 3, sign = TRUE,
-      ucl = .data$upper_confidence_limit / 3, percent = TRUE, link = "log",
+      .data$estimate / 3,
+      lcl = .data$lower_confidence_limit / 3,
+      sign = TRUE,
+      ucl = .data$upper_confidence_limit / 3,
+      percent = TRUE,
+      link = "log",
       change = TRUE
     ),
     looptijd = format_ci(
-      looptijd * .data$estimate / 3, sign = TRUE, link = "log", change = TRUE,
+      looptijd * .data$estimate / 3,
+      sign = TRUE,
+      link = "log",
+      change = TRUE,
       lcl = looptijd * .data$lower_confidence_limit / 3,
-      ucl = looptijd * .data$upper_confidence_limit / 3, percent = TRUE
+      ucl = looptijd * .data$upper_confidence_limit / 3,
+      percent = TRUE
     )
   ) -> trend_cycle
 ```
@@ -156,10 +174,13 @@ meta |>
   filter(!.data$cycle) |>
   semi_join(x = read_vc("estimate", root), by = "analysis") |>
   transmute(
-    .data$year, .data$upper_confidence_limit,
+    .data$year,
+    .data$upper_confidence_limit,
     display = format_ci(
-      .data$estimate, lcl = .data$lower_confidence_limit,
-      ucl = .data$upper_confidence_limit, link = "log"
+      .data$estimate,
+      lcl = .data$lower_confidence_limit,
+      ucl = .data$upper_confidence_limit,
+      link = "log"
     ) |>
       sprintf(fmt = "%2$i: %1$s", .data$year),
     estimate = exp(.data$estimate),
@@ -168,8 +189,14 @@ meta |>
   ) -> estimate_year
 ggplot(estimate_year, aes(x = year, y = estimate)) +
   annotate(
-    geom = "text", x = -Inf, y = -Inf, label = doi, hjust = 0,
-    vjust = 0, colour = inbo_hoofd, size = 2
+    geom = "text",
+    x = -Inf,
+    y = -Inf,
+    label = doi,
+    hjust = 0,
+    vjust = 0,
+    colour = inbo_hoofd,
+    size = 2
   ) +
   stat_fan(aes(link_sd = sd), link = "log") +
   scale_y_continuous(
@@ -196,26 +223,52 @@ change_breaks(n = 4, extra = c(threshold, -threshold))(
 ) -> deze_breaks
 ggplot(nadien, aes(x = alternative, y = estimate)) +
   annotate(
-    geom = "text", x = -Inf, y = -Inf, label = doi, hjust = 0,
-    vjust = 0, colour = inbo_hoofd, size = 2
+    geom = "text",
+    x = -Inf,
+    y = -Inf,
+    label = doi,
+    hjust = 0,
+    vjust = 0,
+    colour = inbo_hoofd,
+    size = 2
   ) +
   annotate(
-    geom = "rect", xmin = -Inf, xmax = Inf, ymin = threshold,
-    ymax = -threshold, alpha = 0.2, fill = inbo_grijs
+    geom = "rect",
+    xmin = -Inf,
+    xmax = Inf,
+    ymin = threshold,
+    ymax = -threshold,
+    alpha = 0.2,
+    fill = inbo_grijs
   ) +
   geom_hline(yintercept = 0) +
   stat_fan(aes(link_sd = sd), geom = "rect") +
   annotate(
-    geom = "text", x = Inf, y = 0, hjust = 1, vjust = -0.1,
-    label = "toestand in 2007", colour = inbo_hoofd
+    geom = "text",
+    x = Inf,
+    y = 0,
+    hjust = 1,
+    vjust = -0.1,
+    label = "toestand in 2007",
+    colour = inbo_hoofd
   ) +
   annotate(
-    geom = "text", x = Inf, y = threshold, hjust = 1, vjust = 1,
-    label = "belangrijke afname t.o.v. 2007", colour = inbo_hoofd
+    geom = "text",
+    x = Inf,
+    y = threshold,
+    hjust = 1,
+    vjust = 1,
+    label = "belangrijke afname t.o.v. 2007",
+    colour = inbo_hoofd
   ) +
   annotate(
-    geom = "text", x = Inf, y = -threshold, hjust = 1, vjust = 0,
-    label = "belangrijke toename t.o.v. 2007", colour = inbo_hoofd
+    geom = "text",
+    x = Inf,
+    y = -threshold,
+    hjust = 1,
+    vjust = 0,
+    label = "belangrijke toename t.o.v. 2007",
+    colour = inbo_hoofd
   ) +
   theme(axis.title = element_blank()) +
   scale_y_continuous(breaks = deze_breaks, labels = change_labels) +
@@ -233,19 +286,27 @@ meta |>
   filter(.data$cycle) |>
   semi_join(x = read_vc("estimate", root), by = "analysis") |>
   transmute(
-    .data$year, .data$upper_confidence_limit,
+    .data$year,
+    .data$upper_confidence_limit,
     estimate = exp(.data$estimate),
     sd = (.data$upper_confidence_limit - .data$lower_confidence_limit) /
       diff(qnorm(c(0.025, 0.975)))
   ) -> estimate_cycle
 ggplot(estimate_cycle, aes(x = year, y = estimate)) +
   annotate(
-    geom = "text", x = -Inf, y = -Inf, label = doi, hjust = 0,
-    vjust = 0, colour = inbo_hoofd, size = 2
+    geom = "text",
+    x = -Inf,
+    y = -Inf,
+    label = doi,
+    hjust = 0,
+    vjust = 0,
+    colour = inbo_hoofd,
+    size = 2
   ) +
   stat_fan(aes(link_sd = sd), link = "log") +
   scale_x_continuous(
-    breaks = estimate_cycle$year, labels = ~paste(.x, .x + 2, sep = "-")
+    breaks = estimate_cycle$year,
+    labels = ~ paste(.x, .x + 2, sep = "-")
   ) +
   scale_y_continuous(
     "gemiddeld aantal dieren per meetpunt",
@@ -271,30 +332,57 @@ change_breaks(n = 4, extra = c(threshold, -threshold))(
 ) -> deze_breaks
 ggplot(nadien, aes(x = alternative, y = estimate)) +
   annotate(
-    geom = "text", x = -Inf, y = -Inf, label = doi, hjust = 0,
-    vjust = 0, colour = inbo_hoofd, size = 2
+    geom = "text",
+    x = -Inf,
+    y = -Inf,
+    label = doi,
+    hjust = 0,
+    vjust = 0,
+    colour = inbo_hoofd,
+    size = 2
   ) +
   annotate(
-    geom = "rect", xmin = -Inf, xmax = Inf, ymin = threshold,
-    ymax = -threshold, alpha = 0.2, fill = inbo_grijs
+    geom = "rect",
+    xmin = -Inf,
+    xmax = Inf,
+    ymin = threshold,
+    ymax = -threshold,
+    alpha = 0.2,
+    fill = inbo_grijs
   ) +
   geom_hline(yintercept = 0) +
   stat_fan(aes(link_sd = sd), geom = "rect") +
   annotate(
-    geom = "text", x = Inf, y = 0, hjust = 1, vjust = -0.1,
-    label = "toestand in 2007-2009", colour = inbo_hoofd
+    geom = "text",
+    x = Inf,
+    y = 0,
+    hjust = 1,
+    vjust = -0.1,
+    label = "toestand in 2007-2009",
+    colour = inbo_hoofd
   ) +
   annotate(
-    geom = "text", x = Inf, y = threshold, hjust = 1, vjust = 1,
-    label = "belangrijke afname t.o.v. 2007-2009", colour = inbo_hoofd
+    geom = "text",
+    x = Inf,
+    y = threshold,
+    hjust = 1,
+    vjust = 1,
+    label = "belangrijke afname t.o.v. 2007-2009",
+    colour = inbo_hoofd
   ) +
   annotate(
-    geom = "text", x = Inf, y = -threshold, hjust = 1, vjust = 0,
-    label = "belangrijke toename t.o.v. 2007-2009", colour = inbo_hoofd
+    geom = "text",
+    x = Inf,
+    y = -threshold,
+    hjust = 1,
+    vjust = 0,
+    label = "belangrijke toename t.o.v. 2007-2009",
+    colour = inbo_hoofd
   ) +
   theme(axis.title = element_blank()) +
   scale_x_continuous(
-    breaks = nadien$alternative, labels = ~paste(.x, .x + 2, sep = "-")
+    breaks = nadien$alternative,
+    labels = ~ paste(.x, .x + 2, sep = "-")
   ) +
   scale_y_continuous(breaks = deze_breaks, labels = change_labels) +
   ggtitle(this_species)

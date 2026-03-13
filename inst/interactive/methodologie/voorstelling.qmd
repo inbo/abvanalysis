@@ -6,9 +6,7 @@ title: Voorstelling van de gegevens
 library(effectclass)
 library(gt)
 library(INBOtheme)
-library(plotly)
 library(tidyverse)
-conflicted::conflicts_prefer(plotly::layout)
 ```
 
 
@@ -63,17 +61,17 @@ De afkortingen zelf zijn te fijn om als symbool te gebruiken.
 #|   90% interval, $b$: bovengrens van het 90% interval. $L < R < B$ en $l < b$.
 #|   "
 tribble(
-  ~ benaming, ~afkorting, ~regels,
-  "sterke toename",    "`++`", "$B < l$",
-  "toename",           "`+`",  "$R < l < B$ en $B < b$",
-  "matige toename",    "`+~`", "$R < l < B$ en $b < B$",
-  "stabiel",           "`~`",  "$L < l < R$ en $R < b < B$",
-  "matige afname",     "`-~`", "$L < l < R$ en $b < R$",
-  "afname",            "`-`",  "$l < L$ en $L < b < R$",
-  "sterke afname",     "`--`", "$l < L$",
-  "mogelijke toename", "`?+`", "$L < l < R$ en $B < b$",
-  "mogelijke afname",  "`?-`", "$l < L$ en $R < b < B$",
-  "onduidelijk",       "`?`",  "$l < L$ en $B < b$"
+  ~benaming           , ~afkorting , ~regels                      ,
+  "sterke toename"    , "`++`"     , "$B < l$"                    ,
+  "toename"           , "`+`"      , "$R < l < B$ en $B < b$"     ,
+  "matige toename"    , "`+~`"     , "$R < l < B$ en $b < B$"     ,
+  "stabiel"           , "`~`"      , "$L < l < R$ en $R < b < B$" ,
+  "matige afname"     , "`-~`"     , "$L < l < R$ en $b < R$"     ,
+  "afname"            , "`-`"      , "$l < L$ en $L < b < R$"     ,
+  "sterke afname"     , "`--`"     , "$l < L$"                    ,
+  "mogelijke toename" , "`?+`"     , "$L < l < R$ en $B < b$"     ,
+  "mogelijke afname"  , "`?-`"     , "$l < L$ en $R < b < B$"     ,
+  "onduidelijk"       , "`?`"      , "$l < L$ en $B < b$"
 ) |>
   gt() |>
   fmt_markdown()
@@ -84,18 +82,20 @@ tribble(
 #|   het 90% interval te vergelijken met een referentie, ondergrens en
 #|   bovengrens.
 tribble(
-  ~x, ~y, "stabiel", 0, "toename", 1, "afname", -1, "sterke toename", 1.5,
-  "sterke afname", -1.5, "matige toename",  0.5, "matige afname", -0.5,
-  "mogelijke toename", 0.5, "mogelijke afname", -0.5, "onduidelijk", 0
+  ~x                  , ~y   , "stabiel"          ,  0   , "toename"       ,  1   , "afname" , -1 , "sterke toename" , 1.5 ,
+  "sterke afname"     , -1.5 , "matige toename"   ,  0.5 , "matige afname" , -0.5 ,
+  "mogelijke toename" ,  0.5 , "mogelijke afname" , -0.5 , "onduidelijk"   ,  0
 ) |>
   mutate(
-    s = c(rep(0.25, 7), 0.5, 0.5, 1.1), lcl = qnorm(0.05, .data$y, .data$s),
+    s = c(rep(0.25, 7), 0.5, 0.5, 1.1),
+    lcl = qnorm(0.05, .data$y, .data$s),
     ucl = qnorm(0.95, .data$y, .data$s),
     klasse = classification(.data$lcl, .data$ucl, 1)
   ) |>
   arrange(.data$klasse) |>
   mutate(
-    x = factor(.data$x, levels = rev(.data$x)), x_int = as.integer(.data$x),
+    x = factor(.data$x, levels = rev(.data$x)),
+    x_int = as.integer(.data$x),
     tekst = format_ci(.data$y, lcl = .data$lcl, ucl = .data$ucl) |>
       sprintf(fmt = "%s\n%s (%s)", .data$x, .data$klasse)
   ) -> effect
@@ -106,31 +106,97 @@ effect |>
     effect |>
       mutate(x_int = .data$x_int + 0.499)
   ) |>
-  arrange(.data$x_int) |>
-  plot_ly(x = ~x_int, y = ~y) |>
-  add_fan(sd = ~s, text = ~tekst) |>
-  config(
-    displaylogo = FALSE,
-    modeBarButtonsToRemove = c(
-      "autoScale", "hoverCompareCartesian", "lasso2d", "select2d"
+  arrange(.data$x_int) -> plot_effect
+if (knitr::is_html_output()) {
+  library(plotly)
+  conflicted::conflicts_prefer(plotly::layout)
+  plot_ly(plot_effect, x = ~x_int, y = ~y) |>
+    add_fan(sd = ~s, text = ~tekst) |>
+    config(
+      displaylogo = FALSE,
+      modeBarButtonsToRemove = c(
+        "autoScale",
+        "hoverCompareCartesian",
+        "lasso2d",
+        "select2d"
+      )
+    ) |>
+    layout(
+      xaxis = list(
+        title = list(font = list(size = 0)),
+        tickvals = effect$x_int,
+        ticktext = effect$x
+      ),
+      yaxis = list(
+        title = list(font = list(size = 0)),
+        zerolinewidth = 1,
+        tickvals = c(-1, 0, 1),
+        ticktext = c("ondergrens", "referentie", "bovengrens")
+      ),
+      shapes = list(
+        type = "rect",
+        x0 = 0,
+        x1 = 1,
+        xref = "paper",
+        y0 = -1,
+        y1 = 1,
+        line = list(width = 0),
+        opacity = 0.1,
+        fillcolor = "black",
+        layer = "below"
+      )
     )
-  ) |>
-  layout(
-    xaxis = list(
-      title = list(font = list(size = 0)), tickvals = effect$x_int,
-      ticktext = effect$x
-    ),
-    yaxis = list(
-      title = list(font = list(size = 0)), zerolinewidth = 1,
-      tickvals = c(-1, 0, 1),
-      ticktext = c("ondergrens", "referentie", "bovengrens")
-    ),
-    shapes = list(
-      type = "rect", x0 = 0, x1 = 1, xref = "paper", y0 = -1, y1 = 1,
-      line = list(width = 0), opacity = 0.1, fillcolor = "black",
-      layer = "below"
+} else {
+  theme_set(theme_inbo(base_size = 8))
+  ggplot(plot_effect, aes(x = x, y = y)) +
+    annotate(
+      geom = "rect",
+      xmin = -Inf,
+      xmax = Inf,
+      ymin = -1,
+      ymax = 1,
+      alpha = 0.2,
+      fill = inbo_grijs
+    ) +
+    geom_hline(yintercept = 0) +
+    stat_fan(aes(link_sd = s), geom = "rect") +
+    annotate(
+      geom = "text",
+      x = Inf,
+      y = 0,
+      hjust = 1,
+      vjust = -0.1,
+      label = "referentie",
+      colour = inbo_hoofd,
+      angle = 90
+    ) +
+    annotate(
+      geom = "text",
+      x = Inf,
+      y = -1,
+      hjust = 1,
+      vjust = 1,
+      label = "belangrijke afname",
+      colour = inbo_hoofd,
+      angle = 90
+    ) +
+    annotate(
+      geom = "text",
+      x = Inf,
+      y = 1,
+      hjust = 1,
+      vjust = 0,
+      label = "belangrijke toename",
+      colour = inbo_hoofd,
+      angle = 90
+    ) +
+    coord_flip() +
+    theme(
+      axis.title = element_blank(),
+      axis.ticks = element_blank(),
+      axis.text.x = element_blank()
     )
-  )
+}
 ```
 
 Uiteraard hangt de opdeling sterk af van de keuze van de boven- en ondergrens.
@@ -171,21 +237,17 @@ Rond de lijn tonen we het 30%, 60% en 90% interval (zie §@sec-onzekerheid).
 In de online versie van het rapport is de figuur interactief.
 Wanneer de gebruiker met de muis over de figuur gaat verschijnt er in de buurt van de lijn een pop-up met de exacte schatting van dat jaar inclusief het 90% betrouwbaarheidsinterval en het jaartal.
 
-## Paarsgewijze vergelijking van jaren
 
+## Paarsgewijze vergelijking van jaren {#sec-paarsgewijs}
+
+::: {.content-visible when-format="pdf"}
 Deze informatie hebben we telkens in twee figuren samengevat.
 De eerste figuur geeft het verschil van elk jaar t.o.v. 2007, het jaar waarin de metingen gestart zijn.
 Voor 2007 geven we geen cijfer omdat het per definitie 1 is en geen informatie bevat.
-Het symbool geeft de puntschatting van het relatieve verschil t.o.v. 2007 weer.
-De vorm van het symbool geeft de opdeling van de sterkte van het effect weer (zie @fig-trendklasse).
-Rond elke puntschatting tonen we het 30%, 60% en 90% interval (zie §@sec-onzekerheid).
+Rond elke puntschatting tonen we het 90% interval in stappen van 5% (zie §@sec-onzekerheid).
 De horizontale streepjeslijn geeft de referentie van 0% verschil weer.
 De horizontale puntlijnen geven de bovengrens (+33%) en ondergrens (-25%) weer.
 Deze laten toe om de vlot zelf de betrouwbaarheidsintervallen te vergelijken met de referentie, boven- en ondergrens.
-De figuur heeft twee y-assen.
-Beide assen geven dezelfde informatie weer, enkel de formattering van de labels is anders.
-De linkeras toont procentuele verschillen terwijl de rechteras de relatieve verschillen toont.
-Een procentueel verschil van +50% is equivalent met een relatieve verschil (verhouding) met een factor 1,5.
 
 We stellen vast dat veel gebruikers ook andere jaren met elkaar willen vergelijken.
 Een correcte vergelijking is enkel mogelijk indien we een van deze jaren als referentie gebruiken.
@@ -200,5 +262,20 @@ De vorm van de symbolen geeft zicht op de sterkte en onzekerheid van het effect 
 Wanneer een rij volledig rood (blauw) is, zijn alle verschillen met dit referentiejaar positief (negatief) m.a.w. dit is het referentiejaar met de laagste (hoogste) aantallen.
 Wanneer een kolom volledig rood (blauw) is, zijn alle verschillen van dit jaar t.o.v. alle referentiejaren negatief (positief) m.a.w. dit is het jaar met de hoogste (laagste) aantallen.
 Clusters van punten met een gelijkaardige kleur geven periodes aan waarin de aantallen geleidelijk wijzigen.
-In de online versie van dit rapport is deze figuur interactief.
+:::
+
+::: {.content-visible when-format="html"}
+De figuur geeft het verschil van elk jaar t.o.v. een referentiejaar.
+Standaard gebruiken we hiervoor 2007, het jaar waarin de metingen gestart zijn.
+Voor het referentiejaar geven we geen cijfer omdat het per definitie 1 is en geen informatie bevat.
+Rond elke puntschatting tonen we het 90% interval in stappen van 5% (zie §@sec-onzekerheid).
+De horizontale streepjeslijn geeft de referentie van 0% verschil weer.
+De horizontale puntlijnen geven de bovengrens (+33%) en ondergrens (-25%) weer.
+Deze laten toe om de vlot zelf de betrouwbaarheidsintervallen te vergelijken met de referentie, boven- en ondergrens.
+
+We stellen vast dat veel gebruikers ook andere jaren met elkaar willen vergelijken.
+Een correcte vergelijking is enkel mogelijk indien we een van deze jaren als referentie gebruiken.
+Hiertoe selecteer je het gewenste referentiejaar in het keuzemenu naast de figuur.
+
 Wanneer de gebruiker met de muis over de figuur gaat verschijnt er in de buurt van de lijn een pop-up met de exacte schatting van dat punt inclusief het 90% betrouwbaarheidsinterval en het jaartal en referentiejaar.
+:::
