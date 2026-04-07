@@ -111,7 +111,7 @@ Dit wil niet zeggen dat we deze soort permanent afschrijven!
 Wanneer we deze regels in de toekomst opnieuw toepassen hebben we mogelijk wel voldoende waarnemingen.
 Ook hokken of strata in de toekomst gekoloniseerd worden, worden dan opgepikt.
 
-## Trendberekening {#s:trendberekening}
+## Trendberekening {#sec-trendberekening}
 
 ### Niet-lineaire trends
 

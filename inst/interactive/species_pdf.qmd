@@ -2,7 +2,8 @@
 title: "{{species}}"
 ---
 
-```{r setup}
+```{r}
+#| label: setup-{{label}}
 library(effectclass)
 library(git2rdata)
 library(INBOtheme)
@@ -34,7 +35,8 @@ periode_labels <- function(x) {
 }
 ```
 
-```{r basis}
+```{r}
+#| label: basis-{{label}}
 read_vc("meta", root) |>
   filter(.data$speciesgroup == id) -> deze_analyse
 deze_analyse |>
@@ -167,7 +169,7 @@ Op basis van jaarlijkse gegevens zien we gemiddeld `r trend_tekst(deze_lineair$t
 `r dit_verschil$verschil[dit_verschil$cycle]`
 
 ```{r}
-#| label: fig-aantal
+#| label: fig-aantal-{{label}}
 #| fig.cap: "Evolutie van het gemodelleerde gemiddeld aantal waargenomen dieren
 #|   op een meetpunt voor {{species}} tijdens de referentieperiode.
 #|   Zie §[-@sec-onzekerheid] voor een verklaring van de intervallen."
@@ -187,7 +189,7 @@ dit_aantal |>
 ```
 
 ```{r}
-#| label: fig--wijziging-jaar-statisch
+#| label: fig-wijziging-jaar-statisch-{{label}}
 #| fig-cap: "Wijzigingen tussen jaren voor {{species}}.
 #|   Zie §[-@sec-onzekerheid] voor een verklaring van de intervallen en
 #|   §[-@sec-trendklasse] voor uitleg over de referentielijnen."
@@ -244,7 +246,7 @@ ggplot(jaarlijks, aes(x = alternative, y = estimate)) +
 ```
 
 ```{r}
-#| label: fig-wijziging-jaar-alles2
+#| label: fig-wijziging-jaar-alles2-{{label}}
 #| fig-cap: "Interpretatie van het verschil van een bepaald jaar (kolom) t.o.v.
 #|   een bepaald referentiejaar (rij) voor {{species}}.
 #|   Gebruik deze figuur om het verschil tussen twee jaren in te schatten.
@@ -291,7 +293,7 @@ Op basis van driejaarlijkse gegevens zien we gemiddeld `r trend_tekst(deze_linea
 `r dit_verschil$verschil[dit_verschil$cycle]`
 
 ```{r}
-#| label: fig-aantal-cyclus
+#| label: fig-aantal-cyclus-{{label}}
 #| fig.cap: "Evolutie van het gemodelleerde gemiddeld aantal waargenomen dieren
 #|   op een meetpunt voor {{species}} tijdens de referentieperiode.
 #|   Zie §[-@sec-onzekerheid] voor een verklaring van de intervallen."
@@ -312,7 +314,7 @@ ggplot(cyclus_aantal, aes(x = year, y = estimate)) +
 ```
 
 ```{r}
-#| label: fig-wijziging-cyclus-statisch
+#| label: fig-wijziging-cyclus-statisch-{{label}}
 #| fig-cap: "Wijzigingen per driejarige cyclus voor {{species}}.
 #|   Zie §[-@sec-onzekerheid] voor een verklaring van de intervallen en
 #|   §[-@sec-trendklasse] voor uitleg over de referentielijnen."
@@ -372,7 +374,7 @@ ggplot(jaarlijks, aes(x = alternative, y = estimate)) +
 ```
 
 ```{r}
-#| label: fig-wijziging-jaar-alles3
+#| label: fig-wijziging-jaar-alles3-{{label}}
 #| fig-cap: "Interpretatie van het verschil van een bepaalde periode (kolom)
 #|   t.o.v. een bepaald referentieperiode (rij) voor {{species}}.
 #|   Gebruik deze figuur om het verschil tussen twee jaren in te schatten.
@@ -433,7 +435,7 @@ deze_wijziging |>
 ## Kenmerken van de gegevens
 
 ```{r}
-#| label: tbl-stratum
+#| label: tbl-stratum-{{label}}
 #| tbl-cap: Stratumgewicht, raming van het aantal hokken waarin de soort
 #|    aanwezig is, aantal relevante hokken voor de analyse, aantal onderzochte
 #|    hokken in het stratum, totaal aantal hokken van het stratum in
@@ -481,7 +483,7 @@ read_vc("effort", root = root) |>
 ```
 
 ```{r}
-#| label: tbl-hash
+#| label: tbl-hash-{{label}}
 #| tbl-cap: "Data-hashes van de analyses in het kader van traceerbaarheid (zie §[-@sec-traceerbaarheid])."
 #| results: "asis"
 deze_analyse |>

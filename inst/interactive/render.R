@@ -14,6 +14,12 @@ target_pdf <- paste0(target_folder, "_pdf")
 dir.create(target_folder, showWarnings = FALSE, recursive = TRUE)
 dir.create(target_pdf, showWarnings = FALSE, recursive = TRUE)
 
+# logo
+system.file("interactive/natuurpunt.png", package = "abvanalysis") |>
+  file.copy(to = target_folder, overwrite = TRUE)
+system.file("interactive/natuurpunt.png", package = "abvanalysis") |>
+  file.copy(to = target_pdf, overwrite = TRUE)
+
 # methodology
 ## html
 file.path(target_folder, "methodologie") |>
@@ -188,10 +194,13 @@ quarto::quarto_render(output_format = "flandersqmd-book-pdf")
 setwd(target_folder)
 if (
   !file_test("-f", file.path(target_folder, "cover.png")) &&
-    file_test("-f", system.file("website/cover.pdf", package = "abvanalysis"))
+    file_test(
+      "-f",
+      system.file("interactive/cover.pdf", package = "abvanalysis")
+    )
 ) {
   requireNamespace("pdftools")
-  system.file("website/cover.pdf", package = "abvanalysis") |>
+  system.file("interactive/cover.pdf", package = "abvanalysis") |>
     file.copy("cover.pdf")
   pdftools::pdf_convert(
     "cover.pdf",

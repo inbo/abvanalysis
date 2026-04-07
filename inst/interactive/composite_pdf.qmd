@@ -2,7 +2,8 @@
 title: "{{species}}"
 ---
 
-```{r setup}
+```{r}
+#| label: setup-{{label}}
 library(effectclass)
 library(git2rdata)
 library(INBOtheme)
@@ -36,7 +37,8 @@ cycle_breaks <- function(x) {
 }
 ```
 
-```{r load-data}
+```{r}
+#| label: load-data-{{label}}
 read_vc("meta", root) |>
   filter(.data$speciesgroup == this_species, , !.data$linear) |>
   select("analysis", "cycle", "status_fingerprint") -> meta
@@ -119,7 +121,7 @@ De aangepaste grenswaarden zijn `r sprintf("%+.1f%%", 100 * exp(threshold) - 100
 `r dit_verschil$verschil[!dit_verschil$cycle]`
 
 ```{r}
-#| label: fig-year-change
+#| label: fig-year-change-{{label}}
 #| warning: false
 #| fig-cap: Wijzigingen t.o.v. het referentiejaar 2007 voor {{species}}.
 #|   De band geeft het 90% geloofwaardigheidsinterval (§[-@sec-onzekerheid]) in
@@ -200,7 +202,7 @@ oldest_ref |>
 ```
 
 ```{r}
-#| label: fig-year-matrix
+#| label: fig-year-matrix-{{label}}
 #| fig.cap: Interpretatie van het verschil van een bepaald jaar (kolom) t.o.v.
 #|   een bepaald referentiejaar (rij) voor {{species}}.
 #|   Uitleg van de symbolen in tabel @tbl-regels.
@@ -229,7 +231,7 @@ ggplot(jaarlijks, aes(x = alternative, y = reference, label = interpretatie)) +
 `r dit_verschil$verschil[dit_verschil$cycle]`
 
 ```{r}
-#| label: fig-cyle-change
+#| label: fig-cycle-change-{{label}}
 #| warning: false
 #| fig-cap: Wijzigingen t.o.v. de referentieperiode 2007-2009 voor {{species}}.
 #|   De band geeft het 90% geloofwaardigheidsinterval (§[-@sec-onzekerheid]) in
@@ -314,7 +316,7 @@ oldest_ref |>
 ```
 
 ```{r}
-#| label: fig-cycle-matrix
+#| label: fig-cycle-matrix-{{label}}
 #| fig.cap: Interpretatie van het verschil van een bepaalde periode (kolom)
 #|   t.o.v. een bepaald referentiejaar (rij) voor {{species}}.
 #|   Uitleg van de symbolen in tabel @tbl-regels.
@@ -347,7 +349,8 @@ ggplot(jaarlijks, aes(x = alternative, y = reference, label = interpretatie)) +
 
 Het cijfermateriaal om de figuren te reproduceren is beschikbaar via de [download pagina](../methodologie/reproduceerbaarheid.html#downloadbaar-cijfermateriaal).
 
-```{r tbl-hash}
+```{r}
+#| label: tbl-hash-{{label}}
 #| tbl-cap: Data-hashes van de analyses in het kader van traceerbaarheid
 #|   (§[-@sec-traceerbaarheid]).
 meta |>
