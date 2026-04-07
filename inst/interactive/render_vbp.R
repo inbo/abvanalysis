@@ -30,8 +30,9 @@ for (i in seq_len(nrow(species))) {
     dir.create(showWarnings = FALSE)
   file.path(source_folder, "vbp_species.qmd") |>
     knit_expand(
-      species = species$speciesgroup[i], doi = "10.21436/inbor.119461371",
-      url = "https://www.vlaanderen.be/inbo/rapporten/abv-trends-2007-2024",
+      species = species$speciesgroup[i],
+      doi = "10.21436/inbor.141312967",
+      url = "https://www.vlaanderen.be/inbo/rapporten/abv-trends-2007-2025",
       label = species$label[i]
     ) |>
     writeLines(file.path(target_folder, species$output_file[i]))
