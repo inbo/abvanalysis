@@ -1,66 +1,97 @@
 ..generic:
-  git2rdata: 0.5.1
+  git2rdata: 0.5.2
   optimize: yes
   NA string: NA
+  sorting: analysis
+  hash: d5d627e772110659c5858415d21283355df3d99f
+  data_hash: 91cd3b3bd4c194a523daef6bf98e977dc255796d
   name: meta
   title: Metadata on the analyses
-  sorting: analysis
-  hash: e1a81d3745681a0c48df09e4f4dd77ca74b6980a
-  data_hash: 3d9f528d86215e1702e084d3f8b9f8de11ae8e93
 analysis:
   class: character
   description: Unique identifier of the analysis
 speciesgroup:
   class: factor
   labels:
+  - Aalscholver
+  - Appelvink
+  - Bergeend
   - Blauwborst
+  - Blauwe reiger
   - Boerenzwaluw
   - Bonte vliegenvanger
   - Boomklever
   - Boomkruiper
+  - Boomleeuwerik
   - Boompieper
   - Bos
   - Bosrietzanger
+  - Braamsluiper
+  - Brandgans
+  - Bruine kiekendief
   - Buizerd
   - Canadese gans
+  - Cetti's zanger
+  - Dodaars
   - Ekster
   - Fazant
   - Fitis
+  - Fuut
   - Gaai
   - Geelgors
   - Gekraagde roodstaart
   - Gele kwikstaart
   - Generalist
   - Gierzwaluw
+  - Glanskop
   - Goudhaan
+  - Goudvink
   - Grasmus
+  - Graspieper
   - Grauwe gans
   - Groene specht
   - Groenling
   - Grote bonte specht
   - Grote lijster
+  - Grutto
+  - Halsbandparkiet
+  - Havik
   - Heggenmus
   - Holenduif
   - Houtduif
   - Huismus
+  - Huiszwaluw
+  - Ijsvogel
   - Kauw
   - Kievit
+  - Kleine bonte specht
   - Kleine karekiet
+  - Kleine mantelmeeuw
   - Kneu
+  - Knobbelzwaan
   - Koekoek
+  - Kokmeeuw
   - Koolmees
+  - Krakeend
+  - Kuifeend
   - Kuifmees
+  - Kwartel
   - Landbouw
   - Matkop
   - Meerkoet
   - Merel
+  - Middelste Bonte Specht
   - Nachtegaal
   - NARA2020
   - Nijlgans
+  - Oeverzwaluw
   - Patrijs
   - Pimpelmees
+  - Putter
+  - Rietgors
   - Rietzanger
   - Ringmus
+  - Roek
   - Roodborst
   - Roodborsttapuit
   - Scholekster
@@ -69,11 +100,14 @@ speciesgroup:
   - Spreeuw
   - Sprinkhaanzanger
   - Staartmees
+  - Stadsduif
   - Standvogel
   - SubSaharaMigrant
+  - Tafeleend
   - Tjiftjaf
   - Torenvalk
   - Tuinfluiter
+  - Tureluur
   - Turkse tortel
   - Veldleeuwerik
   - Vink
@@ -82,98 +116,141 @@ speciesgroup:
   - Wielewaal
   - Wilde eend
   - Winterkoning
+  - Wintertaling
   - Witte kwikstaart
+  - Wulp
   - Zanglijster
+  - Zilvermeeuw
   - Zwarte kraai
   - Zwarte mees
   - Zwarte roodstaart
   - Zwarte specht
   - Zwartkop
   index:
+  - 1
+  - 2
+  - 3
+  - 4
+  - 5
   - 6
+  - 7
+  - 8
   - 9
+  - 10
+  - 11
   - 12
   - 13
   - 14
+  - 15
   - 16
+  - 17
   - 18
   - 19
+  - 20
+  - 21
+  - 22
+  - 23
+  - 24
   - 25
   - 26
+  - 27
+  - 28
+  - 29
+  - 30
+  - 31
   - 32
+  - 33
+  - 34
   - 35
   - 36
+  - 37
+  - 38
   - 39
   - 40
   - 41
   - 42
   - 43
+  - 44
   - 45
+  - 46
   - 47
+  - 48
+  - 49
   - 50
+  - 51
+  - 52
   - 53
+  - 54
+  - 55
+  - 56
   - 57
   - 58
   - 59
+  - 60
+  - 61
   - 62
+  - 63
+  - 64
+  - 65
+  - 66
   - 67
   - 68
+  - 69
   - 70
+  - 71
   - 72
+  - 73
+  - 74
+  - 75
   - 76
+  - 77
+  - 78
   - 79
+  - 80
+  - 81
   - 82
+  - 83
+  - 84
+  - 85
+  - 86
   - 87
+  - 88
   - 89
+  - 90
+  - 91
   - 92
+  - 93
+  - 94
+  - 95
+  - 96
+  - 97
+  - 98
   - 99
+  - 100
   - 101
+  - 102
+  - 103
+  - 104
   - 105
   - 106
   - 107
+  - 108
+  - 109
+  - 110
   - 111
+  - 112
   - 113
-  - 114
-  - 121
-  - 123
-  - 128
-  - 129
-  - 133
-  - 134
-  - 136
-  - 144
-  - 145
-  - 146
-  - 147
-  - 148
-  - 150
-  - 153
-  - 157
-  - 158
-  - 159
-  - 161
-  - 162
-  - 164
-  - 167
-  - 170
-  - 172
-  - 173
-  - 174
-  - 176
-  - 179
-  - 184
-  - 185
-  - 186
-  - 187
-  - 190
   ordered: no
   description: Name of the species or species group
 composite:
   class: logical
+  description: TRUE indicates a species group, FALSE a species
 cycle:
   class: logical
+  description: TRUE indicates a three year cycle, FALSE yearly cycle
 linear:
   class: logical
+  description: TRUE indicates a linear trend, FALSE a nonlinear trend
 family:
   class: factor
   labels:

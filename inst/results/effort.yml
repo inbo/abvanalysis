@@ -1,5 +1,5 @@
 ..generic:
-  git2rdata: 0.5.1
+  git2rdata: 0.5.2
   optimize: yes
   NA string: NA
   sorting:
@@ -7,7 +7,7 @@
   - location
   - year
   hash: a389a963790e3e523740b2f1c8d98f8a6b10052c
-  data_hash: 46762dd2b07dd99619bdef354b8c4242d2710d45
+  data_hash: 1f199715f95a1a5481b887ae61f00a492818bc74
   name: effort
   title: Sampling effort
 year:

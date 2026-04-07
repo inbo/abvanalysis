@@ -1,15 +1,15 @@
 ..generic:
-  git2rdata: 0.5.1
+  git2rdata: 0.5.2
   optimize: yes
   NA string: NA
-  name: composite_moving_trend
-  title: Moving trend for the composite indices
   sorting:
   - analysis
   - window
   - midpoint
-  hash: 58f1cdb950c5850010f0c624962f0bd1aea45584
-  data_hash: 50fc8e05db845a277d6dc8c1cf253dbc8aeb04d4
+  hash: 5f915a50ce7b55fcb7d07d3289628dab524f940e
+  data_hash: ef879ece23973da0a45f44ad126fd68c70c6b39c
+  name: composite_moving_trend
+  title: Moving trend for the composite indices
 analysis:
   class: character
   description: Identifier of the analysis

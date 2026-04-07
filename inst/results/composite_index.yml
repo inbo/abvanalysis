@@ -1,32 +1,32 @@
 ..generic:
-  git2rdata: 0.5.1
+  git2rdata: 0.5.2
   optimize: yes
   NA string: NA
-  name: composite_index
-  title: Indices by species group
   sorting:
   - analysis
   - reference
   - alternative
-  hash: 07fe0c2a760c6aec599e51f170bc6f384abc9179
-  data_hash: 7c08aba992f01ad0f7cfcec3b8b26bcba6f17c0b
+  hash: 198af67d8d77f4f187de0dedf84bfb67d75af81c
+  data_hash: 50787c6cd6b2cc07095ca6183514d48f1997361b
+  name: composite_index
+  title: Indices by species group
 analysis:
   class: factor
   labels:
-  - 1e69344445ca08497e81d0b827d7909b6e1fd309
-  - 234e9e24c3188c6ebeb7f1f02c3e2c8142711c7a
-  - 33035975f7a8a2c0647f5c919d57529a5e91b1e8
-  - 488d2b80ece46c90e6129c6303a3c02249182826
-  - 4e9fb0ee74118d49cc122832fe3f50a11170453b
-  - 7c4305a5d7d5707b83015785c95e66afbc79bd65
-  - 80a304221afa996718e1582acd24b9fc99bb9eab
-  - a695f269c79ddb1da372f75b79123a1722a8a3c1
-  - ae0b4b30106fba95e7634229e39afc580e132f9c
-  - b09e2452e100a91d3d1314556475aa8426926dd3
-  - e1c9ac53bf8baebb81e84a9662a894c47bd8d07b
-  - e25da31bf0d895003cdae013e564c3517bc593dd
-  - e471b7a46f0decd5efd006d6e8bdbe352d00505d
-  - f3c3e92a31c8f4c867f4e1ba63d9bc24e71d613e
+  - 0c87725e89e54d7a91134e56045c26a3a0c598fe
+  - 26e0a132b85822bf9d2894f11fad419f3df28ed0
+  - 3467e6b072760f472d7fc09898c7e6abe65a56a6
+  - 40ec2fbc25dafdd0edf00a1b7f9ac46c709a4ae9
+  - 66335ec4972c682dabeffa7aa92e2a3afe5f7270
+  - 71aec071018610c8c32b566d0cc13580b96821aa
+  - 893db398b31d1a3581118644709a39e1f50f4729
+  - ad7ecc327c5ca1806d7934a1292c95ee252ec3a4
+  - af6a168eced84b18e57938e4b4982d7e13b56802
+  - b0b5c25663dfb65a8828b17eae19985f3ea0bfe2
+  - cd7d7480035e99435fdf1ae2028358cca9e03144
+  - d5e12413e3004018302641cc852f9a4684533daa
+  - f870a60d43e61b0756b3d484fbe5b19ca53bef48
+  - fc4608a9294fe6e005d713b6a15f6bf67604fd06
   index:
   - 1
   - 2
