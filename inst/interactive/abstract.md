@@ -1,4 +1,4 @@
-:::: {lang=en-GB}
+::: {lang=en-GB}
 
 ---
 title: English abstract
@@ -19,9 +19,9 @@ the second part presents a number of indicators based on trends of several types
 the third part describes the time series of individual species.
 In parts two and three, we limit ourselves to a standardised representation of the most relevant analysis results without an ecological interpretation.
 For an ecological interpretation of the results we refer to other publications such as [INBO Vogelnieuws](https://www.vlaanderen.be/inbo/publicaties/vogelnieuws).
-
 :::
 
+<!-- spell-check: ignore:start -->
 ::: {.content-visible when-format="pdf"}
 \clearpage
 \phantomsection
@@ -29,3 +29,4 @@ For an ecological interpretation of the results we refer to other publications s
 \setcounter{tocdepth}{2}
 \tableofcontents
 :::
+<!-- spell-check: ignore:end -->

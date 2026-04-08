@@ -5,7 +5,7 @@ Authors@R: c(
     person("Thierry", "Onkelinx", , "thierry.onkelinx@inbo.be", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0001-8804-4216", affiliation = "Research Institute for Nature and Forest (INBO)")),
     person("Research Institute for Nature and Forest (INBO)", , , "info@inbo.be", role = c("cph", "fnd"),
-           comment = c(ROR = "https://ror.org/00j54wy13"))
+           comment = c(ROR = "00j54wy13"))
   )
 Description: Read in the raw data and prepare analysis datasets.
 License: GPL-3
@@ -26,7 +26,7 @@ Imports:
     stringr,
     tibble,
     tidyr
-Suggests: 
+Suggests:
     DT,
     effectclass,
     gt,
@@ -39,7 +39,7 @@ Suggests:
     rmarkdown,
     scales,
     tidyverse
-VignetteBuilder: 
+VignetteBuilder:
     knitr
 Additional_repositories: https://inbo.r-universe.dev
 Config/checklist/communities: inbo

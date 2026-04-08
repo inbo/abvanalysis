@@ -61,17 +61,17 @@ De afkortingen zelf zijn te fijn om als symbool te gebruiken.
 #|   90% interval, $b$: bovengrens van het 90% interval. $L < R < B$ en $l < b$.
 #|   "
 tribble(
-  ~benaming           , ~afkorting , ~regels                      ,
-  "sterke toename"    , "`++`"     , "$B < l$"                    ,
-  "toename"           , "`+`"      , "$R < l < B$ en $B < b$"     ,
-  "matige toename"    , "`+~`"     , "$R < l < B$ en $b < B$"     ,
-  "stabiel"           , "`~`"      , "$L < l < R$ en $R < b < B$" ,
-  "matige afname"     , "`-~`"     , "$L < l < R$ en $b < R$"     ,
-  "afname"            , "`-`"      , "$l < L$ en $L < b < R$"     ,
-  "sterke afname"     , "`--`"     , "$l < L$"                    ,
-  "mogelijke toename" , "`?+`"     , "$L < l < R$ en $B < b$"     ,
-  "mogelijke afname"  , "`?-`"     , "$l < L$ en $R < b < B$"     ,
-  "onduidelijk"       , "`?`"      , "$l < L$ en $B < b$"
+  ~benaming, ~afkorting, ~regels,
+  "sterke toename", "`++`", "$B < l$",
+  "toename", "`+`", "$R < l < B$ en $B < b$",
+  "matige toename", "`+~`", "$R < l < B$ en $b < B$",
+  "stabiel", "`~`", "$L < l < R$ en $R < b < B$",
+  "matige afname", "`-~`", "$L < l < R$ en $b < R$",
+  "afname", "`-`", "$l < L$ en $L < b < R$",
+  "sterke afname", "`--`", "$l < L$",
+  "mogelijke toename", "`?+`", "$L < l < R$ en $B < b$",
+  "mogelijke afname", "`?-`", "$l < L$ en $R < b < B$",
+  "onduidelijk", "`?`", "$l < L$ en $B < b$"
 ) |>
   gt() |>
   fmt_markdown()
@@ -82,9 +82,9 @@ tribble(
 #|   het 90% interval te vergelijken met een referentie, ondergrens en
 #|   bovengrens.
 tribble(
-  ~x                  , ~y   , "stabiel"          ,  0   , "toename"       ,  1   , "afname" , -1 , "sterke toename" , 1.5 ,
-  "sterke afname"     , -1.5 , "matige toename"   ,  0.5 , "matige afname" , -0.5 ,
-  "mogelijke toename" ,  0.5 , "mogelijke afname" , -0.5 , "onduidelijk"   ,  0
+  ~x, ~y, "stabiel",  0, "toename",  1, "afname", -1, "sterke toename", 1.5,
+  "sterke afname", -1.5, "matige toename",  0.5, "matige afname", -0.5,
+  "mogelijke toename",  0.5, "mogelijke afname", -0.5, "onduidelijk",  0
 ) |>
   mutate(
     s = c(rep(0.25, 7), 0.5, 0.5, 1.1),

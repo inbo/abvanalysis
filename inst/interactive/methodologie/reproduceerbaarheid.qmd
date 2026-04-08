@@ -44,7 +44,7 @@ Deze laatste bevat de nodige links naar de tekstbestanden en hun versie.
 De `n2kanalysis` objecten hebben elk twee data hashes.
 Elk data hash is een reeks van 40 hexadecimale^[Hexadecimaal betekent letterlijk zestientallig.
 Het is een talstelsel waarbij niet, zoals gebruikelijk, met tien cijfers wordt gewerkt, maar met zestien cijfers.
-De cijfers 0 t.e.m. 9 worden daarom uitgebreid met `a` (=10) t.e.m. `f` (=15).] cijfers die het resultaat zijn van de cryptografische [hashfunctie](https://nl.wikipedia.org/wiki/Hashfunctie) [SHA-1](https://nl.wikipedia.org/wiki/SHA-familie).
+De cijfers 0 t.e.m. 9 worden daarom uitgebreid met `a` (=10) t.e.m. `f` (=15).] cijfers die het resultaat zijn van de cryptografische [hashfunctie](https://nl.wikipedia.org/wiki/Hashfunctie) [`SHA-1`](https://nl.wikipedia.org/wiki/SHA-familie).
 Deze hashfunctie heeft een aantal belangrijke eigenschappen:
 
 1. Ze zetten elke invoer om naar een uitvoer met vaste lengte (40 hexadecimale cijfers).
@@ -253,7 +253,7 @@ read_vc("linear_trend", root) |>
       .data$looptijd * .data$estimate / .data$period, change = TRUE,
       lcl = .data$looptijd * .data$lower_confidence_limit / .data$period,
       ucl = .data$looptijd * .data$upper_confidence_limit / .data$period,
-       sign = TRUE, link = "log", percent = TRUE
+      sign = TRUE, link = "log", percent = TRUE
     ),
     .data$verloop,
     analyse = factor(.data$analysis), status = factor(.data$status_fingerprint),
@@ -375,6 +375,8 @@ read_vc("effort", root) |>
 
 ::: {.content-visible when-format="html"}
 
+<<!-- spell-check: ignore:start -->
+
 | informatie | gegevens | metadata |
 | ---------- | -------- | -------- |
 | samengestelde indices | [`samengesteld.csv`](../data/samengesteld.csv) | [`samengesteld.yml`](../data/samengesteld.yml) |
@@ -384,12 +386,14 @@ read_vc("effort", root) |>
 
 | informatie | gegevens | metadata |
 | ---------- | -------- | -------- |
-| gemiddeld aantal op een meetpunt| [`aantallen.csv`](../data/aantallen.csv) |  [`aantallen.yml`](../data/aantallen.yml) | 
+| gemiddeld aantal op een meetpunt| [`aantallen.csv`](../data/aantallen.csv) |  [`aantallen.yml`](../data/aantallen.yml) |
 | lineaire trends| [`lineaire_trend.csv`](../data/lineaire_trend.csv) | [`lineaire_trend.yml`](../data/lineaire_trend.yml) |
 | indices | [`index.csv`](../data/index.csv) | [`index.yml`](../data/index.yml) |
 | stratumgewichten| [`stratum_gewicht.csv`](../data/stratum_gewicht.csv) | [`stratum_gewicht.yml`](../data/stratum_gewicht.yml) |
 
 : Downloadbare bestanden met resultaten per soort {#tbl-download-species}
+
+<<!-- spell-check: ignore:end -->
 
 :::
 
@@ -403,5 +407,4 @@ readLines("../_quarto.yml") |>
 
 De downloadbare bestanden zijn beschikbaar in de online versie.
 Deze kan u bereiken via [`r doi`](`r doi`).
-
 :::

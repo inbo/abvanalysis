@@ -68,7 +68,8 @@ paste0(
   "({{url}}/methodologie/voorstelling.html#sec-onzekerheid){target=\"_blank\"}",
   " in stappen van 5%%. ",
   "De [referentielijnen]",
-  "({{url}}/methodologie/voorstelling.html#sec-trendklasse){target=\"_blank\"} ",
+  "({{url}}/methodologie/voorstelling.html#sec-trendklasse)",
+  "{target=\"_blank\"} ",
   "zorgen voor de opdeling van de wijzigingen in [klassen]",
   "({{url}}/methodologie/voorstelling.html#sec-trendklasse){target=\"_blank\"}."
 ) |>

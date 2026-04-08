@@ -25,7 +25,7 @@ threshold <- log(0.75)
 
 ```{r load-data}
 read_vc("meta", root) |>
-  filter(.data$speciesgroup == this_species, , !.data$linear) |>
+  filter(.data$speciesgroup == this_species, !.data$linear) |>
   select("analysis", "cycle", "status_fingerprint") -> meta
 paste0(
   "Wijzigingen tussen jaren voor %s. ",
@@ -83,16 +83,17 @@ meta |>
   ) |>
   inner_join(
     tribble(
-  ~tekst                  , ~y   , "stabiel"          ,  0   , "toename"       ,  1   , "afname" , -1 , "sterke toename" , 1.5 ,
-  "sterke afname"     , -1.5 , "matige toename"   ,  0.5 , "matige afname" , -0.5 ,
-  "mogelijke toename" ,  0.5 , "mogelijke afname" , -0.5 , "onduidelijk"   ,  0
-) |>
-  mutate(
-    s = c(rep(0.25, 7), 0.5, 0.5, 1),
-    lcl = qnorm(0.05, .data$y, .data$s),
-    ucl = qnorm(0.95, .data$y, .data$s)
-  ) |>
-    transmute(.data$tekst, klasse = classification(.data$lcl, .data$ucl, 1)),
+      ~tekst, ~y, "stabiel",  0, "toename",  1, "afname", -1,
+      "sterke toename", 1.5, "sterke afname", -1.5, "matige toename",  0.5,
+      "matige afname", -0.5, "mogelijke toename",  0.5,
+      "mogelijke afname", -0.5, "onduidelijk", 0
+    ) |>
+      mutate(
+        s = c(rep(0.25, 7), 0.5, 0.5, 1),
+        lcl = qnorm(0.05, .data$y, .data$s),
+        ucl = qnorm(0.95, .data$y, .data$s)
+      ) |>
+      transmute(.data$tekst, klasse = classification(.data$lcl, .data$ucl, 1)),
     by = "klasse"
   ) |>
   mutate(
@@ -570,10 +571,10 @@ meta |>
 ```{js change-js}
 function filter_default() {
   document.getElementById("ref_year").getElementsByClassName("selectized")[0].selectize.removeOption("");
-  document.getElementById("ref_year").getElementsByClassName("selectized") 
+  document.getElementById("ref_year").getElementsByClassName("selectized")
 [0].selectize.setValue("2007", false);
   document.getElementById("ref_cycle").getElementsByClassName("selectized")[0].selectize.removeOption("");
-  document.getElementById("ref_cycle").getElementsByClassName("selectized") 
+  document.getElementById("ref_cycle").getElementsByClassName("selectized")
 [0].selectize.setValue("2007-2009", false);
  }
 $(document).ready(filter_default);

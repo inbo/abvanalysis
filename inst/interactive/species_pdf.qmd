@@ -49,9 +49,9 @@ deze_analyse |>
   ) -> dit_aantal
 looptijd <- diff(range(dit_aantal$year))
 tribble(
-  ~x                  , ~y   , "stabiel"          ,  0   , "toename"       ,  1   , "afname" , -1 , "sterke toename" , 1.5 ,
-  "sterke afname"     , -1.5 , "matige toename"   ,  0.5 , "matige afname" , -0.5 ,
-  "mogelijke toename" ,  0.5 , "mogelijke afname" , -0.5 , "onduidelijk"   ,  0
+  ~x, ~y, "stabiel",  0, "toename",  1, "afname", -1, "sterke toename", 1.5,
+  "sterke afname", -1.5, "matige toename",  0.5, "matige afname", -0.5,
+  "mogelijke toename",  0.5, "mogelijke afname", -0.5, "onduidelijk", 0
 ) |>
   mutate(
     s = c(rep(0.25, 7), 0.5, 0.5, 1),
@@ -102,8 +102,10 @@ deze_analyse |>
   filter(
     !.data$cycle |
       .data$alternative < max(.data$alternative) |
-      (.data$alternative == max(.data$alternative) &
-        (.data$alternative - 2007) %% 3 == 2)
+      (
+        .data$alternative == max(.data$alternative) &
+          (.data$alternative - 2007) %% 3 == 2
+      )
   ) -> deze_wijziging
 deze_wijziging |>
   group_by(.data$cycle) |>
@@ -468,14 +470,14 @@ read_vc("effort", root = root) |>
     punten = sprintf(
       "%.1f%%",
       100 *
-        (.data$points_1 /
-          6 +
-          .data$points_2 / 3 +
-          .data$points_3 / 2 +
-          .data$points_4 * 2 / 3 +
-          .data$points_5 * 5 / 6 +
-          .data$points_6) /
-        .data$relevant
+        (
+          .data$points_1 / 6 +
+            .data$points_2 / 3 +
+            .data$points_3 / 2 +
+            .data$points_4 * 2 / 3 +
+            .data$points_5 * 5 / 6 +
+            .data$points_6
+        ) / .data$relevant
     )
   ) |>
   arrange(desc(.data$gewicht)) |>
@@ -484,7 +486,8 @@ read_vc("effort", root = root) |>
 
 ```{r}
 #| label: tbl-hash-{{label}}
-#| tbl-cap: "Data-hashes van de analyses in het kader van traceerbaarheid (zie §[-@sec-traceerbaarheid])."
+#| tbl-cap: "Data-hashes van de analyses in het kader van traceerbaarheid
+#|   (zie §[-@sec-traceerbaarheid])."
 #| results: "asis"
 deze_analyse |>
   arrange(.data$cycle, .data$linear) |>
