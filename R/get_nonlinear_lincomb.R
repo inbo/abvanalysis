@@ -6,14 +6,14 @@
 #' @param stratum_var variable containing the stratum information.
 #' @export
 #' @importFrom assertthat assert_that has_name is.string
-#' @importFrom dplyr %>% arrange distinct filter inner_join mutate row_number
+#' @importFrom dplyr arrange distinct filter inner_join mutate row_number
 #' select transmute
 #' @importFrom purrr map
 #' @importFrom rlang .data
 #' @importFrom stats setNames
 #' @importFrom tidyr  expand_grid pivot_longer pivot_wider
 get_nonlinear_lincomb <- function(
-    dataset, stratum_weights, time_var, label_var, stratum_var
+  dataset, stratum_weights, time_var, label_var, stratum_var
 ) {
   assert_that(is.string(time_var), is.string(stratum_var), is.string(label_var))
   assert_that(
@@ -26,50 +26,50 @@ get_nonlinear_lincomb <- function(
   )
   start <- min(dataset[[label_var]])
   end <- max(dataset[[label_var]])
-  seq(start, end, by = ifelse(time_var == "cycle", 3, 1)) %>%
+  seq(start, end, by = ifelse(time_var == "cycle", 3, 1)) |>
     length() -> n_total
 
-  dataset %>%
-    inner_join(stratum_weights, by = stratum_var) %>%
-    arrange(.data[[stratum_var]], .data[[time_var]]) %>%
+  dataset |>
+    inner_join(stratum_weights, by = stratum_var) |>
+    arrange(.data[[stratum_var]], .data[[time_var]]) |>
     mutate(
-      id = row_number() %>%
+      id = row_number() |>
         sprintf(fmt = "%04i")
     ) -> base_weights
-  base_weights %>%
+  base_weights |>
     pivot_wider(
       id_cols = label_var, names_from = .data$id, values_from = .data$weight,
       values_fill = 0
     ) -> year_effect
-  dataset %>%
-    select(c(time_var, label_var)) %>%
-    distinct() %>%
+  dataset |>
+    select(c(time_var, label_var)) |>
+    distinct() |>
     arrange(.data[[time_var]]) -> time_steps
   strata <- sort(unique(dataset[[stratum_var]]))
   expand_grid(
     from = time_steps[[time_var]], to = time_steps[[time_var]],
     stratum = strata, to_s = strata
-  ) %>%
-    filter(.data$from < .data$to, .data$stratum == .data$to_s) %>%
-    select(-.data$to_s) %>%
-    inner_join(time_steps, by = c(from = time_var)) %>%
-    mutate(rowname = paste0("index_", .data$label, "_")) %>%
-    select(-.data$label) %>%
-    inner_join(time_steps, by = c(to = time_var)) %>%
-    mutate(rowname = paste0(.data$rowname, .data$label)) %>%
-    select(-.data$label) %>%
+  ) |>
+    filter(.data$from < .data$to, .data$stratum == .data$to_s) |>
+    select(-"to_s") |>
+    inner_join(time_steps, by = c(from = time_var)) |>
+    mutate(rowname = paste0("index_", .data$label, "_")) |>
+    select(-"label") |>
+    inner_join(time_steps, by = c(to = time_var)) |>
+    mutate(rowname = paste0(.data$rowname, .data$label)) |>
+    select(-"label") |>
     pivot_longer(
       c("from", "to"), names_to = "direction", values_to = time_var
-    ) %>%
-    inner_join(stratum_weights, by = stratum_var) %>%
+    ) |>
+    inner_join(stratum_weights, by = stratum_var) |>
     transmute(
-      id = interaction(.data[[time_var]], .data[[stratum_var]]) %>%
-        as.integer() %>%
+      id = interaction(.data[[time_var]], .data[[stratum_var]]) |>
+        as.integer() |>
         sprintf(fmt = "%04i"),
       .data$rowname,
       weight = ifelse(.data$direction == "to", 1, -1) * .data$weight
-    ) %>%
-    arrange(.data$id, .data$rowname) %>%
+    ) |>
+    arrange(.data$id, .data$rowname) |>
     pivot_wider(
       names_from = .data$id, values_from = .data$weight, values_fill = 0
     ) -> indices
@@ -83,18 +83,18 @@ get_nonlinear_lincomb <- function(
       n_window = ifelse(time_var == "cycle", 4, 12)
     ),
     moving_trend(n_total = n_total, n_window = n_total, start = start)
-  ) %>%
-    map(.x = stratum_weights$weight, .f = `*`) %>%
+  ) |>
+    map(.x = stratum_weights$weight, .f = `*`) |>
     do.call(what = "cbind") -> trend_coef
-  select(year_effect, -.data$label) %>%
-    bind_rows(select(indices, -.data$rowname)) %>%
-    as.matrix() %>%
+  select(year_effect, -"label") |>
+    bind_rows(select(indices, -"rowname")) |>
+    as.matrix() |>
     `row.names<-`(
       c(sprintf("estimate_%i", year_effect$label), indices$rowname)
-    ) %>%
-    rbind(trend_coef) %>%
-    list() %>%
-    setNames(time_var) %>%
+    ) |>
+    rbind(trend_coef) |>
+    list() |>
+    setNames(time_var) |>
     c(list(
       `(Intercept)` = c(
         rep(1, nrow(year_effect)), rep(0, nrow(indices) + nrow(trend_coef))

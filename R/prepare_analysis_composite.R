@@ -8,7 +8,7 @@
 #' @export
 #' @importFrom assertthat assert_that is.string has_name
 #' @importFrom n2kanalysis n2k_composite
-#' @importFrom dplyr %>% select mutate arrange filter slice
+#' @importFrom dplyr select mutate arrange filter slice
 #' @importFrom rlang .data
 #' @importFrom tibble rownames_to_column
 prepare_analysis_composite <- function(
@@ -35,20 +35,20 @@ prepare_analysis_composite <- function(
   extractor <- function(model) {
     stopifnot(requireNamespace("tibble", quietly = TRUE))
     stopifnot(requireNamespace("dplyr", quietly = TRUE))
-    model$summary.lincomb.derived %>%
-      tibble::rownames_to_column("value") %>%
-      dplyr::select("value", estimate = "mean", variance = "sd") %>%
+    model$summary.lincomb.derived |>
+      tibble::rownames_to_column("value") |>
+      dplyr::select("value", estimate = "mean", variance = "sd") |>
       dplyr::mutate(
         variance = .data$variance ^ 2,
         number = suppressWarnings(as.integer(.data$value))
-      ) %>%
-      dplyr::arrange(.data$number, .data$value) %>%
+      ) |>
+      dplyr::arrange(.data$number, .data$value) |>
       dplyr::select(-"number")
   }
 
   n2k_composite(
     result_datasource_id = models$result_datasource[1],
-    parent_status = models %>%
+    parent_status = models |>
       select(
         parent_analysis = "fingerprint", parent_status = "status",
         parentstatus_fingerprint = "status_fingerprint"
@@ -60,6 +60,6 @@ prepare_analysis_composite <- function(
     model_type = paste("composite index:", frequency, type),
     formula = paste("~", frequency), extractor = extractor,
     analysis_date = max(models$analysis_date), status = "waiting"
-  ) %>%
+  ) |>
     storage(base = base, project = project, overwrite = overwrite)
 }

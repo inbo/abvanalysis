@@ -1,3 +1,8 @@
+# abvanalysis 0.2.5
+
+* Import only the observations from the target species.
+* Provided more metadata about the imported data.
+
 # abvanalysis 0.2.4
 
 * Update checklist machinery

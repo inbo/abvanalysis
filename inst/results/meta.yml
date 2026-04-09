@@ -1,159 +1,100 @@
 ..generic:
-  git2rdata: 0.4.0
+  git2rdata: 0.5.2
   optimize: yes
   NA string: NA
   sorting: analysis
-  hash: e67aef470f6aed259ddfe60722fccc87abfa042e
-  data_hash: 485e6d3fc42509b00f8a4a1fd944bfed0d230b57
+  hash: d5d627e772110659c5858415d21283355df3d99f
+  data_hash: 91cd3b3bd4c194a523daef6bf98e977dc255796d
+  name: meta
+  title: Metadata on the analyses
 analysis:
   class: character
+  description: Unique identifier of the analysis
 speciesgroup:
   class: factor
   labels:
   - Aalscholver
   - Appelvink
-  - Baardgrasmus
-  - Baardmannetje
   - Bergeend
   - Blauwborst
-  - Blauwe kiekendief
   - Blauwe reiger
   - Boerenzwaluw
-  - Bontbekplevier
-  - Bonte strandloper
   - Bonte vliegenvanger
   - Boomklever
   - Boomkruiper
   - Boomleeuwerik
   - Boompieper
-  - Boomvalk
   - Bos
   - Bosrietzanger
-  - Bosuil
   - Braamsluiper
   - Brandgans
   - Bruine kiekendief
-  - Buidelmees
   - Buizerd
   - Canadese gans
-  - Casarca
   - Cetti's zanger
-  - Common Redpoll
   - Dodaars
-  - Dwergstern
   - Ekster
-  - Engelse gele kwikstaart
-  - Europese kanarie
   - Fazant
   - Fitis
-  - Fluiter
   - Fuut
   - Gaai
   - Geelgors
   - Gekraagde roodstaart
   - Gele kwikstaart
   - Generalist
-  - Geoorde fuut
   - Gierzwaluw
   - Glanskop
   - Goudhaan
-  - Goudplevier
   - Goudvink
   - Grasmus
   - Graspieper
-  - Graszanger
   - Grauwe gans
-  - Grauwe gors
-  - Grauwe klauwier
-  - Grauwe vliegenvanger
   - Groene specht
   - Groenling
   - Grote bonte specht
-  - Grote gele kwikstaart
-  - Grote karekiet
   - Grote lijster
-  - Grote stern
   - Grutto
   - Halsbandparkiet
   - Havik
   - Heggenmus
   - Holenduif
-  - Hop
   - Houtduif
-  - Houtsnip
   - Huismus
   - Huiszwaluw
   - Ijsvogel
-  - Indische gans
   - Kauw
-  - Keep
-  - Kerkuil
   - Kievit
-  - Klapekster
   - Kleine bonte specht
   - Kleine karekiet
   - Kleine mantelmeeuw
-  - Kleine plevier
-  - Kleine zilverreiger
-  - Kluut
   - Kneu
   - Knobbelzwaan
   - Koekoek
   - Kokmeeuw
-  - Kolgans
   - Koolmees
   - Krakeend
-  - Kramsvogel
-  - Krooneend
-  - Kruisbek
   - Kuifeend
-  - Kuifleeuwerik
   - Kuifmees
   - Kwartel
   - Landbouw
-  - Lepelaar
-  - Lesser Redpoll
-  - Mandarijneend
   - Matkop
   - Meerkoet
   - Merel
   - Middelste Bonte Specht
-  - Monniksparkiet
-  - Muskuseend
   - Nachtegaal
-  - Nachtzwaluw
   - NARA2020
   - Nijlgans
-  - Oehoe
-  - Oeverloper
   - Oeverzwaluw
-  - Ooievaar
-  - Orpheusspotvogel
-  - Paapje
   - Patrijs
-  - Pijlstaart
   - Pimpelmees
-  - Porseleinhoen
   - Putter
-  - Raaf
-  - Ransuil
   - Rietgors
   - Rietzanger
   - Ringmus
-  - Rode wouw
   - Roek
-  - Roerdomp
   - Roodborst
   - Roodborsttapuit
-  - Rouwkwikstaart
   - Scholekster
-  - Sijs
-  - Slechtvalk
-  - Slobeend
-  - Smient
-  - Snor
-  - Soepeend
-  - Soepgans
   - Sperwer
   - Spotvogel
   - Spreeuw
@@ -161,47 +102,30 @@ speciesgroup:
   - Staartmees
   - Stadsduif
   - Standvogel
-  - Steenuil
-  - Stormmeeuw
   - SubSaharaMigrant
   - Tafeleend
-  - Taigaboomkruiper
-  - Tapuit
   - Tjiftjaf
   - Torenvalk
   - Tuinfluiter
   - Tureluur
   - Turkse tortel
   - Veldleeuwerik
-  - Velduil
   - Vink
-  - Visdief
-  - Vuurgoudhaantje
   - Waterhoen
-  - Waterral
-  - Watersnip
   - Watervogel
-  - Wespendief
   - Wielewaal
   - Wilde eend
   - Winterkoning
   - Wintertaling
   - Witte kwikstaart
-  - Woudaap
   - Wulp
   - Zanglijster
   - Zilvermeeuw
-  - Zomertaling
-  - Zomertortel
-  - Zwaangans
   - Zwarte kraai
   - Zwarte mees
   - Zwarte roodstaart
   - Zwarte specht
-  - Zwarte wouw
-  - Zwarte zwaan
   - Zwartkop
-  - Zwartkopmeeuw
   index:
   - 1
   - 2
@@ -316,92 +240,17 @@ speciesgroup:
   - 111
   - 112
   - 113
-  - 114
-  - 115
-  - 116
-  - 117
-  - 118
-  - 119
-  - 120
-  - 121
-  - 122
-  - 123
-  - 124
-  - 125
-  - 192
-  - 126
-  - 127
-  - 128
-  - 129
-  - 130
-  - 131
-  - 132
-  - 133
-  - 134
-  - 135
-  - 136
-  - 137
-  - 138
-  - 139
-  - 140
-  - 141
-  - 142
-  - 143
-  - 144
-  - 145
-  - 146
-  - 147
-  - 148
-  - 149
-  - 150
-  - 151
-  - 152
-  - 153
-  - 154
-  - 155
-  - 156
-  - 157
-  - 158
-  - 159
-  - 160
-  - 161
-  - 162
-  - 163
-  - 164
-  - 165
-  - 166
-  - 167
-  - 168
-  - 169
-  - 170
-  - 171
-  - 172
-  - 173
-  - 174
-  - 175
-  - 176
-  - 177
-  - 178
-  - 179
-  - 180
-  - 181
-  - 182
-  - 183
-  - 184
-  - 185
-  - 186
-  - 187
-  - 188
-  - 189
-  - 190
-  - 191
   ordered: no
+  description: Name of the species or species group
 composite:
   class: logical
+  description: TRUE indicates a species group, FALSE a species
 cycle:
   class: logical
+  description: TRUE indicates a three year cycle, FALSE yearly cycle
 linear:
   class: logical
+  description: TRUE indicates a linear trend, FALSE a nonlinear trend
 family:
   class: factor
   labels:
@@ -417,16 +266,17 @@ family:
   - 4
   - 5
   ordered: no
+  description: Statistical distribution used in the analysis
 status_fingerprint:
   class: character
+  description: Status fingerprint of the analysis
 status:
   class: factor
-  labels:
-  - converged
-  - insufficient_data
-  index:
-  - 1
-  - 2
+  labels: converged
+  index: 1
   ordered: no
+  description: Status of the analysis
 waic:
   class: numeric
+  digits: 6
+  description: Wantabe-Akaike Information Criterion

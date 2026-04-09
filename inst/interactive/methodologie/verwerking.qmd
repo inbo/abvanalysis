@@ -7,11 +7,10 @@ library(git2rdata)
 library(INBOtheme)
 library(tidyverse)
 conflicted::conflicts_prefer(dplyr::filter)
-if (interactive()) {
-  root <- file.path("..", "..", "..", "..", "abv", "results")
-} else {
-  root <- file.path("..", "..", "results")
-}
+update_geom_defaults("point", list(size = 2))
+update_geom_defaults("text", list(size = 2))
+theme_set(theme_inbo(base_size = 8))
+root <- system.file("results", package = "abvanalysis")
 ```
 
 
@@ -54,23 +53,35 @@ effort |>
   arrange(.data$year) |>
   group_by(.data$location) |>
   transmute(
-    .data$year, end = max(.data$year), year2 = lead(.data$year),
-    year3 = lead(.data$year2), year4 = lead(.data$year3),
-    year5 = lead(.data$year4), year6 = lead(.data$year5),
+    .data$year,
+    end = max(.data$year),
+    year2 = lead(.data$year),
+    year3 = lead(.data$year2),
+    year4 = lead(.data$year3),
+    year5 = lead(.data$year4),
+    year6 = lead(.data$year5),
     year7 = lead(.data$year6)
   ) |>
   slice(1) |>
   ungroup() |>
   arrange(
-    .data$year, .data$end, .data$year2, .data$year3, .data$year4, .data$year5,
-    .data$year6, .data$year7
+    .data$year,
+    .data$end,
+    .data$year2,
+    .data$year3,
+    .data$year4,
+    .data$year5,
+    .data$year6,
+    .data$year7
   ) |>
   rowid_to_column("hok") |>
   transmute(
-    .data$location, hok = factor(.data$hok),
+    .data$location,
+    hok = factor(.data$hok),
     bruikbaar = ((.data$year - 2007) %/% 3) < ((end - 2007) %/% 3),
     bruikbaar = factor(
-      .data$bruikbaar, levels = c(TRUE, FALSE),
+      .data$bruikbaar,
+      levels = c(TRUE, FALSE),
       labels = c("mogelijk", "voorlopig\nniet")
     )
   ) |>
@@ -100,7 +111,7 @@ Dit wil niet zeggen dat we deze soort permanent afschrijven!
 Wanneer we deze regels in de toekomst opnieuw toepassen hebben we mogelijk wel voldoende waarnemingen.
 Ook hokken of strata in de toekomst gekoloniseerd worden, worden dan opgepikt.
 
-## Trendberekening {#s:trendberekening}
+## Trendberekening {#sec-trendberekening}
 
 ### Niet-lineaire trends
 

@@ -1,0 +1,390 @@
+---
+knitr:
+  opts_chunk:
+    echo: false
+    message: false
+    warning: false
+    dev: svg
+lang: nl-BE
+format:
+  html:
+    embed-resources: true
+---
+
+```{r setup}
+library(effectclass)
+library(git2rdata)
+library(INBOtheme)
+library(tidyverse)
+library(knitr)
+conflicted::conflicts_prefer(dplyr::filter, effectclass::class_labels)
+opts_chunk$set(dev = "svg", echo = FALSE, message = FALSE)
+root <- system.file("results", package = "abvanalysis")
+if (interactive()) {
+  read_vc("meta", root) |>
+    filter(!.data$composite, .data$status == "converged") |>
+    slice_sample(n = 1) -> this
+  this_species <- this$speciesgroup
+  doi <- "https://doi.org/10.21436/inbor.141312967"
+} else {
+  this_species <- "{{species}}"
+  doi <- "{{doi}}"
+}
+threshold <- log(0.75)
+trend_tekst <- function(x) {
+  if (x == "stabiel") {
+    return("een stabiele toestand. De trend blijft beperkt tot")
+  }
+  if (x == "onduidelijk") {
+    return("een onduidelijke toestand. De geschatte trend bedraagt")
+  }
+  paste("een", x, "met")
+}
+```
+
+```{r load-data}
+read_vc("meta", root) |>
+  filter(.data$speciesgroup == this_species) |>
+  select("analysis", "cycle", "linear", "status_fingerprint", "waic") -> meta
+paste0(
+  "Evolutie van het gemodelleerde gemiddeld aantal waargenomen dieren op een ",
+  "meetpunt per jaar voor %s tijdens de referentieperiode. ",
+  "De band geeft het [90%% geloofwaardigheidsinterval]",
+  "({{url}}/methodologie/voorstelling.html#sec-onzekerheid){target=\"_blank\"}",
+  " in stappen van 5%%."
+) |>
+  sprintf(as.character(this_species)) -> caption_year_estimate
+paste0(
+  "Evolutie van het gemodelleerde gemiddeld aantal waargenomen dieren op een ",
+  "meetpunt per driejarige cyclus voor %s tijdens de referentieperiode. ",
+  "De band geeft het [90%% geloofwaardigheidsinterval]",
+  "({{url}}/methodologie/voorstelling.html#sec-onzekerheid){target=\"_blank\"}",
+  " in stappen van 5%%."
+) |>
+  sprintf(as.character(this_species)) -> caption_cycle_estimate
+paste0(
+  "Wijzigingen tussen jaren voor %s. ",
+  "De band geeft het [90%% geloofwaardigheidsinterval]",
+  "({{url}}/methodologie/voorstelling.html#sec-onzekerheid){target=\"_blank\"}",
+  " in stappen van 5%%. ",
+  "De [referentielijnen]",
+  "({{url}}/methodologie/voorstelling.html#sec-trendklasse)",
+  "{target=\"_blank\"} ",
+  "zorgen voor de opdeling van de wijzigingen in [klassen]",
+  "({{url}}/methodologie/voorstelling.html#sec-trendklasse){target=\"_blank\"}."
+) |>
+  sprintf(as.character(this_species)) -> caption_year_index
+paste0(
+  "Wijzigingen tussen driejarige cycli voor %s. ",
+  "De band geeft het [90%% geloofwaardigheidsinterval]",
+  "({{url}}/methodologie/voorstelling.html#sec-onzekerheid){target=\"_blank\"}",
+  " in stappen van 5%%. ",
+  "De [referentielijnen]",
+  "({{url}}/methodologie/voorstelling.html#sec-trendklasse){target=\"_blank\"}",
+  " zorgen voor de opdeling van de wijzigingen in [klassen]",
+  "({{url}}/methodologie/voorstelling.html#sec-trendklasse){target=\"_blank\"}."
+) |>
+  sprintf(as.character(this_species)) -> caption_cycle_index
+meta |>
+  select("cycle", "linear", "waic") |>
+  pivot_wider(names_from = "linear", values_from = "waic") |>
+  transmute(
+    .data$cycle,
+    interpretatie = (.data$`FALSE` - .data$`TRUE`) |>
+      cut(
+        breaks = c(-Inf, -2, 0, Inf),
+        labels = c("niet-lineair", "mogelijk niet-lineair", "lineair")
+      )
+  ) -> interpretatie
+meta |>
+  filter(!.data$cycle) |>
+  semi_join(x = read_vc("linear_estimate", root), by = "analysis") |>
+  tail(-1) |>
+  nrow() -> looptijd
+meta |>
+  filter(!.data$cycle) |>
+  semi_join(x = read_vc("linear_trend", root), by = "analysis") |>
+  transmute(
+    tekst = classification(
+      .data$lower_confidence_limit * looptijd,
+      .data$upper_confidence_limit * looptijd,
+      threshold = threshold
+    ),
+    tekst = class_labels(lang = "nl")[.data$tekst],
+    jaarlijks = format_ci(
+      .data$estimate,
+      lcl = .data$lower_confidence_limit,
+      sign = TRUE,
+      ucl = .data$upper_confidence_limit,
+      percent = TRUE,
+      link = "log",
+      change = TRUE
+    ),
+    looptijd = format_ci(
+      looptijd * .data$estimate,
+      lcl = looptijd * .data$lower_confidence_limit,
+      ucl = looptijd * .data$upper_confidence_limit,
+      percent = TRUE,
+      sign = TRUE,
+      link = "log",
+      change = TRUE
+    )
+  ) -> trend_year
+meta |>
+  filter(.data$cycle) |>
+  semi_join(x = read_vc("linear_trend", root), by = "analysis") |>
+  transmute(
+    tekst = classification(
+      .data$lower_confidence_limit * looptijd / 3,
+      .data$upper_confidence_limit * looptijd / 3,
+      threshold = threshold
+    ),
+    tekst = class_labels(lang = "nl")[.data$tekst],
+    jaarlijks = format_ci(
+      .data$estimate / 3,
+      lcl = .data$lower_confidence_limit / 3,
+      sign = TRUE,
+      ucl = .data$upper_confidence_limit / 3,
+      percent = TRUE,
+      link = "log",
+      change = TRUE
+    ),
+    looptijd = format_ci(
+      looptijd * .data$estimate / 3,
+      sign = TRUE,
+      link = "log",
+      change = TRUE,
+      lcl = looptijd * .data$lower_confidence_limit / 3,
+      ucl = looptijd * .data$upper_confidence_limit / 3,
+      percent = TRUE
+    )
+  ) -> trend_cycle
+```
+
+Onderstaande grafieken zijn als [interactieve grafieken]({{url}}/soort/{{label}}.html){target="_blank"} beschikbaar in de online versie het [rapport]({{url}}){target="_blank"} over de toestand van de Algemene Broedvogels in Vlaanderen.
+In die versie kan je tevens het nodige cijfermateriaal [downloaden]({{url}}/methodologie/reproduceerbaarheid.html#downloadbaar-cijfermateriaal){target="_blank"} om deze figuren te reproduceren.
+
+## Analyse per jaar
+
+Op basis van jaarlijkse gegevens zien we gemiddeld `r trend_tekst(trend_year$tekst)` `r trend_year$jaarlijks` per jaar of `r trend_year$looptijd` over de volledige looptijd van het meetnet.
+Deze trend is `r interpretatie$interpretatie[!interpretatie$cycle]`.
+
+```{r fig-year-estimate}
+#| fig-cap: !expr caption_year_estimate
+meta |>
+  filter(!.data$cycle) |>
+  semi_join(x = read_vc("estimate", root), by = "analysis") |>
+  transmute(
+    .data$year,
+    .data$upper_confidence_limit,
+    display = format_ci(
+      .data$estimate,
+      lcl = .data$lower_confidence_limit,
+      ucl = .data$upper_confidence_limit,
+      link = "log"
+    ) |>
+      sprintf(fmt = "%2$i: %1$s", .data$year),
+    estimate = exp(.data$estimate),
+    sd = .data$upper_confidence_limit - .data$lower_confidence_limit,
+    sd = .data$sd / 2 / qnorm(0.95)
+  ) -> estimate_year
+ggplot(estimate_year, aes(x = year, y = estimate)) +
+  annotate(
+    geom = "text",
+    x = -Inf,
+    y = -Inf,
+    label = doi,
+    hjust = 0,
+    vjust = 0,
+    colour = inbo_hoofd,
+    size = 2
+  ) +
+  stat_fan(aes(link_sd = sd), link = "log") +
+  scale_y_continuous(
+    "gemiddeld aantal dieren per meetpunt",
+    limits = c(0, 1.1 * exp(max(estimate_year$upper_confidence_limit)))
+  ) +
+  theme(axis.title.x = element_blank()) +
+  ggtitle(this_species)
+```
+
+```{r fig-year-change}
+#| warning: false
+#| fig-cap: !expr caption_year_index
+meta |>
+  filter(!.data$cycle) |>
+  semi_join(x = read_vc("index", root), by = "analysis") |>
+  filter(.data$reference == min(.data$reference)) |>
+  mutate(
+    sd = (.data$upper_confidence_limit - .data$lower_confidence_limit) /
+      diff(qnorm(c(0.025, 0.975))),
+  ) -> nadien
+change_breaks(n = 4, extra = c(threshold, -threshold))(
+  c(nadien$lower_confidence_limit, nadien$upper_confidence_limit)
+) -> deze_breaks
+ggplot(nadien, aes(x = alternative, y = estimate)) +
+  annotate(
+    geom = "text",
+    x = -Inf,
+    y = -Inf,
+    label = doi,
+    hjust = 0,
+    vjust = 0,
+    colour = inbo_hoofd,
+    size = 2
+  ) +
+  annotate(
+    geom = "rect",
+    xmin = -Inf,
+    xmax = Inf,
+    ymin = threshold,
+    ymax = -threshold,
+    alpha = 0.2,
+    fill = inbo_grijs
+  ) +
+  geom_hline(yintercept = 0) +
+  stat_fan(aes(link_sd = sd), geom = "rect") +
+  annotate(
+    geom = "text",
+    x = Inf,
+    y = 0,
+    hjust = 1,
+    vjust = -0.1,
+    label = "toestand in 2007",
+    colour = inbo_hoofd
+  ) +
+  annotate(
+    geom = "text",
+    x = Inf,
+    y = threshold,
+    hjust = 1,
+    vjust = 1,
+    label = "belangrijke afname t.o.v. 2007",
+    colour = inbo_hoofd
+  ) +
+  annotate(
+    geom = "text",
+    x = Inf,
+    y = -threshold,
+    hjust = 1,
+    vjust = 0,
+    label = "belangrijke toename t.o.v. 2007",
+    colour = inbo_hoofd
+  ) +
+  theme(axis.title = element_blank()) +
+  scale_y_continuous(breaks = deze_breaks, labels = change_labels) +
+  ggtitle(this_species)
+```
+
+## Analyse per driejarige cyclus
+
+Op basis van jaarlijkse gegevens zien we gemiddeld `r trend_tekst(trend_cycle$tekst)` `r trend_cycle$jaarlijks` per jaar of `r trend_cycle$looptijd` over de volledige looptijd van het meetnet.
+Deze trend is `r interpretatie$interpretatie[interpretatie$cycle]`.
+
+```{r fig-cycle-estimate}
+#| fig-cap: !expr caption_cycle_estimate
+meta |>
+  filter(.data$cycle) |>
+  semi_join(x = read_vc("estimate", root), by = "analysis") |>
+  transmute(
+    .data$year,
+    .data$upper_confidence_limit,
+    estimate = exp(.data$estimate),
+    sd = (.data$upper_confidence_limit - .data$lower_confidence_limit) /
+      diff(qnorm(c(0.025, 0.975)))
+  ) -> estimate_cycle
+ggplot(estimate_cycle, aes(x = year, y = estimate)) +
+  annotate(
+    geom = "text",
+    x = -Inf,
+    y = -Inf,
+    label = doi,
+    hjust = 0,
+    vjust = 0,
+    colour = inbo_hoofd,
+    size = 2
+  ) +
+  stat_fan(aes(link_sd = sd), link = "log") +
+  scale_x_continuous(
+    breaks = estimate_cycle$year,
+    labels = ~ paste(.x, .x + 2, sep = "-")
+  ) +
+  scale_y_continuous(
+    "gemiddeld aantal dieren per meetpunt",
+    limits = c(0, 1.1 * exp(max(estimate_cycle$upper_confidence_limit)))
+  ) +
+  theme(axis.title.x = element_blank()) +
+  ggtitle(this_species)
+```
+
+```{r fig-cycle-change}
+#| warning: false
+#| fig-cap: !expr caption_cycle_index
+meta |>
+  filter(.data$cycle) |>
+  semi_join(x = read_vc("index", root), by = "analysis") |>
+  filter(.data$reference == min(.data$reference)) |>
+  mutate(
+    sd = (.data$upper_confidence_limit - .data$lower_confidence_limit) /
+      diff(qnorm(c(0.025, 0.975))),
+  ) -> nadien
+change_breaks(n = 4, extra = c(threshold, -threshold))(
+  c(nadien$lower_confidence_limit, nadien$upper_confidence_limit)
+) -> deze_breaks
+ggplot(nadien, aes(x = alternative, y = estimate)) +
+  annotate(
+    geom = "text",
+    x = -Inf,
+    y = -Inf,
+    label = doi,
+    hjust = 0,
+    vjust = 0,
+    colour = inbo_hoofd,
+    size = 2
+  ) +
+  annotate(
+    geom = "rect",
+    xmin = -Inf,
+    xmax = Inf,
+    ymin = threshold,
+    ymax = -threshold,
+    alpha = 0.2,
+    fill = inbo_grijs
+  ) +
+  geom_hline(yintercept = 0) +
+  stat_fan(aes(link_sd = sd), geom = "rect") +
+  annotate(
+    geom = "text",
+    x = Inf,
+    y = 0,
+    hjust = 1,
+    vjust = -0.1,
+    label = "toestand in 2007-2009",
+    colour = inbo_hoofd
+  ) +
+  annotate(
+    geom = "text",
+    x = Inf,
+    y = threshold,
+    hjust = 1,
+    vjust = 1,
+    label = "belangrijke afname t.o.v. 2007-2009",
+    colour = inbo_hoofd
+  ) +
+  annotate(
+    geom = "text",
+    x = Inf,
+    y = -threshold,
+    hjust = 1,
+    vjust = 0,
+    label = "belangrijke toename t.o.v. 2007-2009",
+    colour = inbo_hoofd
+  ) +
+  theme(axis.title = element_blank()) +
+  scale_x_continuous(
+    breaks = nadien$alternative,
+    labels = ~ paste(.x, .x + 2, sep = "-")
+  ) +
+  scale_y_continuous(breaks = deze_breaks, labels = change_labels) +
+  ggtitle(this_species)
+```

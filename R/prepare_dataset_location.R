@@ -2,33 +2,33 @@
 #' @inheritParams prepare_dataset
 #' @inheritParams git2rdata::write_vc
 #' @importFrom DBI dbGetQuery dbQuoteIdentifier dbQuoteString Id
-#' @importFrom dplyr %>% arrange count filter full_join inner_join mutate
-#' row_number transmute
+#' @importFrom dplyr arrange count filter full_join inner_join mutate
+#' row_number select transmute
 #' @importFrom rlang .data
-#' @importFrom git2rdata prune_meta read_vc rm_data write_vc
+#' @importFrom git2rdata prune_meta read_vc rm_data update_metadata write_vc
 #' @export
 prepare_dataset_location <- function(
-    origin, repo, end_date, strict = TRUE, db_scheme = ""
+  origin, repo, end_date, strict = TRUE, db_scheme = ""
 ) {
+  strata <- try(
+    read_vc(file.path("location", "stratum"), root = repo), silent = TRUE
+  )
   rm_data(root = repo, path = "location", stage = TRUE)
 
   # import sampling framework
   sampling_frame <- read_vc("sampling_frame", repo)
-  sampling_frame %>%
-    count(description = .data$Stratum) %>%
-    filter(!is.na(.data$description)) %>%
-    arrange(.data$description) %>%
+  sampling_frame |>
+    count(description = .data$Stratum) |>
+    filter(!is.na(.data$description)) |>
+    arrange(.data$description) |>
     mutate(description = as.character(.data$description)) -> new_strata
-  strata <- try(
-    read_vc(file.path("location", "stratum"), root = repo), silent = TRUE
-  )
   if (inherits(strata, "try-error")) {
-    new_strata %>%
+    new_strata |>
       mutate(id = row_number()) -> strata
   } else {
-    strata %>%
-      full_join(new_strata, by = "description") %>%
-      arrange(.data$id) %>%
+    strata |>
+      full_join(new_strata, by = "description") |>
+      arrange(.data$id) |>
       transmute(
         .data$description,
         n = ifelse(is.na(.data$id), .data$n.y, .data$n.x),
@@ -43,17 +43,28 @@ prepare_dataset_location <- function(
     strata, file = file.path("location", "stratum"), root = repo,
     sorting = "description", stage = TRUE, strict = strict
   )
-  strata %>%
-    select(stratum = .data$description, stratum_id = .data$id) %>%
+  update_metadata(
+    file = file.path("location", "stratum"), root = repo, name = "stratum",
+    title = "Strata using in the Common Breeding Bird Cencus in Flanders",
+    field_description = c(
+      description = "Name of the stratum",
+      n = "Total number of squares in the stratum",
+      id = "Unique identifier of the stratum"
+    ),
+    stage = TRUE
+  )
+
+  strata |>
+    select(stratum = "description", stratum_id = "id") |>
     inner_join(
-      sampling_frame %>%
+      sampling_frame |>
         transmute(
           description = sprintf("ABV_%s", .data$ExternalCode),
           stratum = .data$Stratum
         ),
       by = c("stratum")
-    ) %>%
-    select(-.data$stratum) -> strata
+    ) |>
+    select(-"stratum") -> strata
 
   # import UTM squares
   sprintf("
@@ -88,18 +99,29 @@ prepare_dataset_location <- function(
     dbQuoteIdentifier(
       origin, Id(scheme = db_scheme, table = "locations_location")
     )
-  ) %>%
-    dbGetQuery(conn = origin) %>%
-    inner_join(strata, by = "description") %>%
+  ) |>
+    dbGetQuery(conn = origin) |>
+    inner_join(strata, by = "description") |>
     mutate(
       datafield_id = get_field_id(
         repo = repo, table_name = "locations_location", field_name = "id"
       )
-    ) %>%
+    ) |>
     write_vc(
       file = file.path("location", "square"), root = repo,
       sorting = "description", stage = TRUE, strict = strict
     )
+  update_metadata(
+    file = file.path("location", "square"), root = repo, stage = TRUE,
+    name = "square",
+    title = "UTM squares used in the Common Breeding Bird Cencus in Flanders",
+    field_description = c(
+      description = "Name of the UTM square",
+      id = "Unique identifier of the UTM square",
+      stratum_id = "Unique identifier of the stratum",
+      datafield_id = "Unique identifier of the datafield"
+    )
+  )
 
   # import points
   sprintf("
@@ -134,17 +156,28 @@ prepare_dataset_location <- function(
     dbQuoteIdentifier(
       origin, Id(scheme = db_scheme, table = "locations_location")
     )
-  ) %>%
-    dbGetQuery(conn = origin) %>%
+  ) |>
+    dbGetQuery(conn = origin) |>
     mutate(
       datafield_id = get_field_id(
         repo = repo, table_name = "locations_location", field_name = "id"
       )
-    ) %>%
+    ) |>
     write_vc(
       file = file.path("location", "point"), root = repo, stage = TRUE,
       sorting = "description", strict = strict
     )
+  update_metadata(
+    file = file.path("location", "point"), root = repo, stage = TRUE,
+    name = "point",
+    title = "Points used in the Common Breeding Bird Cencus in Flanders",
+    field_description = c(
+      description = "Name of the point",
+      id = "Unique identifier of the point",
+      square_id = "Unique identifier of the UTM square",
+      datafield_id = "Unique identifier of the datafield"
+    )
+  )
 
   prune_meta(root = repo, path = "location", stage = TRUE)
 

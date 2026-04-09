@@ -7,11 +7,12 @@ bibliography: ../references.bib
 library(git2rdata)
 library(INBOtheme)
 library(tidyverse)
-if (interactive()) {
-  root <- file.path("..", "..", "..", "..", "abv", "results")
-} else {
-  root <- file.path("..", "..", "results")
-}
+update_geom_defaults(
+  "point",
+  list(size = ifelse(knitr::is_html_output(), 4, 2))
+)
+theme_set(theme_inbo(base_size = 8))
+root <- system.file("results", package = "abvanalysis")
 strata <- read_vc("stratum", root)
 effort <- read_vc("effort", root)
 ```
@@ -53,39 +54,52 @@ Voor het onderscheid tussen mogelijk bruikbaar en voorlopig niet bruikbaar verwi
 #|   Elk punt is een hok dat onderzocht is in een bepaald jaar.
 #|   De horizontale lijnen verbinden het eerste en meest recente bezoek aan
 #|   eenzelfde hok.
-#| fig.height: 10
+#| fig.height: 9
 effort |>
   arrange(.data$year) |>
   group_by(.data$location) |>
   transmute(
-    .data$year, end = max(.data$year), year2 = lead(.data$year),
-    year3 = lead(.data$year2), year4 = lead(.data$year3),
-    year5 = lead(.data$year4), year6 = lead(.data$year5),
+    .data$year,
+    end = max(.data$year),
+    year2 = lead(.data$year),
+    year3 = lead(.data$year2),
+    year4 = lead(.data$year3),
+    year5 = lead(.data$year4),
+    year6 = lead(.data$year5),
     year7 = lead(.data$year6)
   ) |>
   slice(1) |>
   ungroup() |>
   arrange(
-    .data$year, .data$end, .data$year2, .data$year3, .data$year4, .data$year5,
-    .data$year6, .data$year7
+    .data$year,
+    .data$end,
+    .data$year2,
+    .data$year3,
+    .data$year4,
+    .data$year5,
+    .data$year6,
+    .data$year7
   ) |>
   rowid_to_column("hok") |>
   transmute(
-    .data$location, hok = factor(.data$hok),
+    .data$location,
+    hok = factor(.data$hok),
     bruikbaar = ((.data$year - 2007) %/% 3) < ((end - 2007) %/% 3),
     bruikbaar = factor(
-      .data$bruikbaar, levels = c(TRUE, FALSE),
+      .data$bruikbaar,
+      levels = c(TRUE, FALSE),
       labels = c("mogelijk", "voorlopig\nniet")
     )
   ) |>
   inner_join(effort, by = "location") -> inspanning
 ggplot(inspanning, aes(x = year, y = hok, group = hok, colour = bruikbaar)) +
   geom_line(alpha = 0.2) +
-  geom_point(alpha = 0.5, size = 4) +
+  geom_point(alpha = 0.5) +
   facet_wrap(~stratum, scales = "free_y") +
   scale_x_continuous(breaks = pretty) +
   theme(
-    axis.title.x = element_blank(), axis.text.x = element_text(angle = 90),
+    axis.title.x = element_blank(),
+    axis.text.x = element_text(angle = 90),
     axis.text.y = element_blank()
   )
 ```
@@ -99,7 +113,8 @@ inspanning |>
   geom_histogram(binwidth = 1) +
   facet_wrap(~stratum) +
   scale_x_continuous(
-    "Aantal jaren waarin een hok onderzocht is", breaks = pretty,
+    "Aantal jaren waarin een hok onderzocht is",
+    breaks = pretty,
     limits = c(0, NA)
   ) +
   ylab("Aantal hokken")
@@ -122,9 +137,12 @@ expand.grid(
 ) |>
   ggplot(aes(x = x, y = y)) +
   geom_rect(
-    data = tribble(~x, ~y, ~xend, ~yend, 0, 0, 1, 1),
+    data = tribble(
+      ~x, ~y, ~xend, ~yend, 0, 0, 1, 1
+    ),
     aes(xmin = x, ymin = y, xmax = xend, ymax = yend),
-    fill = NA, colour = inbo_steun_blauw
+    fill = NA,
+    colour = inbo_steun_blauw
   ) +
   geom_point() +
   coord_fixed() +

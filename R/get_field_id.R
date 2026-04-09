@@ -4,7 +4,7 @@
 #' @param field_name The name of the field.
 #' @export
 #' @importFrom assertthat assert_that
-#' @importFrom git2rdata read_vc write_vc
+#' @importFrom git2rdata read_vc update_metadata write_vc
 get_field_id <- function(repo, table_name, field_name) {
   assert_that(
     inherits(repo, "git_repository"), is.string(table_name),
@@ -18,6 +18,16 @@ get_field_id <- function(repo, table_name, field_name) {
       x = data.frame(id = 1L, table = table_name, field = field_name),
       file = "database_id", root = repo, sorting = c("table", "field"),
       stage = TRUE
+    )
+    update_metadata(
+      file = "database_id", root = repo, stage = TRUE, name = "database_id",
+      title = "Database id for tables and fields",
+      description =
+        "This table describes to which table and field an id refers.",
+      field_description = c(
+        id = "Unique identifier", table = "Name of the table",
+        field = "Name of the field"
+      )
     )
     return(1L)
   }
@@ -38,6 +48,16 @@ get_field_id <- function(repo, table_name, field_name) {
       data.frame(
         id = current_max + 1L, table = table_name, field = field_name
       )
+    )
+  )
+  update_metadata(
+    file = "database_id", root = repo, stage = TRUE, name = "database_id",
+    title = "Database id for tables and fields",
+    description =
+      "This table describes to which table and field an id refers.",
+    field_description = c(
+      id = "Unique identifier", table = "Name of the table",
+      field = "Name of the field"
     )
   )
   return(current_max + 1L)

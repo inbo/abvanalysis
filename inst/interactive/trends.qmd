@@ -6,12 +6,7 @@ library(git2rdata)
 library(DT)
 library(tidyverse)
 threshold <- log(0.75)
-if (interactive()) {
-  root <- file.path("..", "..", "..", "abv", "results")
-} else {
-  root <- file.path("..", "..", "results")
-  this_species <- "{{species}}"
-}
+root <- system.file("results", package = "abvanalysis")
 read_vc("meta", root) |>
   filter(!.data$composite) |>
   select("speciesgroup", "cycle", "waic", "linear") |>
@@ -37,8 +32,10 @@ read_vc("meta", root) |>
       slice_max(.data$year, n = 1) |>
       transmute(.data$analysis, looptijd = .data$year - 1),
     by = "analysis"
-  ) -> tmp
-tmp |>
+  ) |>
+  group_by(.data$speciesgroup) |>
+  mutate(looptijd = max(.data$looptijd)) |>
+  ungroup() |>
   mutate(
     estimate = ifelse(.data$cycle, 1 / 3, 1) * .data$estimate,
     lower_confidence_limit = ifelse(.data$cycle, 1 / 3, 1) *
@@ -50,7 +47,6 @@ tmp |>
       ucl = .data$upper_confidence_limit, percent = TRUE, link = "log",
       change = TRUE
     ),
-    looptijd = ifelse(.data$cycle, 3, 1) * .data$looptijd,
     klasse = classification(
       .data$lower_confidence_limit * .data$looptijd,
       .data$upper_confidence_limit * .data$looptijd, threshold = threshold
@@ -100,11 +96,11 @@ trends |>
     escape = FALSE, filter = "bottom", rownames = NULL,
     options = list(
       language = list(
-        url = "//cdn.datatables.net/plug-ins/1.10.11/i18n/Dutch.json"
+        url = "https://cdn.datatables.net/plug-ins/1.10.11/i18n/Dutch.json"
       ),
       pageLength = 25
     )
-)
+  )
 ```
 
 
@@ -118,9 +114,9 @@ trends |>
     escape = FALSE, filter = "bottom", rownames = NULL,
     options = list(
       language = list(
-        url = "//cdn.datatables.net/plug-ins/1.10.11/i18n/Dutch.json"
+        url = "https://cdn.datatables.net/plug-ins/1.10.11/i18n/Dutch.json"
       ),
       pageLength = 25
     )
-)
+  )
 ```

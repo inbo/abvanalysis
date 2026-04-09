@@ -3,8 +3,8 @@
 #' @param formula the formula for the trend component
 #' @export
 #' @importFrom assertthat assert_that has_name is.string
-#' @importFrom dplyr %>% across bind_cols bind_rows distinct group_by inner_join
-#' mutate rename select summarise
+#' @importFrom dplyr across bind_cols bind_rows distinct everything group_by
+#' inner_join mutate rename select summarise
 #' @importFrom rlang :=
 #' @importFrom stats model.matrix
 get_linear_lincomb <- function(
@@ -20,16 +20,16 @@ get_linear_lincomb <- function(
     has_name(stratum_weights, "weight"), has_name(stratum_weights, stratum_var)
   )
 
-  dataset %>%
-    select(c(stratum_var, time_var)) %>%
-    distinct() %>%
+  dataset |>
+    select(c(stratum_var, time_var)) |>
+    distinct() |>
     inner_join(stratum_weights, by = stratum_var) -> all_weight
   model.matrix(object = formula, all_weight) -> mm
-  (as.data.frame(mm) * all_weight$weight) %>%
-    mutate(ID = sprintf("linear_estimate_%02i", all_weight[[time_var]])) %>%
-    group_by(.data$ID) %>%
-    summarise(across(.fns = sum)) -> mm
-  stratum_weights %>%
+  (as.data.frame(mm) * all_weight$weight) |>
+    mutate(ID = sprintf("linear_estimate_%02i", all_weight[[time_var]])) |>
+    group_by(.data$ID) |>
+    summarise(across(.cols = everything(), .fns = sum)) -> mm
+  stratum_weights |>
     mutate("{time_var}" := 1) -> trend_weight # nolint: object_name_linter.
   mm_trend <- model.matrix(object = formula, trend_weight)
   mm_trend <- as.data.frame(mm_trend) * trend_weight$weight
@@ -37,13 +37,13 @@ get_linear_lincomb <- function(
   if (has_name(mm_trend, "(Intercept)")) {
     mm_trend$`(Intercept)` <- 0
   }
-  mm_trend %>%
-    summarise(across(.fns = sum)) %>%
-    mutate(ID = "linear_trend") %>%
+  mm_trend |>
+    summarise(across(.cols = everything(), .fns = sum)) |>
+    mutate(ID = "linear_trend") |>
     bind_rows(mm) -> weights
   w_names <- weights$ID
-  weights %>%
-    select(-"ID") %>%
+  weights |>
+    select(-"ID") |>
     as.list() -> weights
   names(weights[[1]]) <- w_names
   weights

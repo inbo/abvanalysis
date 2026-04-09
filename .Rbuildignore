@@ -1,3 +1,8 @@
+.*\.log
+.*\.tex
+.*_files
+\.Rproj\.user
+\.quarto
 ^.*\.Rproj$
 ^CITATION\.cff$
 ^LICENSE.md$
@@ -20,10 +25,10 @@
 ^inst/*\.log$
 ^inst/*css$
 ^inst/*figure$
-^inst/*rds$
 ^inst/intern_rapport$
 ^inst/output$
 ^inst/rapport$
+^inst/results.rds$
 ^inst/website$
 ^man-roxygen$
 ^organisation.yml$
