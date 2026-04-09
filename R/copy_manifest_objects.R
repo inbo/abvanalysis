@@ -1,4 +1,6 @@
 #' Copy all object of the most recent manifest
+#' @inheritParams n2kanalysis::store_model
+#' @param target_folder Where to store the objects
 #' @export
 #' @importFrom dplyr filter
 #' @importFrom n2kanalysis connect_inbo_s3 read_manifest read_model

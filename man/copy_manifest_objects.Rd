@@ -6,6 +6,16 @@
 \usage{
 copy_manifest_objects(base, project, target_folder = ".", overwrite = FALSE)
 }
+\arguments{
+\item{base}{The base location to store the model.}
+
+\item{project}{Will be a relative path within the base location.}
+
+\item{target_folder}{Where to store the objects}
+
+\item{overwrite}{Should an existing object be overwritten?
+Defaults to \code{TRUE}.}
+}
 \description{
 Copy all object of the most recent manifest
 }
