@@ -56,5 +56,4 @@ spelling:
     - inst/interactive/trends_pdf.qmd
     - inst/interactive/vbp_species.qmd
 pak:
-- inbo/n2kanalysis@0.4.1
 - pdftools
