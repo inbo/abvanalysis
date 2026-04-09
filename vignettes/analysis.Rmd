@@ -47,7 +47,7 @@ the common breeding bird census for Flanders (Belgium.)
 ### Statistical model
 
 - Generalised linear mixed model with negative binomial distribution.
-- Response: 
+- Response:
     - Number of observed breeding bird at each point within the grid cell
 - Covariates:
     - `Stratum`: takes the average difference in abundance among strata into account.
@@ -55,7 +55,7 @@ the common breeding bird census for Flanders (Belgium.)
     - `Period`: categorical factor models the overall differences among periods. Only relevant in case multiple periods are selected.
     - `Location`: i.i.d. random intercept of grid cell. This models effects of the grid cell not captured by `Stratum`, `Period` or `Year`.
     - `SubLocation`: i.i.d. random intercept of point within grid cell. This models effects of the point within the grid cell not captured by `Stratum`, `Period`, `Year` or `Location`.
-- Model fit in [R](https://www.R-project.org) with [INLA](https://www.r-inla.org).
+- Model fit in [R](https://www.R-project.org) with [INLA](https://r-inla.org).
 
 ### Trend
 
